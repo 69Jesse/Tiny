@@ -200,7 +200,7 @@ def sort_imports(raw: str) -> str:
 
     raw = imports_string + '\n\n\n' + raw.replace(content, '', 1).lstrip('\n')
 
-    return raw
+    return raw.lstrip('\n')
 
 
 if __name__ != '__main__':
@@ -218,5 +218,7 @@ for path in Path(p).rglob('*.py'):
     with open(path, 'r', encoding='utf-8') as f:
         raw = f.read()
     raw = sort_imports(raw)
+    if not raw.endswith('\n'):
+        raw += '\n'
     with open(path, 'w', encoding='utf-8') as f:
         f.write(raw)
