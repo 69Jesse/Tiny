@@ -58,6 +58,13 @@ def add_prefix(string: str, prefix: str) -> str:
 
 
 def sort_imports(raw: str) -> str:
+    match = re.match(r'"""(?:.|\n)+?"""', raw)
+    if match is not None and match.start() == 0:
+        before_string = match.group(0)
+        raw = raw.replace(before_string, '', 1)
+    else:
+        before_string = ''
+
     split = raw.split('\n')
     for i, line in enumerate(split):
         if not any(
@@ -70,13 +77,6 @@ def sort_imports(raw: str) -> str:
         content = ''
 
     temp_content = content
-
-    match = re.match(r'(?:"){3}(.+?)(?:"){3}', temp_content)
-    if match:
-        before_string = match.group(0)
-        temp_content = temp_content.replace(before_string, '', 1)
-    else:
-        before_string = ''
 
     imports: list[Import | FromImport] = []
 
