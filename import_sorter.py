@@ -211,7 +211,7 @@ ignoring_folders: list[str] = [
     'legacy',
 ]
 
-p = r'C:\Users\jesse\Desktop\Hackerman\GitHub\bigger\ButtersTemp'
+p = r'C:\Users\jesse\Desktop\Hackerman\GitHub\bigger\Butters'
 for path in Path(p).rglob('*.py'):
     if any(path.parts[i] == folder for i in range(len(path.parts)) for folder in ignoring_folders):
         continue
