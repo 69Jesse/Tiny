@@ -71,6 +71,13 @@ def sort_imports(raw: str) -> str:
 
     temp_content = content
 
+    match = re.match(r'(?:"){3}(.+?)(?:"){3}', temp_content)
+    if match:
+        before_string = match.group(0)
+        temp_content = temp_content.replace(before_string, '', 1)
+    else:
+        before_string = ''
+
     imports: list[Import | FromImport] = []
 
     for match in re.finditer(r'from (.+?) import \(((?:.|\n)+?)\)', temp_content):
@@ -198,9 +205,11 @@ def sort_imports(raw: str) -> str:
 
     imports_string = imports_string.strip('\n')
 
-    raw = imports_string + '\n\n\n' + raw.replace(content, '', 1).lstrip('\n')
+    raw = (imports_string + '\n\n\n' + raw.replace(content, '', 1).lstrip('\n')).lstrip('\n')
 
-    return raw.lstrip('\n')
+    if before_string:
+        raw = before_string + '\n' + raw
+    return raw
 
 
 if __name__ != '__main__':
