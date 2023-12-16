@@ -59,7 +59,7 @@ def parse_integer(
         raise ShowToUserError(f'I was not able to turn `{value}` into a number..')
 
     if value < minimum:
-        raise ShowToUserError(f'You must bet at least {human_format(minimum)} marbles.')
+        raise ShowToUserError(f'You must bet at least {human_format(minimum)} marble{"s" * (minimum != 1)}.')
     if value > maximum:
         raise ShowToUserError(f'You do not have enough marbles to bet {human_format(value)}.')
 
