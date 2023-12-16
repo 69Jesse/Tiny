@@ -60,3 +60,26 @@ def human_format(
     rounded = (decimal_point + decimals).rstrip('0').removesuffix('.')
     symbol = symbols[magnitude - 1]
     return prefix + whole + rounded + symbol
+
+
+"""
+>>> from human_format import human_format
+>>> human_format(1_000)
+'1K'
+>>> human_format(1_000_000)
+'1M'
+>>> human_format(123_123)
+'123.123K'
+>>> human_format(123_123, max_decimals=1)
+'123.1K'
+>>> human_format(123_123, max_decimals=100)
+'123.123K'
+>>> human_format(9_009, max_decimals=2)
+'9.01K'
+>>> human_format(500_000, maybe_plus=True)
+'+500K'
+>>> human_format(-500_000, maybe_plus=True)
+'-500K'
+>>> human_format(1_000_000_000_001, max_decimals=-1, decimal_point=',')
+'1,000000000001T'
+"""

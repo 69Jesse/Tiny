@@ -66,17 +66,34 @@ def parse_integer(
     return value
 
 
-assert parse_integer(1, maximum=1_000) == 1
-assert parse_integer('1', maximum=1_000) == 1
-assert parse_integer('1k', maximum=1_000) == 1_000
-assert parse_integer('1K', maximum=1_000) == 1_000
-assert parse_integer('1m', maximum=1_000_000) == 1_000_000
-assert parse_integer('1.234k', maximum=1_000_000) == 1_234
-assert parse_integer('all', maximum=1_000_000) == 1_000_000
-assert parse_integer('h', maximum=1_000_000) == 500_000
-assert parse_integer('q', maximum=1_000_000) == 250_000
-assert parse_integer('1/2', maximum=1_000_000) == 500_000
-assert parse_integer('1/4', maximum=1_000_000) == 250_000
-assert parse_integer('2/3', maximum=1_000_000) == 666_667
-assert parse_integer('50%', maximum=1_000_000) == 500_000
-assert parse_integer('25%', maximum=1_000_000) == 250_000
+"""
+>>> from parse_integer import parse_integer
+>>> parse_integer(1, maximum=1_000)
+1
+>>> parse_integer('1', maximum=1_000)
+1
+>>> parse_integer('1k', maximum=1_000)
+1000
+>>> parse_integer('1K', maximum=1_000)
+1000
+>>> parse_integer('1m', maximum=1_000_000)
+1000000
+>>> parse_integer('1.234k', maximum=1_000_000)
+1234
+>>> parse_integer('all', maximum=1_000_000)
+1000000
+>>> parse_integer('h', maximum=1_000_000)
+500000
+>>> parse_integer('q', maximum=1_000_000)
+250000
+>>> parse_integer('1/2', maximum=1_000_000)
+500000
+>>> parse_integer('1/4', maximum=1_000_000)
+250000
+>>> parse_integer('2/3', maximum=1_000_000)
+666667
+>>> parse_integer('50%', maximum=1_000_000)
+500000
+>>> parse_integer('25%', maximum=1_000_000)
+250000
+"""
