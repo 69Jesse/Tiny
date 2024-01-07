@@ -1,6 +1,8 @@
 import math
 import re
 
+from typing import Optional
+
 
 class ShowToUserError(Exception):
     pass
@@ -25,7 +27,7 @@ FRACTION_REGEX = re.compile(r'^(\d{1,3})/(\d{1,3})$')
 def parse_integer(
     value: int | str,
     *,
-    maximum: int,
+    maximum: Optional[int] = None,
     minimum: int = 1,
 ) -> int:
     def parse(v: int | str) -> int:
@@ -36,21 +38,23 @@ def parse_integer(
         except ValueError:
             pass
         lowered = v.lower()
-        if lowered in ('a', 'all'):
-            return maximum
-        if lowered in ('h', 'half'):
-            return math.ceil(maximum / 2)
-        if lowered in ('q', 'quarter'):
-            return math.ceil(maximum / 4)
+        if maximum is not None:
+            if lowered in ('a', 'all'):
+                return maximum
+            if lowered in ('h', 'half'):
+                return math.ceil(maximum / 2)
+            if lowered in ('q', 'quarter'):
+                return math.ceil(maximum / 4)
         match = SYMBOL_REGEX.match(lowered)
         if match is not None:
             return math.ceil(float(match.group(1).replace(',', '')) * SYMBOL_TO_MULTIPLIER[lowered[-1]])
-        match = PERCENT_REGEX.match(lowered)
-        if match is not None:
-            return math.ceil(maximum * int(match.group(1)) / 100)
-        match = FRACTION_REGEX.match(lowered)
-        if match is not None:
-            return math.ceil(maximum * int(match.group(1)) / int(match.group(2)))
+        if maximum is not None:
+            match = PERCENT_REGEX.match(lowered)
+            if match is not None:
+                return math.ceil(maximum * int(match.group(1)) / 100)
+            match = FRACTION_REGEX.match(lowered)
+            if match is not None:
+                return math.ceil(maximum * int(match.group(1)) / int(match.group(2)))
         raise ValueError
 
     try:
@@ -60,7 +64,7 @@ def parse_integer(
 
     if value < minimum:
         raise ShowToUserError(f'You must bet at least {human_format(minimum)} marble{"s" * (minimum != 1)}.')
-    if value > maximum:
+    if maximum is not None and value > maximum:
         raise ShowToUserError(f'You do not have enough marbles to bet {human_format(value)}.')
 
     return value
