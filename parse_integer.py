@@ -24,48 +24,53 @@ PERCENT_REGEX = re.compile(r'^(\d{1,3})(?:%|p)$')
 FRACTION_REGEX = re.compile(r'^(\d{1,3})/(\d{1,3})$')
 
 
+def _parse(
+    value: int | str,
+    *,
+    maximum: Optional[int] = None,
+) -> int:
+    if isinstance(value, int):
+        return value
+    try:
+        return int(value)
+    except ValueError:
+        pass
+    lowered = value.lower()
+    if maximum is not None:
+        if lowered in ('a', 'all'):
+            return maximum
+        if lowered in ('h', 'half'):
+            return math.ceil(maximum / 2)
+        if lowered in ('q', 'quarter'):
+            return math.ceil(maximum / 4)
+    match = SYMBOL_REGEX.match(lowered)
+    if match is not None:
+        return math.ceil(float(match.group(1).replace(',', '')) * SYMBOL_TO_MULTIPLIER[lowered[-1]])
+    if maximum is not None:
+        match = PERCENT_REGEX.match(lowered)
+        if match is not None:
+            return math.ceil(maximum * int(match.group(1)) / 100)
+        match = FRACTION_REGEX.match(lowered)
+        if match is not None:
+            return math.ceil(maximum * int(match.group(1)) / int(match.group(2)))
+    raise ValueError(f'Unable to parse {value!r} as an integer.')
+
+
 def parse_integer(
     value: int | str,
     *,
     maximum: Optional[int] = None,
     minimum: int = 1,
 ) -> int:
-    def parse(v: int | str) -> int:
-        if isinstance(v, int):
-            return v
-        try:
-            return int(v)
-        except ValueError:
-            pass
-        lowered = v.lower()
-        if maximum is not None:
-            if lowered in ('a', 'all'):
-                return maximum
-            if lowered in ('h', 'half'):
-                return math.ceil(maximum / 2)
-            if lowered in ('q', 'quarter'):
-                return math.ceil(maximum / 4)
-        match = SYMBOL_REGEX.match(lowered)
-        if match is not None:
-            return math.ceil(float(match.group(1).replace(',', '')) * SYMBOL_TO_MULTIPLIER[lowered[-1]])
-        if maximum is not None:
-            match = PERCENT_REGEX.match(lowered)
-            if match is not None:
-                return math.ceil(maximum * int(match.group(1)) / 100)
-            match = FRACTION_REGEX.match(lowered)
-            if match is not None:
-                return math.ceil(maximum * int(match.group(1)) / int(match.group(2)))
-        raise ValueError
-
     try:
-        value = parse(value)
+        value = _parse(value, maximum=maximum)
     except ValueError:
-        raise ShowToUserError(f'I was not able to turn `{value}` into a number..')
+        raise ShowToUserError(f'I was unable to turn `{value}` into a number..')
 
     if value < minimum:
-        raise ShowToUserError(f'You must bet at least {human_format(minimum)} marble{"s" * (minimum != 1)}.')
+        raise ShowToUserError(f'You must bet at least **{human_format(minimum)}**')
     if maximum is not None and value > maximum:
-        raise ShowToUserError(f'You do not have enough marbles to bet {human_format(value)}.')
+        raise ShowToUserError(f'You do not have enough currency to bet **{human_format(value)}**.')
 
     return value
 
