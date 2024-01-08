@@ -52,7 +52,10 @@ def _parse(
             return math.ceil(maximum * int(match.group(1)) / 100)
         match = FRACTION_REGEX.match(lowered)
         if match is not None:
-            return math.ceil(maximum * int(match.group(1)) / int(match.group(2)))
+            denominator = int(match.group(2))
+            if denominator == 0:
+                raise ValueError('Cannot divide by 0.')
+            return math.ceil(maximum * int(match.group(1)) / denominator)
     raise ValueError(f'Unable to parse {value!r} as an integer.')
 
 
