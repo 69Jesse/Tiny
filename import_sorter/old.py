@@ -222,7 +222,11 @@ ignoring_folders: list[str] = [
 
 p = r'C:\Users\jesse\Desktop\Hackerman\GitHub\bigger\Butters'
 for path in Path(p).rglob('*.py'):
-    if any(path.parts[i] == folder for i in range(len(path.parts)) for folder in ignoring_folders):
+    if any(
+        path.parts[i] == folder
+        for i in range(len(path.parts))
+        for folder in ignoring_folders
+    ):
         continue
     with open(path, 'r', encoding='utf-8') as f:
         raw = f.read()
