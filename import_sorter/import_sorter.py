@@ -112,6 +112,11 @@ def sort_imports(raw: str) -> str:
                 section.pop(i)
         sort_section(section)  # type: ignore
 
+    for section in sections:
+        while len(sections) >= 2 and section[0] == '' and section[1] == '':
+            section.pop(0)
+        while len(sections) >= 2 and section[-1] == '' and section[-2] == '':
+            section.pop()
     while sections[0][0] == '':
         sections[0].pop(0)
     while sections[-1][-1] == '':
@@ -119,7 +124,13 @@ def sort_imports(raw: str) -> str:
     if not after_append_raw.startswith(' '):
         after_append_raw = '\n\n' + after_append_raw.lstrip('\n')
 
-    return '\n'.join(
-        '\n'.join(str(item) for item in section)
-        for section in sections
-    ) + '\n' + after_append_raw
+    after_stripped = after_append_raw.strip('\n')
+    if '\n' not in after_stripped:
+        after_append_raw = ''
+
+    return (
+        '\n'.join(
+            '\n'.join(str(item) for item in section)
+            for section in sections
+        ) + '\n' + after_append_raw
+    ).rstrip('\n') + '\n'

@@ -3,7 +3,7 @@ from import_sorter import sort_imports
 
 
 def main() -> None:
-    with Path('example/parse_me.py').open('r', encoding='utf-8') as f:
+    with Path(r'example/parse_me.py').open('r', encoding='utf-8') as f:
         raw = f.read()
     raw = sort_imports(raw)
     with Path('example/parsed.py').open('w', encoding='utf-8') as f:
