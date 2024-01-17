@@ -2,6 +2,7 @@ from __future__ import annotations
 from discord import app_commands
 from discord.ext import commands
 from discord.utils import MISSING
+from bot import Butters
 
 from .cog import Cog
 from .context import Context

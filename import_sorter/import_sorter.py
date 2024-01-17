@@ -5,6 +5,7 @@ from classes import (
 )
 from configurable import (
     ADD_NEWLINES_AFTER,
+    REMOVE_NEWLINES_IN_BETWEEN,
     get_value,
 )
 
@@ -29,6 +30,8 @@ def sort_section(section: list[Import | FromImport]) -> None:
         value = values[current]
         if value == last_value:
             continue
+        if (value, last_value) in REMOVE_NEWLINES_IN_BETWEEN:
+            continue
         last_value = value
         if ADD_NEWLINES_AFTER.get(value, False):
             section.insert(i + 1, '')  # type: ignore
@@ -41,7 +44,7 @@ def sort_imports(raw: str) -> str:
     before_remove_line = raw
     most_recent_raw = raw
     after_append_raw = raw
-    while (
+    while most_recent_raw and (
         len(current_section) == 0
         or (
             len(current_section) <= MAX_NON_IMPORT_CUTOFF
