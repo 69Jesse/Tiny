@@ -1,0 +1,42 @@
+[
+    {
+        "name": "James",
+        "age": 14,
+        "height": 1.65,
+        "weight": 70.0,
+        "belongings": [
+            {
+                "name": "Cookie",
+                "value": 1.15
+            }
+        ],
+        "isAdult": false,
+        "interests": [
+            {
+                "name": "Python",
+                "extra": "Snake"
+            },
+            {
+                "name": "Python",
+                "extra": "Language"
+            }
+        ],
+        "friends": [
+            "Joey",
+            "you?"
+        ]
+    },
+    {
+        "name": "Greg",
+        "age": 45,
+        "height": 1.80,
+        "weight": 90.0,
+        "belongings": [
+            {
+                "name": "House",
+                "value": 123456.78
+            }
+        ],
+        "isAdult": true
+    }
+]
