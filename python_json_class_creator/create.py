@@ -1,3 +1,4 @@
+"""bad very bad"""
 from typing import (
     TypeAlias,
     overload,
