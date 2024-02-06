@@ -163,20 +163,20 @@ ORDERED_NON_VAR_TOKEN_TYPES: list[type[Token]] = sorted((
     BiImplication,
 ), key=lambda cls: cls.get_order_value())
 
-TOKEN_TYPE_TO_SYMBOL: dict[type[Token], list[str]] = {
+TOKEN_TYPE_TO_SYMBOLS: dict[type[Token], list[str]] = {
     cls: sorted(cls.get_symbols(), key=len, reverse=True)
     for cls in ORDERED_NON_VAR_TOKEN_TYPES
 }
 
 SYMBOL_TO_TOKEN_TYPE: dict[str, type[Token]] = {
     symbol: cls
-    for cls, symbols in TOKEN_TYPE_TO_SYMBOL.items()
+    for cls, symbols in TOKEN_TYPE_TO_SYMBOLS.items()
     for symbol in symbols
 }
 
 ALL_TOKEN_SYMBOLS: list[str] = sorted((
     symbol
-    for symbols in TOKEN_TYPE_TO_SYMBOL.values()
+    for symbols in TOKEN_TYPE_TO_SYMBOLS.values()
     for symbol in symbols
 ), key=len, reverse=True)
 
