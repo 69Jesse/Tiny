@@ -180,6 +180,10 @@ ALL_TOKEN_SYMBOLS: list[str] = sorted((
     for symbol in symbols
 ), key=len, reverse=True)
 
+ALLOWED_VARIABLE_NAME_CHARACTERS: set[str] = set(
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
+)
+
 
 TokenWithContentPairType: TypeAlias = type[Conjuction] | type[Disjunction] | type[Implication] | type[BiImplication]
 
@@ -213,11 +217,11 @@ class Parser:
         variables: Optional[dict[str, Variable]] = None,
     ) -> Token:
         variables = variables or {}
-        print(proposition)
+        # print(proposition)
         parts: list[type[Token] | Token] = []
         index = 0
         while index < len(proposition):
-            print(parts)
+            # print(parts)
             if proposition[index] == '(':
                 depth: int = 1
                 for i in range(index + 1, len(proposition)):
@@ -243,6 +247,7 @@ class Parser:
                 continue
 
             rest: str = proposition[index:]
+            print(rest)
             variable_name: str = ''
             for i in range(len(rest)):
                 for symbol in ALL_TOKEN_SYMBOLS:
@@ -253,10 +258,13 @@ class Parser:
                             name=variable_name,
                         )
                         parts.append(SYMBOL_TO_TOKEN_TYPE[symbol])
-                        index += len(symbol)
+                        index += len(symbol) + len(variable_name)
                         break
                 else:
-                    variable_name += rest[i]
+                    c = rest[i]
+                    if c not in ALLOWED_VARIABLE_NAME_CHARACTERS:
+                        raise ValueError(f'Invalid character {c}')
+                    variable_name += c
                     continue
                 break
             else:
@@ -300,3 +308,4 @@ class Parser:
 
 
 # parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
+parser = Parser.from_proposition('aap => waarheid')
