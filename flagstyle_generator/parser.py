@@ -224,6 +224,8 @@ class Parser:
             rest = proposition[index:]
             
             # ga alle symbolen af als niet in zit is variabele, check totdat er symbool is (of '(') en dan variabele toevoegen en symbool toevoegen
+            # check of var naam alleen a-z A-Z is
+
 
             # for symbol in ALL_TOKEN_SYMBOLS:
             #     if rest.startswith(symbol):
