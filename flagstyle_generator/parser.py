@@ -48,7 +48,7 @@ class Variable(Token):
     def __init__(
         self,
         name: str,
-        value: bool,
+        value: bool = False,
     ) -> None:
         super().__init__()
         self.name = name
@@ -149,13 +149,24 @@ class BiImplication(TokenWithContent[tuple[Token, Token]]):
         return self.content[0].get_value() is self.content[1].get_value()
 
 
-SORTED_TOKEN_TYPES_WITH_SYMBOLS: list[type[Token]] = sorted((
+ORDERED_NON_VAR_TOKEN_TYPES: list[type[Token]] = sorted((
     Negation,
     Conjuction,
     Disjunction,
     Implication,
     BiImplication,
 ), key=lambda cls: cls.get_order_value())
+
+TOKEN_TYPE_SYMBOL_MAPPING: dict[type[Token], list[str]] = {
+    cls: sorted(cls.get_symbols(), key=len, reverse=True)
+    for cls in ORDERED_NON_VAR_TOKEN_TYPES
+}
+
+ALL_TOKEN_SYMBOLS: list[str] = sorted((
+    symbol
+    for symbols in TOKEN_TYPE_SYMBOL_MAPPING.values()
+    for symbol in symbols
+), key=len, reverse=True)
 
 
 TokenWithContentPairType: TypeAlias = type[Conjuction] | type[Disjunction] | type[Implication] | type[BiImplication]
@@ -174,39 +185,32 @@ class Parser:
         proposition: str,
     ) -> Token:
         print(proposition)
-        before_token: Optional[Token] = None
-        in_between_type: Optional[TokenWithContentPairType] = None
-        for index in range(len(proposition)):
-            if proposition[index] == '(':
-                depth = 1
+        parts: list[str | type[Token] | Token] = []
+        index = 0
+        while index < len(proposition):
+            char = proposition[index]
+            if char == '(':
+                depth: int = 1
                 for i in range(index + 1, len(proposition)):
-                    if proposition[i] == '(':
+                    c = proposition[i]
+                    if c == '(':
                         depth += 1
-                    if proposition[i] != ')':
+                        continue
+                    elif c != ')':
                         continue
                     depth -= 1
                     if depth != 0:
                         continue
-                    if i == len(proposition) - 1:
-                        if index == 0:
-                            return Parser.generate_token(proposition[1:-1])
-                        assert before_token is not None
-                        assert in_between_type is not None
-                        return in_between_type((
-                            before_token,
-                            Parser.generate_token(proposition[index + 1:i]),
-                        ))
-                    before_token = Parser.generate_token(proposition[index + 1:i])
-                    for symbol, cls in SYMBOLS_TO_TOKEN_TYPE.items():
-                        if not proposition[i + 1:].startswith(symbol):
-                            continue
-                        in_between_type = cls  # type: ignore
-                        break
+                    parts.append(
+                        Parser.generate_token(proposition[index + 1:i])
+                    )
+                    index = i + 1
                     break
                 else:
-                    raise ValueError('Expected closing parenthesis')
-        print(before_token, 'b')
-        return proposition
+                    raise ValueError('Missing closing parenthesis')
+                continue
+            # print(char)
+        print(parts)
 
 
     @classmethod
