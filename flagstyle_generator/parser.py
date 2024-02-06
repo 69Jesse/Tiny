@@ -25,25 +25,6 @@ class Token(ABC):
     def get_value(self) -> bool:
         raise NotImplementedError
 
-    def __repr__(self) -> str:
-        return f'{self.__class__.__name__}<{self.get_value()}>'
-
-
-class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
-    content: Content
-    def __init__(
-        self,
-        content: Content,
-    ) -> None:
-        super().__init__()
-        self.content = content
-
-    def get_tokens_with_value(self) -> Generator[Token, None, None]:
-        if isinstance(self.content, Token):
-            yield self.content  # type: ignore
-            return
-        yield from self.content
-
 
 class Variable(Token):
     name: str
@@ -73,6 +54,40 @@ class Variable(Token):
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}<{self.name}={self.value}>'
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
+    content: Content
+    def __init__(
+        self,
+        content: Content,
+    ) -> None:
+        super().__init__()
+        self.content = content
+
+    def get_tokens_with_value(self) -> Generator[Token, None, None]:
+        if isinstance(self.content, Token):
+            yield self.content  # type: ignore
+            return
+        yield from self.content
+
+    def __repr__(self) -> str:
+        if isinstance(self.content, Token):
+            return f'{self.__class__.__name__}<{self.get_main_symbol()}{repr(self.content)}>'
+        return f'{self.__class__.__name__}<{repr(self.content[0])} {self.get_main_symbol()} {repr(self.content[1])}'
+
+    def maybe_wrap(self, token: Token) -> str:
+        if isinstance(token, TokenWithContent):
+            return f'({token})'
+        return str(token)
+
+    def __str__(self) -> str:
+        if isinstance(self.content, Token):
+            return f'{self.get_main_symbol()}{self.maybe_wrap(self.content)}'  # type: ignore
+        return f'{self.maybe_wrap(self.content[0])} {self.get_main_symbol()} {self.maybe_wrap(self.content[1])}'
 
 
 class Negation(TokenWithContent[Token]):
@@ -198,11 +213,15 @@ TokenWithContentPairType: TypeAlias = type[Conjuction] | type[Disjunction] | typ
 
 class Parser:
     token: Token
+    variables: dict[str, Variable]
     def __init__(
         self,
+        *,
         token: Token,
+        variables: dict[str, Variable],
     ) -> None:
         self.token = token
+        self.variables = variables
 
     @staticmethod
     def maybe_add_variable(
@@ -222,14 +241,11 @@ class Parser:
         proposition: str,
         /,
         *,
-        variables: Optional[dict[str, Variable]] = None,
+        variables: dict[str, Variable],
     ) -> Token:
-        variables = variables or {}
-        # print(proposition)
         parts: list[type[Token] | Token] = []
         index = 0
         while index < len(proposition):
-            # print(parts)
             if proposition[index] == '(':
                 depth: int = 1
                 for i in range(index + 1, len(proposition)):
@@ -255,7 +271,6 @@ class Parser:
                 continue
 
             rest: str = proposition[index:]
-            print(rest)
             variable_name: str = ''
             for i in range(len(rest)):
                 for symbol in ALL_TOKEN_SYMBOLS:
@@ -282,29 +297,32 @@ class Parser:
                     name=variable_name,
                 )
                 index += len(variable_name)
-                
-        
-            # ga alle symbolen af als niet in zit is variabele, check totdat er symbool is (of '(') en dan variabele toevoegen en symbool toevoegen
-            # check of var naam alleen a-z A-Z is
 
-
-            # for symbol in ALL_TOKEN_SYMBOLS:
-            #     if rest.startswith(symbol):
-            #         parts.append(SYMBOL_TO_TOKEN_TYPE[symbol])
-            #         index += len(symbol)
-            #         break
-            # else:
-
-        print(parts)
         for token_cls in ORDERED_NON_VAR_TOKEN_CLASSES:
+            index: int = 0
+            while index < len(parts):
+                part = parts[index]
+                if isinstance(part, Token):
+                    index += 1
+                    continue
+                if part is not token_cls:
+                    index += 1
+                    continue
+                offsets: tuple[int] | tuple[int, int] = NON_VAR_TOKEN_TYPES_CONTENT_OFFSETS[token_cls]
+                if len(offsets) == 1:
+                    content = parts.pop(index + offsets[0])
+                    if not isinstance(content, Token):
+                        raise ValueError('Invalid proposition')
+                else:
+                    content = (parts.pop(index + offsets[0]), parts.pop(index + offsets[1] - 1))
+                    if not all(isinstance(part, Token) for part in content):
+                        raise ValueError('Invalid proposition')
+                    index -= 1
+                parts[index] = token_cls(content)  # type: ignore
+        if len(parts) != 1:
+            raise ValueError('Invalid proposition')
 
-
-    @classmethod
-    def from_token(
-        cls,
-        token: Token,
-    ) -> 'Parser':
-        return cls(token)
+        return parts[0]  # type: ignore
 
     @classmethod
     def from_proposition(
@@ -312,9 +330,12 @@ class Parser:
         proposition: str,
     ) -> 'Parser':
         proposition = proposition.replace(' ', '').replace('\n', '')
-        token = cls.generate_token(proposition)
-        return cls.from_token(token)
+        variables: dict[str, Variable] = {}
+        token = cls.generate_token(proposition, variables=variables)
+        return cls(token=token, variables=variables)
 
 
-# parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
+parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
+print(parser.token, parser.variables)
 parser = Parser.from_proposition('aap => waarheid => aap')
+print(parser.token, parser.variables)
