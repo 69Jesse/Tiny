@@ -3,20 +3,22 @@ from abc import ABC, abstractmethod
 from typing import Generator, TypeAlias, Optional
 
 
-# neg -> and / or -> imp -> bi imp
-
-
 class Token(ABC):
     def __init__(self) -> None:
         pass
 
+    @staticmethod
     @abstractmethod
-    def get_main_symbol(self) -> str:
+    def get_symbols() -> list[str]:
         raise NotImplementedError
 
     @staticmethod
     @abstractmethod
-    def get_symbols() -> list[str]:
+    def get_order_value() -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_main_symbol(self) -> str:
         raise NotImplementedError
 
     @abstractmethod
@@ -52,93 +54,108 @@ class Variable(Token):
         self.name = name
         self.value = value
 
-    def get_main_symbol(self) -> str:
-        return self.name
-
     @staticmethod
     def get_symbols() -> list[str]:
         raise NotImplementedError
+
+    @staticmethod
+    def get_order_value() -> int:
+        raise NotImplementedError
+
+    def get_main_symbol(self) -> str:
+        return self.name
 
     def get_value(self) -> bool:
         return self.value
 
 
 class Negation(TokenWithContent[Token]):
-    def get_main_symbol(self) -> str:
-        return '~'
-
     @staticmethod
     def get_symbols() -> list[str]:
         return ['~']
+
+    @staticmethod
+    def get_order_value() -> int:
+        return 0
+
+    def get_main_symbol(self) -> str:
+        return '~'
 
     def get_value(self) -> bool:
         return not self.content.get_value()
 
 
 class Conjuction(TokenWithContent[tuple[Token, Token]]):
-    def get_main_symbol(self) -> str:
-        return '&'
-
     @staticmethod
     def get_symbols() -> list[str]:
         return ['&']
+
+    @staticmethod
+    def get_order_value() -> int:
+        return 1
+
+    def get_main_symbol(self) -> str:
+        return '&'
 
     def get_value(self) -> bool:
         return self.content[0].get_value() and self.content[1].get_value()
 
 
 class Disjunction(TokenWithContent[tuple[Token, Token]]):
-    def get_main_symbol(self) -> str:
-        return '|'
-
     @staticmethod
     def get_symbols() -> list[str]:
         return ['|']
+
+    @staticmethod
+    def get_order_value() -> int:
+        return 1
+
+    def get_main_symbol(self) -> str:
+        return '|'
 
     def get_value(self) -> bool:
         return self.content[0].get_value() or self.content[1].get_value()
 
 
 class Implication(TokenWithContent[tuple[Token, Token]]):
-    def get_main_symbol(self) -> str:
-        return '=>'
-
     @staticmethod
     def get_symbols() -> list[str]:
         return ['=>']
+
+    @staticmethod
+    def get_order_value() -> int:
+        return 2
+
+    def get_main_symbol(self) -> str:
+        return '=>'
 
     def get_value(self) -> bool:
         return not self.content[0].get_value() or self.content[1].get_value()
 
 
 class BiImplication(TokenWithContent[tuple[Token, Token]]):
-    def get_main_symbol(self) -> str:
-        return '<=>'
-
     @staticmethod
     def get_symbols() -> list[str]:
         return ['<=>']
+
+    @staticmethod
+    def get_order_value() -> int:
+        return 3
+
+    def get_main_symbol(self) -> str:
+        return '<=>'
 
     def get_value(self) -> bool:
         return self.content[0].get_value() is self.content[1].get_value()
 
 
-TOKEN_TYPES_WITH_SYMBOLS: list[type[Token]] = [
+SORTED_TOKEN_TYPES_WITH_SYMBOLS: list[type[Token]] = sorted((
     Negation,
     Conjuction,
     Disjunction,
     Implication,
     BiImplication,
-]
-SYMBOLS_TO_TOKEN_TYPE: dict[str, type[Token]] = {
-    symbol: cls for symbol, cls in sorted(
-        ((symbol, cls)
-        for cls in TOKEN_TYPES_WITH_SYMBOLS
-        for symbol in cls.get_symbols()),
-        key=lambda x: len(x[0]),
-        reverse=True,
-    )
-}
+), key=lambda cls: cls.get_order_value())
 
 
 TokenWithContentPairType: TypeAlias = type[Conjuction] | type[Disjunction] | type[Implication] | type[BiImplication]
