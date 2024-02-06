@@ -157,14 +157,20 @@ ORDERED_NON_VAR_TOKEN_TYPES: list[type[Token]] = sorted((
     BiImplication,
 ), key=lambda cls: cls.get_order_value())
 
-TOKEN_TYPE_SYMBOL_MAPPING: dict[type[Token], list[str]] = {
+TOKEN_TYPE_TO_SYMBOL: dict[type[Token], list[str]] = {
     cls: sorted(cls.get_symbols(), key=len, reverse=True)
     for cls in ORDERED_NON_VAR_TOKEN_TYPES
 }
 
+SYMBOL_TO_TOKEN_TYPE: dict[str, type[Token]] = {
+    symbol: cls
+    for cls, symbols in TOKEN_TYPE_TO_SYMBOL.items()
+    for symbol in symbols
+}
+
 ALL_TOKEN_SYMBOLS: list[str] = sorted((
     symbol
-    for symbols in TOKEN_TYPE_SYMBOL_MAPPING.values()
+    for symbols in TOKEN_TYPE_TO_SYMBOL.values()
     for symbol in symbols
 ), key=len, reverse=True)
 
@@ -183,13 +189,15 @@ class Parser:
     @staticmethod
     def generate_token(
         proposition: str,
+        /,
+        *,
+        variables: Optional[dict[str, Variable]] = None,
     ) -> Token:
         print(proposition)
         parts: list[str | type[Token] | Token] = []
         index = 0
         while index < len(proposition):
-            char = proposition[index]
-            if char == '(':
+            if proposition[index] == '(':
                 depth: int = 1
                 for i in range(index + 1, len(proposition)):
                     c = proposition[i]
@@ -202,14 +210,28 @@ class Parser:
                     if depth != 0:
                         continue
                     parts.append(
-                        Parser.generate_token(proposition[index + 1:i])
+                        Parser.generate_token(
+                            proposition[index + 1:i],
+                            variables=variables,
+                        )
                     )
                     index = i + 1
                     break
                 else:
                     raise ValueError('Missing closing parenthesis')
                 continue
-            # print(char)
+
+            rest = proposition[index:]
+            
+            # ga alle symbolen af als niet in zit is variabele, check totdat er symbool is (of '(') en dan variabele toevoegen en symbool toevoegen
+
+            # for symbol in ALL_TOKEN_SYMBOLS:
+            #     if rest.startswith(symbol):
+            #         parts.append(SYMBOL_TO_TOKEN_TYPE[symbol])
+            #         index += len(symbol)
+            #         break
+            # else:
+
         print(parts)
 
 
@@ -230,4 +252,4 @@ class Parser:
         return cls.from_token(token)
 
 
-parser = Parser.from_proposition('((aap => waarheid) => hoiii)')
+parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
