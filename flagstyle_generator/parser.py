@@ -19,14 +19,12 @@ class Token(ABC):
     def get_symbols() -> list[str]:
         raise NotImplementedError
 
-
-class TokenWithValue(Token):
     @abstractmethod
     def get_value(self) -> bool:
         raise NotImplementedError
 
 
-class TokenWithContent[Content: TokenWithValue | tuple[TokenWithValue, TokenWithValue]](TokenWithValue):
+class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
     content: Content
     def __init__(
         self,
@@ -35,14 +33,14 @@ class TokenWithContent[Content: TokenWithValue | tuple[TokenWithValue, TokenWith
         super().__init__()
         self.content = content
 
-    def get_tokens_with_value(self) -> Generator[TokenWithValue, None, None]:
-        if isinstance(self.content, TokenWithValue):
+    def get_tokens_with_value(self) -> Generator[Token, None, None]:
+        if isinstance(self.content, Token):
             yield self.content  # type: ignore
             return
         yield from self.content
 
 
-class Variable(TokenWithValue):
+class Variable(Token):
     name: str
     value: bool
     def __init__(
@@ -65,7 +63,7 @@ class Variable(TokenWithValue):
         return self.value
 
 
-class Negation(TokenWithContent[TokenWithValue]):
+class Negation(TokenWithContent[Token]):
     def get_main_symbol(self) -> str:
         return '~'
 
@@ -77,7 +75,7 @@ class Negation(TokenWithContent[TokenWithValue]):
         return not self.content.get_value()
 
 
-class Conjuction(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
+class Conjuction(TokenWithContent[tuple[Token, Token]]):
     def get_main_symbol(self) -> str:
         return '&'
 
@@ -89,7 +87,7 @@ class Conjuction(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
         return self.content[0].get_value() and self.content[1].get_value()
 
 
-class Disjunction(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
+class Disjunction(TokenWithContent[tuple[Token, Token]]):
     def get_main_symbol(self) -> str:
         return '|'
 
@@ -101,7 +99,7 @@ class Disjunction(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
         return self.content[0].get_value() or self.content[1].get_value()
 
 
-class Implication(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
+class Implication(TokenWithContent[tuple[Token, Token]]):
     def get_main_symbol(self) -> str:
         return '=>'
 
@@ -113,7 +111,7 @@ class Implication(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
         return not self.content[0].get_value() or self.content[1].get_value()
 
 
-class BiImplication(TokenWithContent[tuple[TokenWithValue, TokenWithValue]]):
+class BiImplication(TokenWithContent[tuple[Token, Token]]):
     def get_main_symbol(self) -> str:
         return '<=>'
 
@@ -180,7 +178,7 @@ class Parser:
                         return in_between_type((
                             before_token,
                             Parser.generate_token(proposition[index + 1:i]),
-                        ))  # type: ignore
+                        ))
                     before_token = Parser.generate_token(proposition[index + 1:i])
                     for symbol, cls in SYMBOLS_TO_TOKEN_TYPE.items():
                         if not proposition[i + 1:].startswith(symbol):
