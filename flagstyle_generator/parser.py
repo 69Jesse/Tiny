@@ -223,7 +223,7 @@ class PropositionType(Enum):
 class Parser:
     proposition: Token
     variables: dict[str, Variable]
-    type: PropositionType
+    proposition_type: PropositionType
     def __init__(
         self,
         *,
@@ -232,6 +232,7 @@ class Parser:
     ) -> None:
         self.proposition = proposition
         self.variables = variables
+        self.proposition_type = PropositionType.not_sure
 
     @staticmethod
     def maybe_add_variable(
@@ -335,14 +336,14 @@ class Parser:
         return parts[0]  # type: ignore
 
     @classmethod
-    def from_proposition(
+    def from_raw_proposition(
         cls,
-        proposition: str,
+        raw_proposition: str,
     ) -> 'Parser':
-        proposition = proposition.replace(' ', '').replace('\n', '')
+        raw_proposition = raw_proposition.replace(' ', '').replace('\n', '')
         variables: dict[str, Variable] = {}
-        token = cls.generate_token(proposition, variables=variables)
-        return cls(token=token, variables=variables)
+        proposition = cls.generate_token(raw_proposition, variables=variables)
+        return cls(proposition=proposition, variables=variables)
 
     def brute_force(self) -> None:
         for n in range(2 ** len(self.variables)):
@@ -354,6 +355,6 @@ class Parser:
 for proposition in (
     '(P ⇒ (Q ∧ R)) ⇒ ((P ⇒ Q) ∧ (Q ⇒ (P ⇒ R)))',
 ):
-    parser = Parser.from_proposition(proposition)
+    parser = Parser.from_raw_proposition(proposition)
     print(parser.proposition)
     parser.brute_force()
