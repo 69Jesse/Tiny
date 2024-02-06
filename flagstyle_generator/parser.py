@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
-from typing import Generator, TypeAlias, Optional
+from enum import Enum
+
+from typing import Generator, TypeAlias
 
 
 class Token(ABC):
@@ -93,14 +95,14 @@ class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
 class Negation(TokenWithContent[Token]):
     @staticmethod
     def get_symbols() -> list[str]:
-        return ['~']
+        return ['~', '¬']
 
     @staticmethod
     def get_order_value() -> int:
         return 0
 
     def get_main_symbol(self) -> str:
-        return '~'
+        return '¬'
 
     def get_value(self) -> bool:
         return not self.content.get_value()
@@ -109,14 +111,14 @@ class Negation(TokenWithContent[Token]):
 class Conjuction(TokenWithContent[tuple[Token, Token]]):
     @staticmethod
     def get_symbols() -> list[str]:
-        return ['&']
+        return ['&', '∧']
 
     @staticmethod
     def get_order_value() -> int:
         return 1
 
     def get_main_symbol(self) -> str:
-        return '&'
+        return '∧'
 
     def get_value(self) -> bool:
         return self.content[0].get_value() and self.content[1].get_value()
@@ -125,14 +127,14 @@ class Conjuction(TokenWithContent[tuple[Token, Token]]):
 class Disjunction(TokenWithContent[tuple[Token, Token]]):
     @staticmethod
     def get_symbols() -> list[str]:
-        return ['|']
+        return ['|', '∨']
 
     @staticmethod
     def get_order_value() -> int:
         return 1
 
     def get_main_symbol(self) -> str:
-        return '|'
+        return '∨'
 
     def get_value(self) -> bool:
         return self.content[0].get_value() or self.content[1].get_value()
@@ -141,14 +143,14 @@ class Disjunction(TokenWithContent[tuple[Token, Token]]):
 class Implication(TokenWithContent[tuple[Token, Token]]):
     @staticmethod
     def get_symbols() -> list[str]:
-        return ['=>']
+        return ['=>', '->', '⇒']
 
     @staticmethod
     def get_order_value() -> int:
         return 2
 
     def get_main_symbol(self) -> str:
-        return '=>'
+        return '⇒'
 
     def get_value(self) -> bool:
         return not self.content[0].get_value() or self.content[1].get_value()
@@ -157,14 +159,14 @@ class Implication(TokenWithContent[tuple[Token, Token]]):
 class BiImplication(TokenWithContent[tuple[Token, Token]]):
     @staticmethod
     def get_symbols() -> list[str]:
-        return ['<=>']
+        return ['<=>', '<->', '⇔']
 
     @staticmethod
     def get_order_value() -> int:
         return 3
 
     def get_main_symbol(self) -> str:
-        return '<=>'
+        return '⇔'
 
     def get_value(self) -> bool:
         return self.content[0].get_value() is self.content[1].get_value()
@@ -204,23 +206,31 @@ ALL_TOKEN_SYMBOLS: list[str] = sorted((
 ), key=len, reverse=True)
 
 ALLOWED_VARIABLE_NAME_CHARACTERS: set[str] = set(
-    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-_'
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_'
 )
 
 
 TokenWithContentPairType: TypeAlias = type[Conjuction] | type[Disjunction] | type[Implication] | type[BiImplication]
 
 
+class PropositionType(Enum):
+    not_sure = 0
+    tautology = 1
+    contradiction = 2
+    contingency = 3
+
+
 class Parser:
-    token: Token
+    proposition: Token
     variables: dict[str, Variable]
+    type: PropositionType
     def __init__(
         self,
         *,
-        token: Token,
+        proposition: Token,
         variables: dict[str, Variable],
     ) -> None:
-        self.token = token
+        self.proposition = proposition
         self.variables = variables
 
     @staticmethod
@@ -334,8 +344,16 @@ class Parser:
         token = cls.generate_token(proposition, variables=variables)
         return cls(token=token, variables=variables)
 
+    def brute_force(self) -> None:
+        for n in range(2 ** len(self.variables)):
+            for i, variable in enumerate(self.variables.values()):
+                variable.value = bool(n & (1 << i))
+            print(self.proposition, self.proposition.get_value())
 
-parser = Parser.from_proposition('((aap => waarheid) => hoiii) => ~hoiii')
-print(parser.token, parser.variables)
-parser = Parser.from_proposition('aap => waarheid => aap')
-print(parser.token, parser.variables)
+
+for proposition in (
+    '(P ⇒ (Q ∧ R)) ⇒ ((P ⇒ Q) ∧ (Q ⇒ (P ⇒ R)))',
+):
+    parser = Parser.from_proposition(proposition)
+    print(parser.proposition)
+    parser.brute_force()
