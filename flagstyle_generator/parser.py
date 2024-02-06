@@ -155,7 +155,7 @@ class BiImplication(TokenWithContent[tuple[Token, Token]]):
         return self.content[0].get_value() is self.content[1].get_value()
 
 
-ORDERED_NON_VAR_TOKEN_TYPES: list[type[Token]] = sorted((
+ORDERED_NON_VAR_TOKEN_CLASSES: list[type[Token]] = sorted((
     Negation,
     Conjuction,
     Disjunction,
@@ -163,20 +163,28 @@ ORDERED_NON_VAR_TOKEN_TYPES: list[type[Token]] = sorted((
     BiImplication,
 ), key=lambda cls: cls.get_order_value())
 
-TOKEN_TYPE_TO_SYMBOLS: dict[type[Token], list[str]] = {
-    cls: sorted(cls.get_symbols(), key=len, reverse=True)
-    for cls in ORDERED_NON_VAR_TOKEN_TYPES
+NON_VAR_TOKEN_TYPES_CONTENT_OFFSETS: dict[type[Token], tuple[int] | tuple[int, int]] = {
+    Negation: (1,),
+    Conjuction: (-1, 1),
+    Disjunction: (-1, 1),
+    Implication: (-1, 1),
+    BiImplication: (-1, 1),
 }
 
-SYMBOL_TO_TOKEN_TYPE: dict[str, type[Token]] = {
+TOKEN_CLASS_TO_SYMBOLS: dict[type[Token], list[str]] = {
+    cls: sorted(cls.get_symbols(), key=len, reverse=True)
+    for cls in ORDERED_NON_VAR_TOKEN_CLASSES
+}
+
+SYMBOL_TO_TOKEN_CLASS: dict[str, type[Token]] = {
     symbol: cls
-    for cls, symbols in TOKEN_TYPE_TO_SYMBOLS.items()
+    for cls, symbols in TOKEN_CLASS_TO_SYMBOLS.items()
     for symbol in symbols
 }
 
 ALL_TOKEN_SYMBOLS: list[str] = sorted((
     symbol
-    for symbols in TOKEN_TYPE_TO_SYMBOLS.values()
+    for symbols in TOKEN_CLASS_TO_SYMBOLS.values()
     for symbol in symbols
 ), key=len, reverse=True)
 
@@ -257,7 +265,7 @@ class Parser:
                             parts=parts,
                             name=variable_name,
                         )
-                        parts.append(SYMBOL_TO_TOKEN_TYPE[symbol])
+                        parts.append(SYMBOL_TO_TOKEN_CLASS[symbol])
                         index += len(symbol) + len(variable_name)
                         break
                 else:
@@ -288,6 +296,7 @@ class Parser:
             # else:
 
         print(parts)
+        for token_cls in ORDERED_NON_VAR_TOKEN_CLASSES:
 
 
     @classmethod
@@ -308,4 +317,4 @@ class Parser:
 
 
 # parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
-parser = Parser.from_proposition('aap => waarheid')
+parser = Parser.from_proposition('aap => waarheid => aap')
