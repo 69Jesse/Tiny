@@ -80,7 +80,7 @@ class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
         return f'{self.__class__.__name__}<{repr(self.content[0])} {self.get_main_symbol()} {repr(self.content[1])}'
 
     def maybe_wrap(self, token: Token) -> str:
-        if isinstance(token, TokenWithContent):
+        if isinstance(token, TokenWithContent) and not isinstance(token, Negation):
             return f'({token})'
         return str(token)
 
@@ -335,7 +335,7 @@ class Parser:
         return cls(token=token, variables=variables)
 
 
-parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
+parser = Parser.from_proposition('((aap => waarheid) => hoiii) => ~hoiii')
 print(parser.token, parser.variables)
 parser = Parser.from_proposition('aap => waarheid => aap')
 print(parser.token, parser.variables)
