@@ -25,6 +25,9 @@ class Token(ABC):
     def get_value(self) -> bool:
         raise NotImplementedError
 
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}<{self.get_value()}>'
+
 
 class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
     content: Content
@@ -67,6 +70,9 @@ class Variable(Token):
 
     def get_value(self) -> bool:
         return self.value
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}<{self.name}={self.value}>'
 
 
 class Negation(TokenWithContent[Token]):
@@ -187,16 +193,31 @@ class Parser:
         self.token = token
 
     @staticmethod
+    def maybe_add_variable(
+        *,
+        variables: dict[str, Variable],
+        parts: list[type[Token] | Token],
+        name: str,
+    ) -> None:
+        if len(name) == 0:
+            return
+        variable: Variable = variables.get(name, None) or Variable(name)
+        variables[name] = variable
+        parts.append(variable)
+
+    @staticmethod
     def generate_token(
         proposition: str,
         /,
         *,
         variables: Optional[dict[str, Variable]] = None,
     ) -> Token:
+        variables = variables or {}
         print(proposition)
-        parts: list[str | type[Token] | Token] = []
+        parts: list[type[Token] | Token] = []
         index = 0
         while index < len(proposition):
+            print(parts)
             if proposition[index] == '(':
                 depth: int = 1
                 for i in range(index + 1, len(proposition)):
@@ -221,8 +242,32 @@ class Parser:
                     raise ValueError('Missing closing parenthesis')
                 continue
 
-            rest = proposition[index:]
-            
+            rest: str = proposition[index:]
+            variable_name: str = ''
+            for i in range(len(rest)):
+                for symbol in ALL_TOKEN_SYMBOLS:
+                    if rest[i:len(symbol) + i] == symbol:
+                        Parser.maybe_add_variable(
+                            variables=variables,
+                            parts=parts,
+                            name=variable_name,
+                        )
+                        parts.append(SYMBOL_TO_TOKEN_TYPE[symbol])
+                        index += len(symbol)
+                        break
+                else:
+                    variable_name += rest[i]
+                    continue
+                break
+            else:
+                Parser.maybe_add_variable(
+                    variables=variables,
+                    parts=parts,
+                    name=variable_name,
+                )
+                index += len(variable_name)
+                
+        
             # ga alle symbolen af als niet in zit is variabele, check totdat er symbool is (of '(') en dan variabele toevoegen en symbool toevoegen
             # check of var naam alleen a-z A-Z is
 
@@ -254,4 +299,4 @@ class Parser:
         return cls.from_token(token)
 
 
-parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
+# parser = Parser.from_proposition('((aap => waarheid) => hoiii) => hoiii')
