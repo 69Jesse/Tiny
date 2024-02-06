@@ -381,6 +381,8 @@ class Parser:
 for raw_proposition in (
     '(P ⇒ (Q ∧ R)) ⇒ ((P ⇒ Q) ∧ (Q ⇒ (P ⇒ R)))',
     'a|b|c|d|e|f|g',
+    'a=>b=>c',
+    'a=>b=>c=>d',
 ):
     parser = Parser.from_raw_proposition(raw_proposition)
     parser.brute_force()
