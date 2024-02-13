@@ -13,7 +13,7 @@ from typing import (
 )
 
 
-GRID_SIZE: int = 2048
+GRID_SIZE: int = 8 * 16
 CELL_SIZE: int = 16
 assert GRID_SIZE % CELL_SIZE == 0, f'{GRID_SIZE=} must be divisible by {CELL_SIZE=}'
 
