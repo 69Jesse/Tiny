@@ -252,7 +252,7 @@ class Parser:
         parts.append(variable)
 
     @staticmethod
-    def generate_token(
+    def _generate_token(
         proposition: str,
         /,
         *,
@@ -274,7 +274,7 @@ class Parser:
                     if depth != 0:
                         continue
                     parts.append(
-                        Parser.generate_token(
+                        Parser._generate_token(
                             proposition[index + 1:i],
                             variables=variables,
                         )
@@ -346,7 +346,7 @@ class Parser:
     ) -> 'Parser':
         raw_proposition = raw_proposition.replace(' ', '').replace('\n', '')
         variables: dict[str, Variable] = {}
-        proposition = cls.generate_token(raw_proposition, variables=variables)
+        proposition = cls._generate_token(raw_proposition, variables=variables)
         return cls(proposition=proposition, variables=variables)
 
     def brute_force(self) -> None:
@@ -379,10 +379,34 @@ class Parser:
 
 
 for raw_proposition in (
-    '(P ⇒ (Q ∧ R)) ⇒ ((P ⇒ Q) ∧ (Q ⇒ (P ⇒ R)))',
-    'a|b|c|d|e|f|g',
-    'a=>b=>c',
-    'a=>b=>c=>d',
+    # '(P ⇒ (Q ∧ R)) ⇒ ((P ⇒ Q) ∧ (Q ⇒ (P ⇒ R)))',
+    # 'a|b|c|d|e|f|g',
+    # 'a=>b=>c',
+    # 'a=>b=>c=>d',
+    '''
+
+(a|b|c) &
+(a|b|d) &
+(a|c|d) &
+(b|c|d)
+
+''',
+    '''
+
+(a | (
+    (b|c) &
+    (b|d) &
+    (c|d)
+)) & (b|c|d)
+
+''',
+    '''
+
+(a | (
+    (b | (c & d)) & (c|d)
+)) & (b|c|d)
+
+''',
 ):
     parser = Parser.from_raw_proposition(raw_proposition)
     parser.brute_force()
