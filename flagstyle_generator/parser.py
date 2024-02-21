@@ -384,23 +384,11 @@ for raw_proposition in (
     # 'a=>b=>c',
     # 'a=>b=>c=>d',
     '''
-(a|b|c) &
-(a|b|d) &
-(a|c|d) &
-(b|c|d)
+
+(a|b|(c&d)) &  ((a&b)|c|d)
+
 ''',
-    '''
-(a | (
-    (b|c) &
-    (b|d) &
-    (c|d)
-)) & (b|c|d)
-''',
-    '''
-(a | (
-    (b | (c & d)) & (c|d)
-)) & (b|c|d)
-''',
+    'a|(c|(b&d))&(b|d)',
 ):
     parser = Parser.from_raw_proposition(raw_proposition)
     parser.brute_force()
