@@ -388,7 +388,41 @@ for raw_proposition in (
 (a|b|(c&d)) &  ((a&b)|c|d)
 
 ''',
-    '(a | ( c & d )) & (b | c | d)',
+    '''
+
+
+    (a | (
+        (b | (
+            (c | (
+                d & ~d
+            )) & (~c | d)
+        )) & (~b | c | d)
+    )) & (~a | b | c | d)
+
+
+''',
+    '''
+
+
+    (a | (
+        (b | (
+            c & (~c | d)
+        )) & (~b | c | d)
+    )) & (~a | b | c | d)
+
+
+''',
+'''
+
+
+    (a | (
+        (b | (
+            c & d
+        )) & (~b | c | d)
+    )) & (~a | b | c | d)
+
+
+''',
 ):
     parser = Parser.from_raw_proposition(raw_proposition)
     parser.brute_force()
