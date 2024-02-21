@@ -72,7 +72,7 @@ class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
 
     def get_tokens_with_value(self) -> Generator[Token, None, None]:
         if isinstance(self.content, Token):
-            yield self.content  # type: ignore
+            yield self.content
             return
         yield from self.content
 
@@ -388,7 +388,7 @@ for raw_proposition in (
 (a|b|(c&d)) &  ((a&b)|c|d)
 
 ''',
-    'a|(c|(b&d))&(b|d)',
+    '(a | ( c & d )) & (b | c | d)',
 ):
     parser = Parser.from_raw_proposition(raw_proposition)
     parser.brute_force()
