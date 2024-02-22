@@ -72,7 +72,7 @@ class TokenWithContent[Content: Token | tuple[Token, Token]](Token):
 
     def get_tokens_with_value(self) -> Generator[Token, None, None]:
         if isinstance(self.content, Token):
-            yield self.content  # type: ignore
+            yield self.content
             return
         yield from self.content
 
@@ -385,26 +385,42 @@ for raw_proposition in (
     # 'a=>b=>c=>d',
     '''
 
-(a|b|c) &
-(a|b|d) &
-(a|c|d) &
-(b|c|d)
+(a|b|(c&d)) &  ((a&b)|c|d)
 
 ''',
     '''
 
-(a | (
-    (b|c) &
-    (b|d) &
-    (c|d)
-)) & (b|c|d)
+
+    (a | (
+        (b | (
+            (c | (
+                d & ~d
+            )) & (~c | d)
+        )) & (~b | c | d)
+    )) & (~a | b | c | d)
+
 
 ''',
     '''
 
-(a | (
-    (b | (c & d)) & (c|d)
-)) & (b|c|d)
+
+    (a | (
+        (b | (
+            c & (~c | d)
+        )) & (~b | c | d)
+    )) & (~a | b | c | d)
+
+
+''',
+'''
+
+
+    (a | (
+        (b | (
+            c & d
+        )) & (~b | c | d)
+    )) & (~a | b | c | d)
+
 
 ''',
 '(a|b|(c&d)) & ((a&b)|c|d)',
