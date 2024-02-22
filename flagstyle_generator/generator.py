@@ -29,5 +29,6 @@ class Generator:
         display: bool,
     ) -> None:
         self.checker.brute_force()
-        if display:
-            print(self.checker.get_result_string())
+        if not display:
+            return
+        print(self.checker.get_result_string())
