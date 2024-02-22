@@ -407,6 +407,7 @@ for raw_proposition in (
 )) & (b|c|d)
 
 ''',
+'(a|b|(c&d)) & ((a&b)|c|d)',
 ):
     parser = Parser.from_raw_proposition(raw_proposition)
     parser.brute_force()
