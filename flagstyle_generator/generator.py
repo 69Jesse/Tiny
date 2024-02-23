@@ -110,7 +110,7 @@ class Generator:
         top_assumptions: list[Token] = []
         token: Token = self.parser.proposition
         flag: Flag = Flag(parent=None, bottom=[Line(reason=LineReason.unknown, token=token)])
-        while True:
+        for _ in range(1000):
             if isinstance(token, Implication):
                 left, right = token.content
                 new_flag: Flag = Flag(
@@ -121,6 +121,7 @@ class Generator:
                     )],
                 )
                 flag.top.append(new_flag)
+                top_assumptions.append(left)
                 bottom_line = flag.bottom[-1]
                 assert isinstance(bottom_line, Line)
                 bottom_line.reason = LineReason.intro
