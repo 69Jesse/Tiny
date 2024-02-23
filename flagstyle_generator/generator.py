@@ -1,8 +1,37 @@
-from parse import Parser
+from parse import Parser, Token
 from checker import Checker, PropositionType
+
+from enum import Enum
 
 from typing import Self
 
+
+def format_line_numbers(lines: list[int]) -> str:
+    if len(lines) == 0:
+        return '...'
+    if len(lines) == 1:
+        return f'({lines[0]})'
+    return f'{', '.join(f'({line})' for line in lines[:-1])} and ({lines[-1]})'
+
+
+class LineReason(Enum):
+    unknown = '...'
+    assumption = 'Assume'
+    intro = '{symbol}-intro on {lines}'
+    elim = '{symbol}-elim on {lines}'
+
+
+class Line:
+    reason: LineReason
+    token: Token
+    def __init__(
+        self,
+        *,
+        reason: LineReason,
+        token: Token,
+    ) -> None:
+        self.reason = reason
+        self.token = token
 
 
 class Generator:
@@ -33,3 +62,9 @@ class Generator:
         if not display:
             return
         print(self.checker.get_result_string())
+
+    def prove(self) -> None:
+        self.check(display=False)
+        if self.checker.proposition_type is not PropositionType.tautology:
+            raise ValueError('Proposition is not a tautology.')
+        ...
