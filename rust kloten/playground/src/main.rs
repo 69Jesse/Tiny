@@ -34,6 +34,46 @@ fn board_is_full(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) -> bool {
     true
 }
 
+fn is_valid_move(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT], column: usize) -> bool {
+    if column >= BOARD_WIDTH {
+        return false;
+    }
+    if board[0][column] != EMPTY {
+        return false;
+    }
+    true
+}
+
+fn get_player_move(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) -> usize {
+    loop {
+        println!("Your turn (1-7): ");
+        let mut column = String::new();
+        std::io::stdin().read_line(&mut column).unwrap();
+        let column: Result<usize, _> = column.trim().parse();
+        let column = match column {
+            Ok(column) => column - 1,
+            Err(_) => {
+                println!("Invalid column");
+                continue;
+            }
+        };
+        if !is_valid_move(board, column) {
+            println!("Invalid move");
+            continue;
+        }
+        return column;
+    }
+}
+
+fn make_move(board: &mut [[usize; BOARD_WIDTH]; BOARD_HEIGHT], column: usize, player: usize) {
+    for row in (0..BOARD_HEIGHT).rev() {
+        if board[row][column] == EMPTY {
+            board[row][column] = player;
+            return;
+        }
+    }
+}
+
 fn cell_symbol(cell: usize) -> String {
     match cell {
         EMPTY => " ".to_string(),
@@ -76,7 +116,15 @@ fn print_board(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) {
 fn main() {
     let mut board = create_board();
     let player = random_player();
+
     let computer = other_player(player);
     let mut turn = random_player();
-    print_board(&board);
+
+    while !board_is_full(&board) {
+        if turn == player {
+            print_board(&board);
+            let column = get_player_move(&board);
+            make_move(&mut board, column, player);
+        }
+    }
 }
