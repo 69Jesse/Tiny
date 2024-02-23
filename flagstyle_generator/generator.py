@@ -34,16 +34,44 @@ class Line:
     reason: LineReason
     token: Token
     maybe_symbol: Optional[str]
+    maybe_lines: list[int]
     def __init__(
         self,
         *,
         reason: LineReason,
         token: Token,
         maybe_symbol: Optional[str] = None,
+        maybe_lines: Optional[list[int]] = None,
     ) -> None:
         self.reason = reason
         self.token = token
         self.maybe_symbol = maybe_symbol
+        self.maybe_lines = maybe_lines or []
+
+    def add_indent(self, string: str, indent: int) -> str:
+        return '\n'.join(f'{'║ ' * indent}{line}' for line in string.split('\n'))
+
+    def string(
+        self,
+        *,
+        is_beginning: bool,
+        indent: int,
+    ) -> str:
+        reason = self.reason.value.format(
+            symbol=self.maybe_symbol or '...',
+            lines=format_line_numbers(self.maybe_lines),
+        )
+        token = str(self.token)
+        if is_beginning:
+            return self.add_indent(
+                (
+                    f'\n{{ {reason}: }}'
+                    f'\n╔{'═' * (len(token) + 2)}╗'
+                    f'\n║ {token} ║'
+                    f'\n╠{'═' * (len(token) + 2)}╝'
+                ),
+                indent=indent - 1,
+            )
 
 
 class Flag:
@@ -123,6 +151,10 @@ class Generator:
                         reason=LineReason.assumption,
                         token=left,
                     )],
+                    bottom=[Line(
+                        reason=LineReason.unknown,
+                        token=right,
+                    )],
                 )
                 flag.top.append(new_flag)
                 top_assumptions.append(left)
@@ -133,5 +165,3 @@ class Generator:
                 flag = new_flag
                 token = right
                 continue
-        
-        print(str(self.flag))
