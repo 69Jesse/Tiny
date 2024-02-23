@@ -25,6 +25,16 @@ fn other_player(player: usize) -> usize {
     }
 }
 
+fn board_is_full(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) -> bool {
+    for cell in board[0].iter() {
+        if *cell == EMPTY {
+            return false;
+        }
+    }
+    true
+}
+
+
 fn cell_symbol(cell: usize) -> String {
     match cell {
         EMPTY => " ".to_string(),
