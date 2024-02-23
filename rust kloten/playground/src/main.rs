@@ -83,6 +83,15 @@ fn cell_symbol(cell: usize) -> String {
     }
 }
 
+fn make_computer_move(board: &mut [[usize; BOARD_WIDTH]; BOARD_HEIGHT], computer: usize) {
+    let mut rng = rand::thread_rng();
+    let mut column = rng.gen_range(0..BOARD_WIDTH);
+    while !is_valid_move(board, column) {
+        column = rng.gen_range(0..BOARD_WIDTH);
+    }
+    make_move(board, column, computer);
+}
+
 fn print_board(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) {
     let mut text: String = String::new();
     text.push_str("╔");
@@ -121,10 +130,14 @@ fn main() {
     let mut turn = random_player();
 
     while !board_is_full(&board) {
-        if turn == player {
-            print_board(&board);
-            let column = get_player_move(&board);
-            make_move(&mut board, column, player);
+        turn = other_player(turn);
+        if turn == computer {
+            make_computer_move(&mut board, computer);
+            continue;
         }
+        print_board(&board);
+        let column = get_player_move(&board);
+        make_move(&mut board, column, player);
     }
+    print_board(&board);
 }
