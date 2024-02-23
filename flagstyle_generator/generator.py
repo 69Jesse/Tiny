@@ -24,23 +24,38 @@ class LineReason(Enum):
 class Line:
     reason: LineReason
     token: Token
+    maybe_symbol: Optional[str]
     def __init__(
         self,
         *,
         reason: LineReason,
         token: Token,
+        maybe_symbol: Optional[str] = None,
     ) -> None:
         self.reason = reason
         self.token = token
+        self.maybe_symbol = maybe_symbol
 
 
 class Flag:
-    lines: list['Line | Flag']
+    top: list['Line | Flag']
+    bottom: list['Line | Flag']
+    combined: Optional[list['Line | Flag']]
     def __init__(
         self,
-        lines: list['Line | Flag'],
+        top: Optional[list['Line | Flag']] = None,
+        bottom: Optional[list['Line | Flag']] = None,
     ) -> None:
-        self.lines = lines
+        self.top = top or []
+        self.bottom = bottom or []
+        self.combined = None
+
+    def combine_top_and_bottom(self) -> None:
+        self.combined = self.top + self.bottom
+
+    @property
+    def complete(self) -> bool:
+        return self.combined is not None
 
 
 class Generator:
