@@ -28,8 +28,8 @@ fn other_player(player: usize) -> usize {
 fn cell_symbol(cell: usize) -> String {
     match cell {
         EMPTY => " ".to_string(),
-        PLAYER_1 => "X".to_string(),
-        PLAYER_2 => "O".to_string(),
+        PLAYER_1 => "\x1b[91mX\x1b[39m".to_string(),
+        PLAYER_2 => "\x1b[33mO\x1b[39m".to_string(),
         _ => panic!("Invalid cell value"),
     }
 }
@@ -56,15 +56,11 @@ fn print_board(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) {
         text.pop();
         text.push_str("╣\n");
     }
-    for _ in 0..(4 * BOARD_WIDTH + 2) {
-        text.pop();
+    text.push_str("║");
+    for i in 0..BOARD_WIDTH {
+        text.push_str(&format!(" {} ║", i + 1));
     }
-    text.push_str("╚");
-    for _ in 0..BOARD_WIDTH {
-        text.push_str("═══╩");
-    }
-    text.pop();
-    text.push_str("╝\n");
+    text.push_str("\n");
     println!("{}", text);
 }
 
