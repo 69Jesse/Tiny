@@ -34,6 +34,15 @@ class Line:
         self.token = token
 
 
+class Flag:
+    lines: list['Line | Flag']
+    def __init__(
+        self,
+        lines: list['Line | Flag'],
+    ) -> None:
+        self.lines = lines
+
+
 class Generator:
     parser: Parser
     checker: Checker
