@@ -9,8 +9,7 @@ def main() -> None:
         # 'a=>b=>c=>d',
     ):
         generator = Generator.from_proposition(raw_proposition)
-        print(generator.parser.proposition)
-        generator.check(display=True)
+        generator.prove()
 
 
 if __name__ == '__main__':

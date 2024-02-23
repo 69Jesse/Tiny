@@ -66,5 +66,5 @@ class Generator:
     def prove(self) -> None:
         self.check(display=False)
         if self.checker.proposition_type is not PropositionType.tautology:
-            raise ValueError('Proposition is not a tautology.')
+            raise ValueError(self.checker.get_result_string())
         ...
