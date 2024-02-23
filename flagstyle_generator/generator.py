@@ -124,5 +124,7 @@ class Generator:
                 bottom_line = flag.bottom[-1]
                 assert isinstance(bottom_line, Line)
                 bottom_line.reason = LineReason.intro
-                bottom_line.maybe_symbol = Implication.get_main_symbol()
+                bottom_line.maybe_symbol = Implication.get_main_symbol(None)  # type: ignore
+                flag = new_flag
+                token = right
                 continue
