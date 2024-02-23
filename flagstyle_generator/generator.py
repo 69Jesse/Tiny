@@ -49,7 +49,7 @@ class Line:
         self.maybe_lines = maybe_lines or []
 
     def add_indent(self, string: str, indent: int) -> str:
-        return '\n'.join(f'{'│ ' * indent}{line}' for line in string.split('\n'))
+        return '\n'.join(f'{(' │' * indent) + (' ' * (indent > 0))}{line}' for line in string.split('\n'))
 
     def string(
         self,
@@ -63,12 +63,13 @@ class Line:
         )
         token = str(self.token)
         if is_beginning:
+            space = ' ' * (indent == 1)
             return self.add_indent(
                 (
-                    f'{{ {reason}: }}'
-                    f'\n┌{'─' * (len(token) + 2)}┐'
-                    f'\n│ {token} │'
-                    f'\n├{'─' * (len(token) + 2)}┘'
+                    f'{space}{{ {reason}: }}'
+                    f'\n{space}┌{'─' * (len(token) + 2)}┐'
+                    f'\n{space}│ {token} │'
+                    f'\n{space}├{'─' * (len(token) + 2)}┘'
                 ),
                 indent=indent - 1,
             )
