@@ -108,7 +108,7 @@ class Negation(TokenWithContent[Token]):
         return not self.content.get_value()
 
 
-class Conjuction(TokenWithContent[tuple[Token, Token]]):
+class Conjunction(TokenWithContent[tuple[Token, Token]]):
     @staticmethod
     def get_symbols() -> list[str]:
         return ['&', '∧']
@@ -174,7 +174,7 @@ class BiImplication(TokenWithContent[tuple[Token, Token]]):
 
 ORDERED_NON_VAR_TOKEN_CLASSES: list[type[Token]] = sorted((
     Negation,
-    Conjuction,
+    Conjunction,
     Disjunction,
     Implication,
     BiImplication,
@@ -182,7 +182,7 @@ ORDERED_NON_VAR_TOKEN_CLASSES: list[type[Token]] = sorted((
 
 NON_VAR_TOKEN_TYPES_CONTENT_OFFSETS: dict[type[Token], tuple[int] | tuple[int, int]] = {
     Negation: (1,),
-    Conjuction: (-1, 1),
+    Conjunction: (-1, 1),
     Disjunction: (-1, 1),
     Implication: (-1, 1),
     BiImplication: (-1, 1),
@@ -210,7 +210,7 @@ ALLOWED_VARIABLE_NAME_CHARACTERS: set[str] = set(
 )
 
 
-TokenWithContentPairType: TypeAlias = type[Conjuction] | type[Disjunction] | type[Implication] | type[BiImplication]
+TokenWithContentPairType: TypeAlias = type[Conjunction] | type[Disjunction] | type[Implication] | type[BiImplication]
 
 
 class Parser:

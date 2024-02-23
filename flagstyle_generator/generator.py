@@ -1,4 +1,13 @@
-from parse import Parser, Token
+from parse import (
+    Parser,
+    Token,
+    Variable,
+    Negation,
+    Conjunction,
+    Disjunction,
+    Implication,
+    BiImplication,
+)
 from checker import Checker, PropositionType
 
 from enum import Enum
@@ -40,18 +49,22 @@ class Line:
 class Flag:
     top: list['Line | Flag']
     bottom: list['Line | Flag']
+    parent: Optional['Flag']
     combined: Optional[list['Line | Flag']]
     def __init__(
         self,
+        *,
+        parent: Optional['Flag'],
         top: Optional[list['Line | Flag']] = None,
         bottom: Optional[list['Line | Flag']] = None,
     ) -> None:
         self.top = top or []
         self.bottom = bottom or []
+        self.parent = parent
         self.combined = None
 
     def combine_top_and_bottom(self) -> None:
-        self.combined = self.top + self.bottom
+        self.combined = self.top + list(reversed(self.bottom))
 
     @property
     def complete(self) -> bool:
@@ -93,4 +106,23 @@ class Generator:
         self.check(display=False)
         if self.checker.proposition_type is not PropositionType.tautology:
             raise ValueError(self.checker.get_result_string())
-        ...
+
+        top_assumptions: list[Token] = []
+        token: Token = self.parser.proposition
+        flag: Flag = Flag(parent=None, bottom=[Line(reason=LineReason.unknown, token=token)])
+        while True:
+            if isinstance(token, Implication):
+                left, right = token.content
+                new_flag: Flag = Flag(
+                    parent=flag,
+                    top=[Line(
+                        reason=LineReason.assumption,
+                        token=left,
+                    )],
+                )
+                flag.top.append(new_flag)
+                bottom_line = flag.bottom[-1]
+                assert isinstance(bottom_line, Line)
+                bottom_line.reason = LineReason.intro
+                bottom_line.maybe_symbol = Implication.get_main_symbol()
+                continue
