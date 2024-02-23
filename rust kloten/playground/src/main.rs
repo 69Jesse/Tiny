@@ -34,7 +34,6 @@ fn board_is_full(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) -> bool {
     true
 }
 
-
 fn cell_symbol(cell: usize) -> String {
     match cell {
         EMPTY => " ".to_string(),
