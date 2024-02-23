@@ -102,6 +102,9 @@ class Generator:
             return
         print(self.checker.get_result_string())
 
+    def get_symbol(self, cls: type[Token]) -> str:
+        return cls.get_main_symbol(None)  # type: ignore
+
     def prove(self) -> None:
         self.check(display=False)
         if self.checker.proposition_type is not PropositionType.tautology:
@@ -110,6 +113,7 @@ class Generator:
         top_assumptions: list[Token] = []
         token: Token = self.parser.proposition
         flag: Flag = Flag(parent=None, bottom=[Line(reason=LineReason.unknown, token=token)])
+        self.flag = flag
         for _ in range(1000):
             if isinstance(token, Implication):
                 left, right = token.content
@@ -125,7 +129,9 @@ class Generator:
                 bottom_line = flag.bottom[-1]
                 assert isinstance(bottom_line, Line)
                 bottom_line.reason = LineReason.intro
-                bottom_line.maybe_symbol = Implication.get_main_symbol(None)  # type: ignore
+                bottom_line.maybe_symbol = self.get_symbol(Implication)
                 flag = new_flag
                 token = right
                 continue
+        
+        print(str(self.flag))
