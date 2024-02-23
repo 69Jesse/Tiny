@@ -23,6 +23,15 @@ fn other_player(player: usize) -> usize {
     }
 }
 
+fn cell_symbol(cell: usize) -> String {
+    match cell {
+        EMPTY => " ".to_string(),
+        PLAYERS[0] => "X".to_string(),
+        PLAYERS[1] => "O".to_string(),
+        _ => panic!("Invalid cell value"),
+    }
+}
+
 fn print_board(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) {
     let text: String = board
         .iter()
