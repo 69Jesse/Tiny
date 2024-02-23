@@ -23,9 +23,24 @@ fn other_player(player: usize) -> usize {
     }
 }
 
+fn print_board(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) {
+    let text: String = board
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|cell| cell.to_string())
+                .collect::<Vec<String>>()
+                .join(" ")
+        })
+        .collect::<Vec<String>>()
+        .join("\n");
+    println!("{}", text);
+}
+
 fn main() {
     let mut board = create_board();
     let player = random_player();
     let computer = other_player(player);
     let mut turn = random_player();
+    print_board(&board);
 }
