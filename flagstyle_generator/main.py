@@ -11,7 +11,7 @@ def main() -> None:
     ):
         generator = Generator.from_proposition(raw_proposition)
         generator.prove()
-        print(generator.flag)
+        print(f'\n\n{generator.flag}\n\n')
 
 
 if __name__ == '__main__':

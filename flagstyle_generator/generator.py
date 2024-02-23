@@ -49,7 +49,7 @@ class Line:
         self.maybe_lines = maybe_lines or []
 
     def add_indent(self, string: str, indent: int) -> str:
-        return '\n'.join(f'{'║ ' * indent}{line}' for line in string.split('\n'))
+        return '\n'.join(f'{'│ ' * indent}{line}' for line in string.split('\n'))
 
     def string(
         self,
@@ -65,13 +65,20 @@ class Line:
         if is_beginning:
             return self.add_indent(
                 (
-                    f'\n{{ {reason}: }}'
-                    f'\n╔{'═' * (len(token) + 2)}╗'
-                    f'\n║ {token} ║'
-                    f'\n╠{'═' * (len(token) + 2)}╝'
+                    f'{{ {reason}: }}'
+                    f'\n┌{'─' * (len(token) + 2)}┐'
+                    f'\n│ {token} │'
+                    f'\n├{'─' * (len(token) + 2)}┘'
                 ),
                 indent=indent - 1,
             )
+        return self.add_indent(
+            (
+                f'{{ {reason}: }}'
+                f'\n{token}'
+            ),
+            indent=indent,
+        )
 
 
 class Flag:
@@ -97,6 +104,30 @@ class Flag:
     @property
     def complete(self) -> bool:
         return self.combined is not None
+
+    def string(
+        self,
+        *,
+        indent: int,
+    ) -> str:
+        if not self.complete:
+            # raise ValueError('Flag is not complete.')
+            self.combine_top_and_bottom()
+        assert self.combined is not None
+        return '\n'.join(
+            (
+                item.string(
+                    is_beginning=i == 0,
+                    indent=indent,
+                ) if isinstance(item, Line) else item.string(
+                    indent=indent + 1,
+                )
+            )
+            for i, item in enumerate(self.combined)
+        )
+
+    def __str__(self) -> str:
+        return self.string(indent=0)
 
 
 class Generator:
