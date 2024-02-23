@@ -3,7 +3,8 @@ from generator import Generator
 
 def main() -> None:
     for raw_proposition in (
-        '(P ⇒ P)',
+        'P -> P',
+        # '(P ⇒ (Q ∧ R)) ⇒ ((P ⇒ Q) ∧ (Q ⇒ (P ⇒ R)))',
         # 'a|b|c|d|e|f|g',
         # 'a=>b=>c',
         # 'a=>b=>c=>d',
