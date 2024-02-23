@@ -3,7 +3,7 @@ from checker import Checker, PropositionType
 
 from enum import Enum
 
-from typing import Self
+from typing import Optional, Self
 
 
 def format_line_numbers(lines: list[int]) -> str:
@@ -46,12 +46,14 @@ class Flag:
 class Generator:
     parser: Parser
     checker: Checker
+    flag: Optional[Flag]
     def __init__(
         self,
         parser: Parser,
     ) -> None:
         self.parser = parser
         self.checker = Checker.from_parser(parser)
+        self.flag = None
 
     @classmethod
     def from_parser(cls, parser: Parser) -> Self:
