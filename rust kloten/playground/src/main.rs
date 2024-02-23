@@ -1,7 +1,8 @@
 use rand::Rng;
 
 const EMPTY: usize = 0;
-const PLAYERS: [usize; 2] = [1, 2];
+const PLAYER_1: usize = 1;
+const PLAYER_2: usize = 2;
 
 const BOARD_HEIGHT: usize = 6;
 const BOARD_WIDTH: usize = 7;
@@ -12,37 +13,58 @@ fn create_board() -> [[usize; BOARD_WIDTH]; BOARD_HEIGHT] {
 
 fn random_player() -> usize {
     let mut rng = rand::thread_rng();
-    PLAYERS[rng.gen_range(0..2)]
+    let index = rng.gen_range(0..2);
+    [PLAYER_1, PLAYER_2][index]
 }
 
 fn other_player(player: usize) -> usize {
-    if player == PLAYERS[0] {
-        PLAYERS[1]
+    if player == PLAYER_1 {
+        PLAYER_2
     } else {
-        PLAYERS[0]
+        PLAYER_1
     }
 }
 
 fn cell_symbol(cell: usize) -> String {
     match cell {
         EMPTY => " ".to_string(),
-        PLAYERS[0] => "X".to_string(),
-        PLAYERS[1] => "O".to_string(),
+        PLAYER_1 => "X".to_string(),
+        PLAYER_2 => "O".to_string(),
         _ => panic!("Invalid cell value"),
     }
 }
 
 fn print_board(board: &[[usize; BOARD_WIDTH]; BOARD_HEIGHT]) {
-    let text: String = board
-        .iter()
-        .map(|row| {
-            row.iter()
-                .map(|cell| cell.to_string())
-                .collect::<Vec<String>>()
-                .join(" ")
-        })
-        .collect::<Vec<String>>()
-        .join("\n");
+    let mut text: String = String::new();
+    text.push_str("╔");
+    for _ in 0..BOARD_WIDTH {
+        text.push_str("═══╦");
+    }
+    text.pop();
+    text.push_str("╗\n");
+    for row in board.iter() {
+        text.push_str("║");
+        for cell in row.iter() {
+            text.push_str(&format!(" {} ", cell_symbol(*cell)));
+            text.push_str("║");
+        }
+        text.push_str("\n");
+        text.push_str("╠");
+        for _ in 0..BOARD_WIDTH {
+            text.push_str("═══╬");
+        }
+        text.pop();
+        text.push_str("╣\n");
+    }
+    for _ in 0..(4 * BOARD_WIDTH + 2) {
+        text.pop();
+    }
+    text.push_str("╚");
+    for _ in 0..BOARD_WIDTH {
+        text.push_str("═══╩");
+    }
+    text.pop();
+    text.push_str("╝\n");
     println!("{}", text);
 }
 
