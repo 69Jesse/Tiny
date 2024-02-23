@@ -1,5 +1,5 @@
 from parse import Parser
-from checker import Checker
+from checker import Checker, PropositionType
 
 from typing import Self
 
@@ -28,7 +28,8 @@ class Generator:
         *,
         display: bool,
     ) -> None:
-        self.checker.brute_force()
+        if self.checker.proposition_type is PropositionType.not_sure:
+            self.checker.brute_force()
         if not display:
             return
         print(self.checker.get_result_string())
