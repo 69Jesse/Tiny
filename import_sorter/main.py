@@ -13,7 +13,7 @@ def main() -> None:
         'legacy',
     ]
 
-    p = r'C:\Users\jesse\Desktop\Hackerman\GitHub\bigger\Butters'
+    p = r'C:\Aliases\scripts'
     for path in Path(p).rglob('*.py'):
         if any(
             path.parts[i] == folder
