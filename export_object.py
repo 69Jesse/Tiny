@@ -82,55 +82,55 @@ def export(
 
 
 
-# EXAMPLE
+# # EXAMPLE
 
-class Bar:
-    a = 'hello'
-    b = (1, 2, 3, 4)
+# class Bar:
+#     a = 'hello'
+#     b = (1, 2, 3, 4)
 
-class Foo:
-    x = 123
-    y = {
-        'a': 1,
-        'b': 2,
-        'c': 4,
-    }
-    z = [1, 2, 3, y]
-    def __init__(self) -> None:
-        self.a = self
-        self.b = self.x
-        self.c = Bar()
+# class Foo:
+#     x = 123
+#     y = {
+#         'a': 1,
+#         'b': 2,
+#         'c': 4,
+#     }
+#     z = [1, 2, 3, y]
+#     def __init__(self) -> None:
+#         self.a = self
+#         self.b = self.x
+#         self.c = Bar()
 
-import json
-print(json.dumps(export(Foo()), indent=4))
-"""
-{
-    "__name": "Foo",
-    "__id": 2630097488400,
-    "a": "REFERENCE TO 2630097488400",
-    "b": 123,
-    "c": {
-        "__name": "Bar",
-        "__id": 2630097488272,
-        "a": "hello",
-        "b": [
-            1,
-            2,
-            3,
-            4
-        ]
-    },
-    "x": 123,
-    "y": {
-        "a": 1,
-        "b": 2,
-        "c": 4
-    },
-    "z": [
-        1,
-        2,
-        3,
-        "REFERENCE TO 2630097487808"
-    ]
-}
-"""
+# import json
+# print(json.dumps(export(Foo()), indent=4))
+# """
+# {
+#     "__name": "Foo",
+#     "__id": 2630097488400,
+#     "a": "REFERENCE TO 2630097488400",
+#     "b": 123,
+#     "c": {
+#         "__name": "Bar",
+#         "__id": 2630097488272,
+#         "a": "hello",
+#         "b": [
+#             1,
+#             2,
+#             3,
+#             4
+#         ]
+#     },
+#     "x": 123,
+#     "y": {
+#         "a": 1,
+#         "b": 2,
+#         "c": 4
+#     },
+#     "z": [
+#         1,
+#         2,
+#         3,
+#         "REFERENCE TO 2630097487808"
+#     ]
+# }
+# """
