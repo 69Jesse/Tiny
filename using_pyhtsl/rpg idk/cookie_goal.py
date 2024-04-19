@@ -15,12 +15,14 @@ def check_cookie_goal() -> None:
         GlobalStats.latest_cookies > HouseCookies,
     ):
         trigger_function(reset_cookie_goal)
+        exit_function()
     GlobalStats.cookies_needed.value = GlobalStats.cookie_goal - GlobalStats.latest_cookies
     trigger_function(cookie_receive_message, trigger_for_all_players=True)
     GlobalStats.latest_cookies.value = HouseCookies
     with IfAnd(
         GlobalStats.latest_cookies >= GlobalStats.cookie_goal,
     ):
+        trigger_function(increment_cookie_goal)
         trigger_function(cookie_reward, trigger_for_all_players=True)
 
 
