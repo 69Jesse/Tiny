@@ -9,6 +9,7 @@ from everything import GlobalStats
 from ingame_time import update_timer
 
 
+# Have this run every 4 ticks
 @create_function('Global 1s')
 def global_every_second() -> None:
     last = GlobalStats.last_unix
