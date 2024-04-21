@@ -1,24 +1,25 @@
 from pyhtsl import (
-    create_function,
+    Item,
+    IfAnd,
+    Enchantment,
+    HasItem,
     chat,
-    trigger_function,
-    PlayerStat,
-    GlobalStat,
 )
 
-@create_function('Reward')
-def testing_1() -> None:
-    reward = PlayerStat('reward')
-    reward.value = 100
-    multiplier = GlobalStat('multiplier')
-    trigger_function(add_gold, parameters=(reward, multiplier))
 
-@create_function('Add Gold')
-def add_gold(
-    reward: PlayerStat,
-    multiplier: PlayerStat,
-) -> None:
-    gold = PlayerStat('gold')
-    add = reward * multiplier
-    gold += add
-    chat(f'&eYou gained &6{add}g&e!')
+for tier, pick in (
+    (1, 'wooden_pickaxe'),
+    (2, 'stone_pickaxe'),
+    (3, 'iron_pickaxe'),
+    (4, 'golden_pickaxe'),
+    (5, 'diamond_pickaxe'),
+):
+    item = Item(
+        pick,
+        name=f'&bTier {tier} Pickaxe',
+        lore='&6Shiny!\n\n&7Go mine some ores!',
+        enchantments=[Enchantment('efficiency', tier)],
+        hide_enchantments_flag=True,
+    )
+    with IfAnd(HasItem(item)):
+        chat(f'&eYou have a Tier {tier} {item.as_title()}!')
