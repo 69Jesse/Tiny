@@ -3,6 +3,7 @@ from pyhtsl import (
     GlobalStat,
     PlayerStat,
     Item,
+    ALL_POSSIBLE_ITEM_KEYS,
 )
 
 from enum import Enum, auto
@@ -65,11 +66,25 @@ class ItemType(Enum):
 
 class CustomItem:
     name: str
+    key: ALL_POSSIBLE_ITEM_KEYS
     rarity: ItemRarity
     type: ItemType
+    def __init__(
+        self,
+        name: str,
+        key: ALL_POSSIBLE_ITEM_KEYS,
+        rarity: ItemRarity,
+        type: ItemType,
+    ) -> None:
+        self.name = name
+        self.key = key
+        self.rarity = rarity
+        self.type = type
 
     @property
-    def item(self) -> None:
+    def item(self) -> Item:
         return Item(
-            
+            self.key,
+            name=self.name,
+            lore=f'&{self.rarity.value}{self.type.name}',
         )
