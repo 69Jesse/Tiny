@@ -1,14 +1,18 @@
 from pyhtsl import (
     create_function,
-    chat,
     trigger_function,
-    HouseCookies,
     IfAnd,
     exit_function,
+    DateUnix,
 )
 from everything import GlobalStats
+from ingame_time import update_timer
 
 
 @create_function('Global 1s')
 def global_every_second() -> None:
-    pass
+    last = GlobalStats.last_unix
+    with IfAnd(last <= DateUnix):
+        exit_function()
+    last.value = DateUnix
+    trigger_function(update_timer)
