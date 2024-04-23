@@ -78,6 +78,15 @@ class ItemType(Enum):
     Material = auto()
 
 
+class Buff:
+    def __init__(
+        self,
+        stat: PlayerStat,
+        value: int,
+    ) -> None:
+        ...
+
+
 class CustomItem:
     name: str
     key: ALL_POSSIBLE_ITEM_KEYS
@@ -90,6 +99,7 @@ class CustomItem:
         rarity: ItemRarity,
         type: ItemType,
         enchantments: Optional[list[Enchantment]] = None,
+        buffs: Optional[list[Buff]] = None,
     ) -> None:
         self.name = name
         self.key = key
