@@ -13,7 +13,7 @@ from ingame_time import update_timer
 @create_function('Global 1s')
 def global_every_second() -> None:
     last = GlobalStats.last_unix
-    with IfAnd(last <= DateUnix):
+    with IfAnd(DateUnix <= last):
         exit_function()
     last.value = DateUnix
     trigger_function(update_timer)
