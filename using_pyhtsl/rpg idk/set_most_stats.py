@@ -5,6 +5,8 @@ from pyhtsl import (
     IfAnd,
     IfOr,
     Else,
+    trigger_function,
+    exit_function,
 )
 from stats.playerstats import (
     MAX_HEALTH,
@@ -16,11 +18,11 @@ from stats.playerstats import (
 
 @create_function('Set Most Stats')
 def set_most_stats() -> None:
-    set_player_max_health()
-    set_player_health()
+    trigger_function(set_player_health)
 
 
-def set_player_max_health() -> None:
+@create_function('Set Player Health')
+def set_player_health() -> None:
     with IfAnd(MAX_HEALTH <= 300):
         PLAYER_MAX_HEALTH.value = 20 + (MAX_HEALTH - 100) // 10
     with Else:
@@ -32,8 +34,12 @@ def set_player_max_health() -> None:
     with IfOr(PlayerMaxHealth != PLAYER_MAX_HEALTH):
         PlayerMaxHealth.value = PLAYER_MAX_HEALTH
 
-
-def set_player_health() -> None:
+    with IfAnd(HEALTH == 0):
+        from on_death import on_death
+        trigger_function(on_death)
+        exit_function()
     PLAYER_HEALTH.value = HEALTH * PLAYER_MAX_HEALTH // MAX_HEALTH
+    with IfAnd(PLAYER_HEALTH <= 0):
+        PLAYER_HEALTH.value = 1
     with IfOr(PlayerHealth != PLAYER_HEALTH):
         PlayerHealth.value = PLAYER_HEALTH
