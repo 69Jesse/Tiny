@@ -1,10 +1,19 @@
 from pyhtsl import (
     Team,
-    GlobalStat,
     PlayerStat,
     Item,
     ALL_POSSIBLE_ITEM_KEYS,
     Enchantment,
+)
+from stats.playerstats import (
+    MAX_HEALTH,
+    MAX_MANA,
+    SPEED,
+    MINING_SPEED,
+    FORAGING_SPEED,
+    MINING_FORTUNE,
+    FARMING_FORTUNE,
+    FORAGING_FORTUNE,
 )
 
 from enum import Enum, auto
@@ -19,26 +28,6 @@ class Teams:
     mining = Team('Mining')
     farming = Team('Farming')
     fishing = Team('Fishing')
-
-
-class GlobalStats:
-    __slots__ = ()
-    last_unix = GlobalStat('last_unix')
-
-    latest_cookies = GlobalStat('latest_cookies')
-    cookie_goal = GlobalStat('cookie_goal')
-    cookies_needed = GlobalStat('cookies_needed')
-
-    time_temp = GlobalStat('time/temp')
-    time_day = GlobalStat('time/day')
-    time_hour = GlobalStat('time/hour')
-    time_minutes = GlobalStat('time/minutes')
-    time_color = GlobalStat('time/color')
-
-
-class PlayerStats:
-    __slots__ = ()
-    pass
 
 
 LINE_REGEX = re.compile(r'^(x+)(\.*)$')
@@ -78,13 +67,68 @@ class ItemType(Enum):
     Material = auto()
 
 
+class BuffType(Enum):
+    max_health = MAX_HEALTH
+    max_mana = MAX_MANA
+    speed = SPEED
+    mining_speed = MINING_SPEED
+    foraging_speed = FORAGING_SPEED
+    mining_fortune = MINING_FORTUNE
+    farming_fortune = FARMING_FORTUNE
+    foraging_fortune = FORAGING_FORTUNE
+
+
 class Buff:
+
     def __init__(
         self,
-        stat: PlayerStat,
+        type: BuffType,
         value: int,
     ) -> None:
         ...
+
+
+MINING_SPEED_PER_EFF_LEVEL: int = 60
+DEFAULT_MINING_SPEED: dict[ALL_POSSIBLE_ITEM_KEYS, int] = {
+    'wooden_pickaxe': 70,
+    'stone_pickaxe': 110,
+    'iron_pickaxe': 160,
+    'golden_pickaxe': 250,
+    'diamond_pickaxe': 220,
+
+    'wooden_axe': 70,
+    'stone_axe': 110,
+    'iron_axe': 160,
+    'golden_axe': 250,
+    'diamond_axe': 220,
+}
+
+DAMAGE_PER_SHARPNESS_LEVEL: float = 6.25
+DEFAULT_DAMAGE: dict[ALL_POSSIBLE_ITEM_KEYS, int] = {
+    'wooden_sword': 20,
+    'stone_sword': 25,
+    'iron_sword': 30,
+    'golden_sword': 20,
+    'diamond_sword': 35,
+
+    'wooden_pickaxe': 10,
+    'stone_pickaxe': 15,
+    'iron_pickaxe': 20,
+    'golden_pickaxe': 10,
+    'diamond_pickaxe': 25,
+
+    'wooden_axe': 15,
+    'stone_axe': 20,
+    'iron_axe': 25,
+    'golden_axe': 15,
+    'diamond_axe': 30,
+
+    'wooden_shovel': 5,
+    'stone_shovel': 10,
+    'iron_shovel': 15,
+    'golden_shovel': 5,
+    'diamond_shovel': 20,
+}
 
 
 class CustomItem:

@@ -5,15 +5,14 @@ from pyhtsl import (
     exit_function,
     DateUnix,
 )
-from everything import GlobalStats
+from stats.globalstats import LAST_UNIX
 from ingame_time import update_timer
 
 
 # Have this run every 4 ticks
 @create_function('Global 1s')
 def global_every_second() -> None:
-    last = GlobalStats.last_unix
-    with IfAnd(DateUnix <= last):
+    with IfAnd(DateUnix <= LAST_UNIX):
         exit_function()
-    last.value = DateUnix
+    LAST_UNIX.value = DateUnix
     trigger_function(update_timer)

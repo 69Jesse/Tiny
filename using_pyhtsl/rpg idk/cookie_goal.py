@@ -6,21 +6,25 @@ from pyhtsl import (
     IfAnd,
     exit_function,
 )
-from everything import GlobalStats
+from stats.globalstats import (
+    LATEST_COOKIES,
+    COOKIE_GOAL,
+    COOKIES_NEEDED,
+)
 
 
 @create_function('Check Cookie Goal')
 def check_cookie_goal() -> None:
     with IfAnd(
-        GlobalStats.latest_cookies > HouseCookies,
+        LATEST_COOKIES > HouseCookies,
     ):
         trigger_function(reset_cookie_goal)
         exit_function()
-    GlobalStats.cookies_needed.value = GlobalStats.cookie_goal - GlobalStats.latest_cookies
+    COOKIES_NEEDED.value = COOKIE_GOAL - LATEST_COOKIES
     trigger_function(cookie_receive_message, trigger_for_all_players=True)
-    GlobalStats.latest_cookies.value = HouseCookies
+    LATEST_COOKIES.value = HouseCookies
     with IfAnd(
-        GlobalStats.latest_cookies >= GlobalStats.cookie_goal,
+        LATEST_COOKIES >= COOKIE_GOAL,
     ):
         trigger_function(increment_cookie_goal)
         trigger_function(cookie_reward, trigger_for_all_players=True)
@@ -28,23 +32,23 @@ def check_cookie_goal() -> None:
 
 @create_function('Reset Cookie Goal')
 def reset_cookie_goal() -> None:
-    GlobalStats.cookie_goal.value = 0
+    COOKIE_GOAL.value = 0
     trigger_function(increment_cookie_goal)
 
 
 @create_function('Increment Cookie Goal')
 def increment_cookie_goal() -> None:
-    GlobalStats.cookie_goal += 5
+    COOKIE_GOAL.value += 5
 
 
 @create_function('Cookie Receive Message')
 def cookie_receive_message() -> None:
     with IfAnd(
-        GlobalStats.cookies_needed <= 0,
+        COOKIES_NEEDED <= 0,
     ):
         exit_function()
     chat('&eSomeone gave cookies! Thanks so much! We only')
-    chat(f'&eneed&6 {GlobalStats.cookies_needed} &emore to hit the &6&lCookie Goal&e!')
+    chat(f'&eneed&6 {COOKIES_NEEDED} &emore to hit the &6&lCookie Goal&e!')
 
 
 @create_function('Cookie Reward')
