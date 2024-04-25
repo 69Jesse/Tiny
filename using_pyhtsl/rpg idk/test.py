@@ -1,6 +1,8 @@
-from pyhtsl import PlayerStat, goto
+from pyhtsl import PlayerStat, goto, IfAnd
 
 
 goto('function', name='Some Function')
-for i in range(2000):
-    PlayerStat('foo').value = i
+with IfAnd():
+    for i in range(11):
+        PlayerStat('foo').value = i
+PlayerStat('bar').value += 1
