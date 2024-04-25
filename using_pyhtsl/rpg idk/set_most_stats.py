@@ -15,6 +15,8 @@ from stats.playerstats import (
     PLAYER_HEALTH,
 )
 
+from on_death import on_death
+
 
 @create_function('Set Most Stats')
 def set_most_stats() -> None:
@@ -35,7 +37,6 @@ def set_player_health() -> None:
         PlayerMaxHealth.value = PLAYER_MAX_HEALTH
 
     with IfAnd(HEALTH == 0):
-        from on_death import on_death
         trigger_function(on_death)
         exit_function()
     PLAYER_HEALTH.value = HEALTH * PLAYER_MAX_HEALTH // MAX_HEALTH
