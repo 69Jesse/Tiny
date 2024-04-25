@@ -1,9 +1,9 @@
-from pyhtsl import PlayerMaxHealth, full_heal
+from pyhtsl import PlayerStat, IfAnd, goto
 
 
-PlayerMaxHealth += 5
-PlayerMaxHealth += 5
-PlayerMaxHealth += 5
-PlayerMaxHealth += 5
-PlayerMaxHealth += 5
-full_heal()
+goto('function', 'Some Function')
+with IfAnd():
+    for i in range(1, 51):
+        PlayerStat('foo').value = i
+for i in range(1, 51):
+    PlayerStat('bar').value = i
