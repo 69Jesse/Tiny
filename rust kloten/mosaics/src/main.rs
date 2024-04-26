@@ -6,20 +6,52 @@ const CELL_SIZE: (u32, u32) = {
     (n, n)
 };
 const MAX_GRID_SIZE: (u32, u32) = {
-    let n = 64;
+    let n = 256;
     (n, n)
 };
+
+#[allow(dead_code)]
+enum ComparisonMethod {
+    Average,
+    Euclidean,
+    Manhattan,
+}
+
+trait Average {
+    fn get_pixels(&self) -> Vec<image::Rgb<u8>>;
+    fn set_average(&mut self, average: (f64, f64, f64));
+
+    fn calculate_average(&mut self) {
+        let mut r = 0;
+        let mut g = 0;
+        let mut b = 0;
+        for pixel in self.get_pixels().iter() {
+            r += pixel[0] as u32;
+            g += pixel[1] as u32;
+            b += pixel[2] as u32;
+        }
+        let n = self.get_pixels().len() as u32;
+        let average = (
+            r as f64 / n as f64,
+            g as f64 / n as f64,
+            b as f64 / n as f64,
+        );
+        self.set_average(average);
+    }
+}
 
 #[derive(Debug)]
 struct Mosaic {
     path: PathBuf,
     pixels: Vec<image::Rgb<u8>>,
+    average: (f64, f64, f64),
 }
 impl Mosaic {
     fn new(path: PathBuf) -> Self {
         Mosaic {
             path: path,
             pixels: Vec::new(),
+            average: (0.0, 0.0, 0.0),
         }
     }
 
@@ -39,40 +71,77 @@ impl Mosaic {
         Ok(())
     }
 }
+impl Average for Mosaic {
+    fn get_pixels(&self) -> Vec<image::Rgb<u8>> {
+        self.pixels.clone()
+    }
+
+    fn set_average(&mut self, average: (f64, f64, f64)) {
+        self.average = average;
+    }
+}
 
 #[derive(Debug)]
 struct Cell {
     pixels: Vec<image::Rgb<u8>>,
+    average: (f64, f64, f64),
 }
 impl Cell {
     fn new() -> Self {
-        Cell { pixels: Vec::new() }
+        Cell { pixels: Vec::new(), average: (0.0, 0.0, 0.0) }
     }
 
-    fn distance(&self, mosaic: &Mosaic) -> u32 {
+    fn distance(&self, mosaic: &Mosaic, method: &ComparisonMethod) -> f64 {
         assert!(self.pixels.len() == mosaic.pixels.len());
-        let mut distance = 0;
-        for i in 0..self.pixels.len() {
-            let p1 = self.pixels[i];
-            let p2 = mosaic.pixels[i];
-            distance += ((p1[0] as i16 - p2[0] as i16).abs()
-                + (p1[1] as i16 - p2[1] as i16).abs()
-                + (p1[2] as i16 - p2[2] as i16).abs()) as u32;
+        match method {
+            ComparisonMethod::Average => {
+                let mut distance = 0.0;
+                distance += (self.average.0 - mosaic.average.0).powi(2)
+                    + (self.average.1 - mosaic.average.1).powi(2)
+                    + (self.average.2 - mosaic.average.2).powi(2);
+                distance
+            }
+            ComparisonMethod::Euclidean => {
+                let mut distance = 0.0;
+                for (p1, p2) in self.pixels.iter().zip(mosaic.pixels.iter()) {
+                    distance += (p1[0] as f64 - p2[0] as f64).powi(2)
+                        + (p1[1] as f64 - p2[1] as f64).powi(2)
+                        + (p1[2] as f64 - p2[2] as f64).powi(2);
+                }
+                distance // No need to square root
+            }
+            ComparisonMethod::Manhattan => {
+                let mut distance = 0.0;
+                for (p1, p2) in self.pixels.iter().zip(mosaic.pixels.iter()) {
+                    distance += (p1[0] as f64 - p2[0] as f64).abs()
+                        + (p1[1] as f64 - p2[1] as f64).abs()
+                        + (p1[2] as f64 - p2[2] as f64).abs();
+                }
+                distance
+            }
         }
-        distance
     }
 
-    fn best_match<'a>(&'a self, others: &Vec<&'a Mosaic>) -> &Mosaic {
+    fn best_match<'a>(&'a self, others: &Vec<&'a Mosaic>, method: &ComparisonMethod) -> &'a Mosaic {
         let mut best = others[0];
-        let mut best_distance = self.distance(best);
+        let mut best_distance = self.distance(best, method);
         for other in others.iter().skip(1) {
-            let distance = self.distance(*other);
+            let distance = self.distance(*other, method);
             if distance < best_distance {
                 best = *other;
                 best_distance = distance;
             }
         }
         best
+    }
+}
+impl Average for Cell {
+    fn get_pixels(&self) -> Vec<image::Rgb<u8>> {
+        self.pixels.clone()
+    }
+
+    fn set_average(&mut self, average: (f64, f64, f64)) {
+        self.average = average;
     }
 }
 
@@ -91,7 +160,7 @@ impl Grid {
         }
     }
 
-    fn from_image(path: PathBuf) -> Result<Self, Box<dyn Error>> {
+    fn from_image(path: PathBuf, method: &ComparisonMethod) -> Result<Self, Box<dyn Error>> {
         let img = image::open(&path)?;
         let old_size = img.dimensions();
         let grid_size = {
@@ -133,19 +202,29 @@ impl Grid {
                     }
                 }
                 assert!(cell.pixels.len() == (CELL_SIZE.0 * CELL_SIZE.1) as usize);
+                match method {
+                    ComparisonMethod::Average => {
+                        cell.calculate_average();
+                    }
+                    _ => {}
+                }
                 grid.cells.push(cell);
             }
         }
         Ok(grid)
     }
 
-    fn create_mosaic_image(&self, mosaics: &Vec<&Mosaic>) -> Result<DynamicImage, Box<dyn Error>> {
+    fn create_mosaic_image(
+        &self,
+        mosaics: &Vec<&Mosaic>,
+        method: &ComparisonMethod,
+    ) -> Result<DynamicImage, Box<dyn Error>> {
         let mut img =
             image::DynamicImage::new_rgb8(self.size.0 * CELL_SIZE.0, self.size.1 * CELL_SIZE.1);
         for y in 0..self.size.1 {
             for x in 0..self.size.0 {
                 let cell = &self.cells[(y * self.size.0 + x) as usize];
-                let best_mosaic = cell.best_match(&mosaics);
+                let best_mosaic = cell.best_match(&mosaics, &method);
                 for dy in 0..CELL_SIZE.1 {
                     for dx in 0..CELL_SIZE.0 {
                         let pixel = best_mosaic.pixels[(dy * CELL_SIZE.0 + dx) as usize];
@@ -163,35 +242,44 @@ impl Grid {
     }
 }
 
-fn fetch_mosaics() -> Result<Vec<Mosaic>, Box<dyn Error>> {
+fn fetch_mosaics(method: &ComparisonMethod) -> Result<Vec<Mosaic>, Box<dyn Error>> {
     let paths = fs::read_dir("./mosaics/")?;
     let mut mosaics = Vec::new();
     for path in paths {
         let path = path.unwrap().path();
         let mut mosaic = Mosaic::new(path);
         mosaic.create_pixels()?;
+        match method {
+            ComparisonMethod::Average => {
+                mosaic.calculate_average();
+            }
+            _ => {}
+        }
         mosaics.push(mosaic);
     }
     Ok(mosaics)
 }
 
 fn main() {
-    let mosaics = match fetch_mosaics() {
+    let method = ComparisonMethod::Manhattan;
+    let mosaics = match fetch_mosaics(&method) {
         Ok(mosaics) => mosaics,
         Err(e) => {
             eprintln!("Could not get fetch: {}", e);
             return;
         }
     };
-    let grid = match Grid::from_image(PathBuf::from("./input.png")) {
+    let mosaic_references: Vec<&Mosaic> = mosaics.iter().collect();
+
+    let grid = match Grid::from_image(PathBuf::from("./input.png"), &method) {
         Ok(grid) => grid,
         Err(e) => {
             eprintln!("Could not create grid: {}", e);
             return;
         }
     };
-    let mosaic_references: Vec<&Mosaic> = mosaics.iter().collect();
-    let img = match grid.create_mosaic_image(&mosaic_references) {
+
+    let img = match grid.create_mosaic_image(&mosaic_references, &method) {
         Ok(img) => img,
         Err(e) => {
             eprintln!("Could not create mosaic image: {}", e);
