@@ -10,35 +10,6 @@ const MAX_GRID_SIZE: (u32, u32) = {
     (n, n)
 };
 
-trait HasPixels {
-    fn get_pixels(&self) -> &Vec<image::Rgb<u8>>;
-
-    fn distance(&self, other: &dyn HasPixels) -> u32 {
-        let mut distance = 0;
-        for i in 0..self.get_pixels().len() {
-            let p1 = self.get_pixels()[i];
-            let p2 = other.get_pixels()[i];
-            distance += ((p1[0] as i16 - p2[0] as i16).abs()
-                + (p1[1] as i16 - p2[1] as i16).abs()
-                + (p1[2] as i16 - p2[2] as i16).abs()) as u32;
-        }
-        distance
-    }
-
-    fn best_match<'a>(&'a self, others: &Vec<&'a dyn HasPixels>) -> &dyn HasPixels {
-        let mut best = others[0];
-        let mut best_distance = self.distance(best);
-        for other in others.iter().skip(1) {
-            let distance = self.distance(*other);
-            if distance < best_distance {
-                best = *other;
-                best_distance = distance;
-            }
-        }
-        best
-    }
-}
-
 #[derive(Debug)]
 struct Mosaic {
     path: PathBuf,
@@ -68,11 +39,6 @@ impl Mosaic {
         Ok(())
     }
 }
-impl HasPixels for Mosaic {
-    fn get_pixels(&self) -> &Vec<image::Rgb<u8>> {
-        &self.pixels
-    }
-}
 
 #[derive(Debug)]
 struct Cell {
@@ -82,10 +48,31 @@ impl Cell {
     fn new() -> Self {
         Cell { pixels: Vec::new() }
     }
-}
-impl HasPixels for Cell {
-    fn get_pixels(&self) -> &Vec<image::Rgb<u8>> {
-        &self.pixels
+
+    fn distance(&self, mosaic: &Mosaic) -> u32 {
+        assert!(self.pixels.len() == mosaic.pixels.len());
+        let mut distance = 0;
+        for i in 0..self.pixels.len() {
+            let p1 = self.pixels[i];
+            let p2 = mosaic.pixels[i];
+            distance += ((p1[0] as i16 - p2[0] as i16).abs()
+                + (p1[1] as i16 - p2[1] as i16).abs()
+                + (p1[2] as i16 - p2[2] as i16).abs()) as u32;
+        }
+        distance
+    }
+
+    fn best_match<'a>(&'a self, others: &Vec<&'a Mosaic>) -> &Mosaic {
+        let mut best = others[0];
+        let mut best_distance = self.distance(best);
+        for other in others.iter().skip(1) {
+            let distance = self.distance(*other);
+            if distance < best_distance {
+                best = *other;
+                best_distance = distance;
+            }
+        }
+        best
     }
 }
 
@@ -152,20 +139,16 @@ impl Grid {
         Ok(grid)
     }
 
-    fn create_mosaic_image(&self, mosaics: &Vec<Mosaic>) -> Result<DynamicImage, Box<dyn Error>> {
+    fn create_mosaic_image(&self, mosaics: &Vec<&Mosaic>) -> Result<DynamicImage, Box<dyn Error>> {
         let mut img =
             image::DynamicImage::new_rgb8(self.size.0 * CELL_SIZE.0, self.size.1 * CELL_SIZE.1);
-        let mosaic = mosaics
-            .iter()
-            .map(|m| m as &dyn HasPixels)
-            .collect::<Vec<&dyn HasPixels>>();
         for y in 0..self.size.1 {
             for x in 0..self.size.0 {
                 let cell = &self.cells[(y * self.size.0 + x) as usize];
-                let best_mosaic = cell.best_match(&mosaic);
+                let best_mosaic = cell.best_match(&mosaics);
                 for dy in 0..CELL_SIZE.1 {
                     for dx in 0..CELL_SIZE.0 {
-                        let pixel = best_mosaic.get_pixels()[(dy * CELL_SIZE.0 + dx) as usize];
+                        let pixel = best_mosaic.pixels[(dy * CELL_SIZE.0 + dx) as usize];
                         img.put_pixel(
                             x * CELL_SIZE.0 + dx,
                             y * CELL_SIZE.1 + dy,
@@ -207,7 +190,8 @@ fn main() {
             return;
         }
     };
-    let img = match grid.create_mosaic_image(&mosaics) {
+    let mosaic_references: Vec<&Mosaic> = mosaics.iter().collect();
+    let img = match grid.create_mosaic_image(&mosaic_references) {
         Ok(img) => img,
         Err(e) => {
             eprintln!("Could not create mosaic image: {}", e);
