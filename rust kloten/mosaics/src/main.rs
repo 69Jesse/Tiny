@@ -10,6 +10,36 @@ const MAX_GRID_SIZE: (u32, u32) = {
     (n, n)
 };
 
+trait HasPixels {
+    fn pixels(&self) -> &Vec<image::Rgb<u8>>;
+
+    fn distance(&self, other: &dyn HasPixels) -> f64 {
+        let mut distance = 0.0;
+        for i in 0..self.pixels().len() {
+            let p1 = self.pixels()[i];
+            let p2 = other.pixels()[i];
+            distance += ((p1[0] as f64 - p2[0] as f64).powi(2)
+                + (p1[1] as f64 - p2[1] as f64).powi(2)
+                + (p1[2] as f64 - p2[2] as f64).powi(2))
+            .sqrt();
+        }
+        distance
+    }
+
+    fn best_match<'a>(&'a self, others: &Vec<&'a dyn HasPixels>) -> &dyn HasPixels {
+        let mut best = others[0];
+        let mut best_distance = self.distance(best);
+        for other in others.iter().skip(1) {
+            let distance = self.distance(*other);
+            if distance < best_distance {
+                best = *other;
+                best_distance = distance;
+            }
+        }
+        best
+    }
+}
+
 #[derive(Debug)]
 struct Mosaic {
     path: PathBuf,
@@ -41,6 +71,11 @@ impl Mosaic {
         Ok(())
     }
 }
+impl HasPixels for Mosaic {
+    fn pixels(&self) -> &Vec<image::Rgb<u8>> {
+        &self.pixels
+    }
+}
 
 #[derive(Debug)]
 struct Cell {
@@ -53,6 +88,11 @@ impl Cell {
             size: size,
             pixels: Vec::new(),
         }
+    }
+}
+impl HasPixels for Cell {
+    fn pixels(&self) -> &Vec<image::Rgb<u8>> {
+        &self.pixels
     }
 }
 
@@ -120,7 +160,7 @@ impl Grid {
     }
 }
 
-fn get_mosaics() -> Result<Vec<Mosaic>, Box<dyn Error>> {
+fn fetch_mosaics() -> Result<Vec<Mosaic>, Box<dyn Error>> {
     let paths = fs::read_dir("./mosaics/")?;
     let mut mosaics = Vec::new();
     for path in paths {
@@ -133,7 +173,7 @@ fn get_mosaics() -> Result<Vec<Mosaic>, Box<dyn Error>> {
 }
 
 fn main() {
-    let mosaics = match get_mosaics() {
+    let mosaics = match fetch_mosaics() {
         Ok(mosaics) => mosaics,
         Err(e) => {
             eprintln!("Could not get fetch: {}", e);
