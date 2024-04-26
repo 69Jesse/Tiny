@@ -1,11 +1,13 @@
+use image::GenericImageView;
+use image::Pixel;
 use std::fs;
 use std::path::PathBuf;
-use image::GenericImageView;
 
+const MOSAIC_SIZE: (u32, u32) = (8, 8);
 
 struct Mosaic {
     path: PathBuf,
-    pixels: Vec<Vec<u8>>,
+    pixels: Vec<image::Rgb<u8>>,
 }
 impl Mosaic {
     fn new(path: PathBuf) -> Self {
@@ -14,9 +16,14 @@ impl Mosaic {
             pixels: Vec::new(),
         }
     }
+
     fn create_pixels(&mut self) {
         let img = match image::open(&self.path) {
-            Ok(img) => img,
+            Ok(img) => img.resize_exact(
+                MOSAIC_SIZE.0,
+                MOSAIC_SIZE.1,
+                image::imageops::FilterType::Nearest,
+            ),
             Err(e) => {
                 eprintln!("Could not open image: {}", e);
                 return;
@@ -24,10 +31,9 @@ impl Mosaic {
         };
         for y in 0..img.height() {
             for x in 0..img.width() {
-                let pixel = img.get_pixel(x, y);
-                self.pixels.push(vec![pixel[0], pixel[1], pixel[2]]);
+                let pixel = img.get_pixel(x, y).to_rgb();
+                self.pixels.push(pixel);
                 println!("{:?}", pixel);
-                // TODO turn into RGB and convert into RGB
             }
         }
     }
