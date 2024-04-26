@@ -75,10 +75,10 @@ impl Grid {
         let img = image::open(&path)?;
         let old_size = img.dimensions();
         let grid_size = {
+            // TODO round to nearest integer instead of flooring
             if (old_size.0 as f64 / MAX_GRID_SIZE.0 as f64)
                 > (old_size.1 as f64 / MAX_GRID_SIZE.1 as f64)
             {
-                // TODO round to nearest integer instead of flooring
                 (
                     MAX_GRID_SIZE.0,
                     cmp::max(
