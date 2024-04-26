@@ -6,7 +6,7 @@ const CELL_SIZE: (u32, u32) = {
     (n, n)
 };
 const MAX_GRID_SIZE: (u32, u32) = {
-    let n = 256;
+    let n = 128;
     (n, n)
 };
 
@@ -88,7 +88,10 @@ struct Cell {
 }
 impl Cell {
     fn new() -> Self {
-        Cell { pixels: Vec::new(), average: (0.0, 0.0, 0.0) }
+        Cell {
+            pixels: Vec::new(),
+            average: (0.0, 0.0, 0.0),
+        }
     }
 
     fn distance(&self, mosaic: &Mosaic, method: &ComparisonMethod) -> f64 {
@@ -108,7 +111,7 @@ impl Cell {
                         + (p1[1] as f64 - p2[1] as f64).powi(2)
                         + (p1[2] as f64 - p2[2] as f64).powi(2);
                 }
-                distance // No need to square root
+                distance
             }
             ComparisonMethod::Manhattan => {
                 let mut distance = 0.0;
@@ -147,14 +150,12 @@ impl Average for Cell {
 
 #[derive(Debug)]
 struct Grid {
-    path: PathBuf,
     size: (u32, u32),
     cells: Vec<Cell>,
 }
 impl Grid {
-    fn new(path: PathBuf, size: (u32, u32)) -> Self {
+    fn new(size: (u32, u32)) -> Self {
         Grid {
-            path: path,
             size: size,
             cells: Vec::new(),
         }
@@ -191,7 +192,7 @@ impl Grid {
             grid_size.1 * CELL_SIZE.1,
             image::imageops::FilterType::Nearest,
         );
-        let mut grid = Grid::new(path, grid_size);
+        let mut grid = Grid::new(grid_size);
         for y in 0..grid.size.1 {
             for x in 0..grid.size.0 {
                 let mut cell = Cell::new();
@@ -261,7 +262,7 @@ fn fetch_mosaics(method: &ComparisonMethod) -> Result<Vec<Mosaic>, Box<dyn Error
 }
 
 fn main() {
-    let method = ComparisonMethod::Manhattan;
+    let method = ComparisonMethod::Average;
     let mosaics = match fetch_mosaics(&method) {
         Ok(mosaics) => mosaics,
         Err(e) => {
