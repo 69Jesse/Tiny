@@ -18,9 +18,9 @@ trait HasPixels {
         for i in 0..self.get_pixels().len() {
             let p1 = self.get_pixels()[i];
             let p2 = other.get_pixels()[i];
-            distance += ((p1[0] as i32 - p2[0] as i32).abs()
-                + (p1[1] as i32 - p2[1] as i32).abs()
-                + (p1[2] as i32 - p2[2] as i32).abs()) as u32;
+            distance += ((p1[0] as i16 - p2[0] as i16).abs()
+                + (p1[1] as i16 - p2[1] as i16).abs()
+                + (p1[2] as i16 - p2[2] as i16).abs()) as u32;
         }
         distance
     }
