@@ -1,4 +1,4 @@
-use image::{GenericImageView, Pixel};
+use image::{DynamicImage, GenericImage, GenericImageView, Pixel};
 use std::{cmp, error::Error, fs, path::PathBuf};
 
 const CELL_SIZE: (u32, u32) = {
@@ -11,17 +11,16 @@ const MAX_GRID_SIZE: (u32, u32) = {
 };
 
 trait HasPixels {
-    fn pixels(&self) -> &Vec<image::Rgb<u8>>;
+    fn get_pixels(&self) -> &Vec<image::Rgb<u8>>;
 
-    fn distance(&self, other: &dyn HasPixels) -> f64 {
-        let mut distance = 0.0;
-        for i in 0..self.pixels().len() {
-            let p1 = self.pixels()[i];
-            let p2 = other.pixels()[i];
-            distance += ((p1[0] as f64 - p2[0] as f64).powi(2)
-                + (p1[1] as f64 - p2[1] as f64).powi(2)
-                + (p1[2] as f64 - p2[2] as f64).powi(2))
-            .sqrt();
+    fn distance(&self, other: &dyn HasPixels) -> u32 {
+        let mut distance = 0;
+        for i in 0..self.get_pixels().len() {
+            let p1 = self.get_pixels()[i];
+            let p2 = other.get_pixels()[i];
+            distance += ((p1[0] as i32 - p2[0] as i32).abs()
+                + (p1[1] as i32 - p2[1] as i32).abs()
+                + (p1[2] as i32 - p2[2] as i32).abs()) as u32;
         }
         distance
     }
@@ -43,22 +42,20 @@ trait HasPixels {
 #[derive(Debug)]
 struct Mosaic {
     path: PathBuf,
-    size: (u32, u32),
     pixels: Vec<image::Rgb<u8>>,
 }
 impl Mosaic {
     fn new(path: PathBuf) -> Self {
         Mosaic {
             path: path,
-            size: CELL_SIZE,
             pixels: Vec::new(),
         }
     }
 
     fn create_pixels(&mut self) -> Result<(), Box<dyn Error>> {
         let img = image::open(&self.path)?.resize_exact(
-            self.size.0,
-            self.size.1,
+            CELL_SIZE.0,
+            CELL_SIZE.1,
             image::imageops::FilterType::Nearest,
         );
         for y in 0..img.height() {
@@ -72,26 +69,22 @@ impl Mosaic {
     }
 }
 impl HasPixels for Mosaic {
-    fn pixels(&self) -> &Vec<image::Rgb<u8>> {
+    fn get_pixels(&self) -> &Vec<image::Rgb<u8>> {
         &self.pixels
     }
 }
 
 #[derive(Debug)]
 struct Cell {
-    size: (u32, u32),
     pixels: Vec<image::Rgb<u8>>,
 }
 impl Cell {
-    fn new(size: (u32, u32)) -> Self {
-        Cell {
-            size: size,
-            pixels: Vec::new(),
-        }
+    fn new() -> Self {
+        Cell { pixels: Vec::new() }
     }
 }
 impl HasPixels for Cell {
-    fn pixels(&self) -> &Vec<image::Rgb<u8>> {
+    fn get_pixels(&self) -> &Vec<image::Rgb<u8>> {
         &self.pixels
     }
 }
@@ -145,10 +138,10 @@ impl Grid {
         let mut grid = Grid::new(path, grid_size);
         for y in 0..grid.size.1 {
             for x in 0..grid.size.0 {
-                let mut cell = Cell::new(CELL_SIZE);
-                for dy in 0..cell.size.1 {
-                    for dx in 0..cell.size.0 {
-                        let pixel = img.get_pixel(x * cell.size.0 + dx, y * cell.size.1 + dy);
+                let mut cell = Cell::new();
+                for dy in 0..CELL_SIZE.1 {
+                    for dx in 0..CELL_SIZE.0 {
+                        let pixel = img.get_pixel(x * CELL_SIZE.0 + dx, y * CELL_SIZE.1 + dy);
                         cell.pixels.push(pixel.to_rgb());
                     }
                 }
@@ -157,6 +150,33 @@ impl Grid {
             }
         }
         Ok(grid)
+    }
+
+    fn create_mosaic_image(&self, mosaics: &Vec<Mosaic>) -> Result<DynamicImage, Box<dyn Error>> {
+        let mut img =
+            image::DynamicImage::new_rgb8(self.size.0 * CELL_SIZE.0, self.size.1 * CELL_SIZE.1);
+        let mosaic = mosaics
+            .iter()
+            .map(|m| m as &dyn HasPixels)
+            .collect::<Vec<&dyn HasPixels>>();
+        for y in 0..self.size.1 {
+            for x in 0..self.size.0 {
+                let cell = &self.cells[(y * self.size.0 + x) as usize];
+                let best_mosaic = cell.best_match(&mosaic);
+                for dy in 0..CELL_SIZE.1 {
+                    for dx in 0..CELL_SIZE.0 {
+                        let pixel = best_mosaic.get_pixels()[(dy * CELL_SIZE.0 + dx) as usize];
+                        img.put_pixel(
+                            x * CELL_SIZE.0 + dx,
+                            y * CELL_SIZE.1 + dy,
+                            image::Rgba([pixel[0], pixel[1], pixel[2], 255]),
+                        );
+                    }
+                }
+            }
+            println!("Row {}/{}", y + 1, self.size.1)
+        }
+        Ok(img)
     }
 }
 
@@ -187,5 +207,12 @@ fn main() {
             return;
         }
     };
-    print!("{:?}", grid.size);
+    let img = match grid.create_mosaic_image(&mosaics) {
+        Ok(img) => img,
+        Err(e) => {
+            eprintln!("Could not create mosaic image: {}", e);
+            return;
+        }
+    };
+    img.save("output.png").unwrap();
 }
