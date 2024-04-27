@@ -4,6 +4,7 @@ from pyhtsl import (
     Item,
     ALL_POSSIBLE_ITEM_KEYS,
     Enchantment,
+    delete_all_items_from_imports_folder,
 )
 from stats.playerstats import (
     MAX_HEALTH,
@@ -28,6 +29,9 @@ from enum import Enum, auto
 import re
 
 from typing import Optional
+
+
+delete_all_items_from_imports_folder()
 
 
 class Teams:
@@ -74,13 +78,27 @@ class ItemType(Enum):
     Consumable = auto()
     Material = auto()
 
+    def better_name(self, item_key: ALL_POSSIBLE_ITEM_KEYS) -> str:
+        if self is ItemType.Tool:
+            if item_key.endswith('_pickaxe'):
+                return 'Pickaxe'
+            if item_key.endswith('_axe'):
+                return 'Axe'
+            if item_key.endswith('_shovel'):
+                return 'Shovel'
+            if item_key.endswith('_hoe'):
+                return 'Hoe'
+            if item_key == 'fishing_rod':
+                return 'Fishing Rod'
+        return self.name
+
 
 class BuffType(Enum):
     max_health =       (MAX_HEALTH,         100,    1000,   lambda x: x,        '&7Health:&a +{value:,}',             f'&c❤ Health&f {MAX_HEALTH}',                       )
-    defense =          (DEFENSE,            0,      -1,     lambda x: x / 10,   '&7Defense:&a +{value:.1f}%',         f'&a❈ Defense&f {DEFENSE_BIG}.{DEFENSE_SMALL}',     )
+    defense =          (DEFENSE,            0,      -1,     lambda x: x / 10,   '&7Defense:&a +{value}%',         f'&a❈ Defense&f {DEFENSE_BIG}.{DEFENSE_SMALL}',     )
     speed =            (SPEED,              100,    300,    lambda x: x,        '&7Speed:&a +{value:,}',              f'&f✦ Speed&f {SPEED}',                             )  # Speed x where x = value // 20
     damage =           (DAMAGE,             1,      -1,     lambda x: x,        '&7Damage:&c +{value:,}',             f'&c❁ Damage&f {DAMAGE}',                           )
-    strength =         (STRENGTH,           1000,   -1,     lambda x: x / 10,   '&7Strength:&c +{value:.1f}%',        f'&c❁ Strength&f {STRENGTH_BIG}.{STRENGTH_SMALL}',  )  # Strength x where x = value // 50
+    strength =         (STRENGTH,           1000,   -1,     lambda x: x / 10,   '&7Strength:&c +{value}%',        f'&c❁ Strength&f {STRENGTH_BIG}.{STRENGTH_SMALL}',  )  # Strength x where x = value // 50
     intelligence =     (INTELLIGENCE,       0,      -1,     lambda x: x,        '&7Intelligence:&a +{value:,}',       f'&b✎ Intelligence&f {INTELLIGENCE}',               )
     max_mana =         (MAX_MANA,           100,    -1,     lambda x: x,        '',                                   '',                                                  )
     mining_speed =     (MINING_SPEED,       0,      -1,     lambda x: x,        '&7Mining Speed:&a +{value:,}',       f'&6⸕ Mining Speed&f {MINING_SPEED}',                )
@@ -105,7 +123,12 @@ class BuffType(Enum):
         return self.value[3](value)
 
     def formatted_addition(self, value: int) -> str:
-        return self.value[4].format(value=self.format_value(value))
+        v = self.format_value(value)
+        if v.is_integer():
+            v = int(v)
+        else:
+            v = f'{v:.1f}'
+        return self.value[4].format(value=v)
 
     @property
     def formatted_total(self) -> str:
@@ -219,16 +242,26 @@ class CustomItem:
 
     @property
     def item(self) -> Item:
-        lore: list[str] = [f'&8{self.type.name}']
-        lore.append(f'&{self.rarity.value}{self.rarity.name}')
+        type_name = self.type.better_name(self.key)
+        lore: list[str] = [f'&8{type_name}']
+
+        if self.buffs:
+            lore.append('')
+            for buff in self.buffs:
+                lore.append(buff.type.formatted_addition(buff.value))
+            lore.append('')
+
+        lore.append(f'&{self.rarity.value}&l{self.rarity.name}')
         if len(lore) == 2:
             lore.pop(0)
-            lore[-1] = f'{lore[-1]} {self.type.name.upper()}'
+            lore[-1] = f'{lore[-1]} {type_name.upper()}'
         return Item(
             self.key,
             name=f'&{self.rarity.value}{self.name}',
             lore=lore,
+            enchantments=self.enchantments,
             hide_all_flags=True,
+            unbreakable=True,
         )
 
 
@@ -246,3 +279,7 @@ class Items:
         ItemRarity.COMMON,
         ItemType.Tool,
     )
+
+
+Items.wooden_pickaxe.item.save()
+Items.stone_pickaxe.item.save()
