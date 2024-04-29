@@ -6,15 +6,15 @@ const CELL_SIZE: (u32, u32) = {
     (n, n)
 };
 const MAX_GRID_SIZE: (u32, u32) = {
-    let n = 128;
+    let n = 512;
     (n, n)
 };
 
 #[allow(dead_code)]
 enum ComparisonMethod {
     Average,
-    Euclidean,
     Manhattan,
+    Euclidean,
 }
 
 trait Average {
@@ -262,7 +262,7 @@ fn fetch_mosaics(method: &ComparisonMethod) -> Result<Vec<Mosaic>, Box<dyn Error
 }
 
 fn main() {
-    let method = ComparisonMethod::Average;
+    let method = ComparisonMethod::Euclidean;
     let mosaics = match fetch_mosaics(&method) {
         Ok(mosaics) => mosaics,
         Err(e) => {
