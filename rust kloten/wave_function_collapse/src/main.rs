@@ -87,7 +87,7 @@ fn create_patterns(
     wrap_around_edges: bool,
     allow_rotations: bool, // TODO
 ) -> Vec<Pattern> {
-    let mut patterns = Vec::new();
+    let mut patterns: Vec<Pattern> = Vec::new();
     for x in 0..image.width() / tile_size.0 {
         for y in 0..image.height() / tile_size.1 {
             let tile = tiles[&(x, y)].clone();
@@ -120,7 +120,18 @@ fn create_patterns(
                             );
                         }
                     }
-                    patterns.push(Pattern::new(tile.clone(), offset_tiles));
+                    let pattern = Pattern::new(tile.clone(), offset_tiles);
+                    let mut found = false;
+                    for existing_pattern in &mut patterns {
+                        if *existing_pattern == pattern {
+                            existing_pattern.increment();
+                            found = true;
+                            break;
+                        }
+                    }
+                    if !found {
+                        patterns.push(pattern);
+                    }
                 }
             }
         }
@@ -167,6 +178,7 @@ impl Grid {
             wrap_around_edges,
             allow_rotations,
         );
+        println!("{:?} patterns", patterns.len());
 
         return Ok(Grid {});
     }
