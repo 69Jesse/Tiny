@@ -3,9 +3,9 @@ use image_hasher::HasherConfig;
 use std::collections::{HashMap, HashSet};
 
 const TILE_SIZE: (u32, u32) = (1, 1);
-const OPTION_SIZE: (u8, u8) = (2, 2);  // in amount of tiles, not pixels
-const ALLOW_ROTATIONS: bool = true;
+const OPTION_SIZE: (u8, u8) = (2, 2); // in amount of tiles, not pixels
 const WRAP_AROUND_EDGES: bool = true;
+const ALLOW_ROTATIONS: bool = true;
 
 struct Tile {
     image: DynamicImage,
@@ -69,8 +69,8 @@ fn create_patterns(
     image: DynamicImage,
     tile_size: (u32, u32),
     option_size: (u8, u8),
-    allow_rotations: bool,
     wrap_around_edges: bool,
+    allow_rotations: bool,
 ) -> Result<HashSet<Pattern>, String> {
     return Ok(HashSet::new());
 }
@@ -81,8 +81,8 @@ impl Grid {
         image: DynamicImage,
         tile_size: (u32, u32),
         option_size: (u8, u8),
-        allow_rotations: bool,
         wrap_around_edges: bool,
+        allow_rotations: bool,
     ) -> Result<Grid, String> {
         if image.width() % tile_size.0 != 0 || image.height() % tile_size.1 != 0 {
             return Err(format!(
@@ -109,10 +109,10 @@ impl Grid {
             image,
             tile_size,
             option_size,
-            allow_rotations,
             wrap_around_edges,
+            allow_rotations,
         )?;
-    
+
         return Ok(Grid {});
     }
 }
@@ -124,8 +124,8 @@ fn main() {
         img,
         TILE_SIZE,
         OPTION_SIZE,
-        ALLOW_ROTATIONS,
         WRAP_AROUND_EDGES,
+        ALLOW_ROTATIONS,
     ) {
         Ok(patterns) => patterns,
         Err(err) => {
