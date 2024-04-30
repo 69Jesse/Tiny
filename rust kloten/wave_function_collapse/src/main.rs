@@ -7,7 +7,7 @@ use std::{
 
 const TILE_SIZE: (u32, u32) = (1, 1);
 const OPTION_SIZE: (u8, u8) = {
-    let n = 5;
+    let n = 2;
     (n, n)
 }; // in amount of tiles, not pixels
 const WRAP_AROUND_EDGES: bool = true;
