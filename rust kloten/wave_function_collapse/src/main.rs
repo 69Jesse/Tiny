@@ -1,9 +1,5 @@
 use image::{GenericImageView, RgbImage};
-use image_hasher::HasherConfig;
-use std::{
-    collections::{HashMap, HashSet},
-    hash::Hash,
-};
+use std::collections::HashMap;
 
 const TILE_SIZE: (u32, u32) = (1, 1);
 const OPTION_SIZE: (u8, u8) = {
@@ -101,23 +97,19 @@ fn create_patterns(
                                 (y as i32 + dy as i32 + ddy as i32),
                             );
                             if !wrap_around_edges
-                                && (tx < 0 || ty < 0 || tx >= image.width() as i32 || ty >= image.height() as i32)
+                                && (tx < 0
+                                    || ty < 0
+                                    || tx >= image.width() as i32
+                                    || ty >= image.height() as i32)
                             {
                                 continue;
                             }
                             let (tx, ty) = (
-                                tx.rem_euclid((image.width() / tile_size.0) as i32),
-                                ty.rem_euclid((image.height() / tile_size.1) as i32),
+                                tx.rem_euclid((image.width() / tile_size.0) as i32) as u32,
+                                ty.rem_euclid((image.height() / tile_size.1) as i32) as u32,
                             );
-                            let (tx, ty) = (
-                                tx as u32,
-                                ty as u32,
-                            );
-                            offset_tiles.insert(
-                                (dx + ddx as i8, dy + ddy as i8),
-                                tiles[&(tx, ty)]
-                                    .clone(),
-                            );
+                            offset_tiles
+                                .insert((dx + ddx as i8, dy + ddy as i8), tiles[&(tx, ty)].clone());
                         }
                     }
                     let pattern = Pattern::new(tile.clone(), offset_tiles);
@@ -185,8 +177,7 @@ impl Grid {
 }
 
 fn main() {
-    let hasher = HasherConfig::new().to_hasher();
-    let img = image::open("input.png").unwrap().to_rgb8();
+    let img = image::open("input2.png").unwrap().to_rgb8();
     let grid = match Grid::from_image(
         &img,
         TILE_SIZE,
