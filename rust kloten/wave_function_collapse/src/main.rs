@@ -1,25 +1,25 @@
-use image::DynamicImage;
+use image::{GenericImageView, RgbImage};
 use image_hasher::HasherConfig;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    hash::Hash,
+};
 
 const TILE_SIZE: (u32, u32) = (1, 1);
-const OPTION_SIZE: (u8, u8) = (2, 2); // in amount of tiles, not pixels
+const OPTION_SIZE: (u8, u8) = {
+    let n = 5;
+    (n, n)
+}; // in amount of tiles, not pixels
 const WRAP_AROUND_EDGES: bool = true;
 const ALLOW_ROTATIONS: bool = true;
 
+#[derive(Clone)]
 struct Tile {
-    image: DynamicImage,
+    image: RgbImage,
 }
 impl Tile {
-    fn new(image: DynamicImage) -> Tile {
+    fn new(image: RgbImage) -> Tile {
         return Tile { image: image };
-    }
-}
-impl std::hash::Hash for Tile {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        let hasher = HasherConfig::new().to_hasher();
-        let hash = hasher.hash_image(&self.image);
-        hash.hash(state);
     }
 }
 impl PartialEq for Tile {
@@ -27,15 +27,14 @@ impl PartialEq for Tile {
         return self.image == other.image;
     }
 }
-impl Eq for Tile {}
 
 struct Pattern {
-    tile: &'static Tile,
-    offset_tiles: HashMap<(i8, i8), &'static Tile>,
+    tile: Tile,
+    offset_tiles: HashMap<(i8, i8), Tile>,
     count: u32,
 }
 impl Pattern {
-    fn new(tile: &'static Tile, offset_tiles: HashMap<(i8, i8), &'static Tile>) -> Pattern {
+    fn new(tile: Tile, offset_tiles: HashMap<(i8, i8), Tile>) -> Pattern {
         return Pattern {
             tile: tile,
             offset_tiles: offset_tiles,
@@ -56,7 +55,7 @@ impl PartialEq for Pattern {
 struct Cell {
     x: u32,
     y: u32,
-    patterns: HashSet<Pattern>,
+    patterns: Vec<Pattern>,
     tile: Option<Tile>,
 }
 impl Cell {
@@ -65,20 +64,74 @@ impl Cell {
     }
 }
 
+fn create_tiles(image: &RgbImage, tile_size: (u32, u32)) -> HashMap<(u32, u32), Tile> {
+    let mut tiles = HashMap::new();
+    for x in 0..image.width() / tile_size.0 {
+        for y in 0..image.height() / tile_size.1 {
+            let tile = Tile::new(
+                image
+                    .view(x * tile_size.0, y * tile_size.1, tile_size.0, tile_size.1)
+                    .to_image(),
+            );
+            tiles.insert((x, y), tile);
+        }
+    }
+    tiles
+}
+
 fn create_patterns(
-    image: DynamicImage,
+    image: &RgbImage,
+    tiles: &HashMap<(u32, u32), Tile>,
     tile_size: (u32, u32),
     option_size: (u8, u8),
     wrap_around_edges: bool,
-    allow_rotations: bool,
-) -> Result<HashSet<Pattern>, String> {
-    return Ok(HashSet::new());
+    allow_rotations: bool, // TODO
+) -> Vec<Pattern> {
+    let mut patterns = Vec::new();
+    for x in 0..image.width() / tile_size.0 {
+        for y in 0..image.height() / tile_size.1 {
+            let tile = tiles[&(x, y)].clone();
+            for dx in -(option_size.0 as i8) + 1..=0 {
+                for dy in -(option_size.1 as i8) + 1..=0 {
+                    let mut offset_tiles = HashMap::new();
+                    for ddx in 0..option_size.0 {
+                        for ddy in 0..option_size.1 {
+                            let (tx, ty) = (
+                                (x as i32 + dx as i32 + ddx as i32),
+                                (y as i32 + dy as i32 + ddy as i32),
+                            );
+                            if !wrap_around_edges
+                                && (tx < 0 || ty < 0 || tx >= image.width() as i32 || ty >= image.height() as i32)
+                            {
+                                continue;
+                            }
+                            let (tx, ty) = (
+                                tx.rem_euclid((image.width() / tile_size.0) as i32),
+                                ty.rem_euclid((image.height() / tile_size.1) as i32),
+                            );
+                            let (tx, ty) = (
+                                tx as u32,
+                                ty as u32,
+                            );
+                            offset_tiles.insert(
+                                (dx + ddx as i8, dy + ddy as i8),
+                                tiles[&(tx, ty)]
+                                    .clone(),
+                            );
+                        }
+                    }
+                    patterns.push(Pattern::new(tile.clone(), offset_tiles));
+                }
+            }
+        }
+    }
+    patterns
 }
 
 struct Grid {}
 impl Grid {
     fn from_image(
-        image: DynamicImage,
+        image: &RgbImage,
         tile_size: (u32, u32),
         option_size: (u8, u8),
         wrap_around_edges: bool,
@@ -105,13 +158,15 @@ impl Grid {
                 option_size.0, option_size.1, tile_size.0, tile_size.1
             ));
         }
+        let tiles = create_tiles(image, tile_size);
         let patterns = create_patterns(
             image,
+            &tiles,
             tile_size,
             option_size,
             wrap_around_edges,
             allow_rotations,
-        )?;
+        );
 
         return Ok(Grid {});
     }
@@ -119,9 +174,9 @@ impl Grid {
 
 fn main() {
     let hasher = HasherConfig::new().to_hasher();
-    let img = image::open("input.png").unwrap();
+    let img = image::open("input.png").unwrap().to_rgb8();
     let grid = match Grid::from_image(
-        img,
+        &img,
         TILE_SIZE,
         OPTION_SIZE,
         WRAP_AROUND_EDGES,
