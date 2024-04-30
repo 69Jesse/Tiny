@@ -1,8 +1,9 @@
 use image::{GenericImageView, RgbImage};
-use rand;
 use rand::distributions::{Distribution, WeightedIndex};
+use rand::{self, Rng};
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
+use std::hash::Hash;
 
 const GRID_SIZE: (u32, u32) = (64, 64);
 const TILE_SIZE: (u32, u32) = (1, 1);
@@ -22,11 +23,17 @@ impl Tile {
         return Tile { image: image };
     }
 }
+impl Hash for Tile {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.image.hash(state);
+    }
+}
 impl PartialEq for Tile {
     fn eq(&self, other: &Self) -> bool {
         return self.image == other.image;
     }
 }
+impl Eq for Tile {}
 impl fmt::Debug for Tile {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Tile({}x{})", self.image.width(), self.image.height())
@@ -58,12 +65,11 @@ impl PartialEq for Pattern {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct Cell {
     x: u32,
     y: u32,
     patterns: Vec<Pattern>,
-    tile: Option<Tile>,
 }
 impl Cell {
     fn new(x: u32, y: u32) -> Cell {
@@ -71,7 +77,6 @@ impl Cell {
             x: x,
             y: y,
             patterns: Vec::new(),
-            tile: None,
         };
     }
 
@@ -111,12 +116,29 @@ impl Cell {
             .collect::<Vec<u32>>();
         let mut rng = rand::thread_rng();
         let index = WeightedIndex::new(&weights).unwrap().sample(&mut rng);
-        let pattern = &self.patterns[index];
-        self.tile = Some(pattern.tile.clone());
+        let pattern = self.patterns.swap_remove(index);
+        self.patterns.clear();
+        self.patterns.push(pattern);
     }
 
     fn is_collapsed(&self) -> bool {
-        return self.tile.is_some();
+        return self.patterns.len() == 1;
+    }
+
+    fn get_tile(&self) -> Option<&Tile> {
+        if self.is_collapsed() {
+            Some(&self.patterns[0].tile)
+        } else {
+            None
+        }
+    }
+
+    fn entropy(&self) -> u32 {
+        if self.is_collapsed() {
+            u32::MAX
+        } else {
+            self.patterns.iter().map(|pattern| pattern.count).sum()
+        }
     }
 }
 
@@ -147,6 +169,8 @@ fn create_patterns(
     for x in 0..image.width() / tile_size.0 {
         for y in 0..image.height() / tile_size.1 {
             let tile = tiles[&(x, y)].clone();
+            // O(option_size.0 ** 2 * option_size.1 ** 2) from here on out
+            // size should be very small, its not as bad as it looks
             for dx in -(option_size.0 as i8) + 1..=0 {
                 'new_pattern: for dy in -(option_size.1 as i8) + 1..=0 {
                     let mut offset_tiles = HashMap::new();
@@ -200,13 +224,10 @@ struct Grid {
     cells: Vec<Cell>,
     tile_size: (u32, u32),
     option_size: (u8, u8),
+    collapsed_count: u32,
 }
 impl Grid {
-    fn new(
-        size: (u32, u32),
-        tile_size: (u32, u32),
-        option_size: (u8, u8),
-    ) -> Grid {
+    fn new(size: (u32, u32), tile_size: (u32, u32), option_size: (u8, u8)) -> Grid {
         let mut cells = Vec::new();
         for x in 0..size.0 {
             for y in 0..size.1 {
@@ -218,15 +239,53 @@ impl Grid {
             cells: cells,
             tile_size: tile_size,
             option_size: option_size,
+            collapsed_count: 0,
         };
     }
 
-    fn solve(&mut self) {
-        self.cells.iter_mut().for_each(|cell| {
-            if !cell.is_collapsed() {
-                cell.collapse();
+    fn lowest_entropy_cells(&mut self) -> Vec<&mut Cell> {
+        assert!(!self.is_solved());
+        let mut lowest_entropy = u32::MAX - 1;
+        let mut cells = Vec::new();
+        for cell in &mut self.cells {
+            let entropy = cell.entropy();
+            if entropy < lowest_entropy {
+                lowest_entropy = entropy;
+                cells.clear();
             }
-        });
+            if entropy == lowest_entropy {
+                cells.push(cell);
+            }
+        }
+        cells
+    }
+
+    fn collapse_random_cell(&mut self) -> &mut Cell {
+        let mut rng = rand::thread_rng();
+        let mut cells = self.lowest_entropy_cells();
+        cells.swap_remove(rng.gen_range(0..cells.len()))
+    }
+
+    fn is_solved(&self) -> bool {
+        self.cells.iter().all(|cell| cell.is_collapsed())
+    }
+
+    fn iteration(&mut self) {
+        let mut queue = VecDeque::new();
+        let cell = self.collapse_random_cell();
+        cell.collapse();
+        queue.push_back(cell);
+        while let Some(cell) = queue.pop_front() {
+            for i in (cell.patterns.len() - 1)..=0 {
+                println!("{} {}", i, cell.patterns.len());
+            }
+        }
+    }
+
+    fn solve(&mut self) {
+        while !self.is_solved() {
+            self.iteration();
+        }
     }
 
     fn create_image(&self) -> Result<RgbImage, String> {
@@ -235,7 +294,7 @@ impl Grid {
             self.size.1 * self.tile_size.1,
         );
         for cell in &self.cells {
-            let tile = match &cell.tile {
+            let tile = match cell.get_tile() {
                 Some(tile) => tile,
                 None => return Err("Not all cells have been collapsed.".to_string()),
             };
@@ -286,11 +345,7 @@ impl Grid {
             allow_rotations,
         );
         println!("{} patterns", patterns.len());
-        let mut grid = Grid::new(
-            grid_size,
-            tile_size,
-            option_size,
-        );
+        let mut grid = Grid::new(grid_size, tile_size, option_size);
         grid.cells.iter_mut().for_each(|cell| {
             cell.initiate_patterns(&patterns, wrap_around_edges);
         });
