@@ -5,7 +5,7 @@ use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::hash::Hash;
 
-const GRID_SIZE: (u32, u32) = (64, 64);
+const GRID_SIZE: (u32, u32) = (32, 32);
 const TILE_SIZE: (u32, u32) = (1, 1);
 const OPTION_SIZE: (u8, u8) = {
     let n = 2;
