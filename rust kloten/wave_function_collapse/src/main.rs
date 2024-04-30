@@ -1,13 +1,13 @@
 use image::{GenericImageView, RgbImage};
 use rand::distributions::{Distribution, WeightedIndex};
 use rand::{self, Rng};
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::hash::Hash;
 
 const GRID_SIZE: (u32, u32) = (32, 32);
 const TILE_SIZE: (u32, u32) = (1, 1);
-const OPTION_SIZE: (u8, u8) = {
+const PATTERN_SIZE: (u8, u8) = {
     let n = 2;
     (n, n)
 }; // in amount of tiles, not pixels
@@ -161,7 +161,7 @@ fn create_patterns(
     image: &RgbImage,
     tiles: &HashMap<(u32, u32), Tile>,
     tile_size: (u32, u32),
-    option_size: (u8, u8),
+    pattern_size: (u8, u8),
     wrap_around_edges: bool,
     allow_rotations: bool, // TODO
 ) -> Vec<Pattern> {
@@ -169,13 +169,13 @@ fn create_patterns(
     for x in 0..image.width() / tile_size.0 {
         for y in 0..image.height() / tile_size.1 {
             let tile = tiles[&(x, y)].clone();
-            // O(option_size.0 ** 2 * option_size.1 ** 2) from here on out
+            // O(pattern_size.0 ** 2 * pattern_size.1 ** 2) from here on out
             // size should be very small, its not as bad as it looks
-            for dx in -(option_size.0 as i8) + 1..=0 {
-                'new_pattern: for dy in -(option_size.1 as i8) + 1..=0 {
+            for dx in -(pattern_size.0 as i8) + 1..=0 {
+                'new_pattern: for dy in -(pattern_size.1 as i8) + 1..=0 {
                     let mut offset_tiles = HashMap::new();
-                    for ddx in 0..option_size.0 {
-                        for ddy in 0..option_size.1 {
+                    for ddx in 0..pattern_size.0 {
+                        for ddy in 0..pattern_size.1 {
                             if ddx == 0 && ddy == 0 {
                                 continue;
                             }
@@ -200,9 +200,9 @@ fn create_patterns(
                         }
                     }
                     assert!(if wrap_around_edges {
-                        offset_tiles.len() == (option_size.0 * option_size.1 - 1) as usize
+                        offset_tiles.len() == (pattern_size.0 * pattern_size.1 - 1) as usize
                     } else {
-                        offset_tiles.len() <= (option_size.0 * option_size.1 - 1) as usize
+                        offset_tiles.len() <= (pattern_size.0 * pattern_size.1 - 1) as usize
                     });
                     let pattern = Pattern::new(tile.clone(), offset_tiles);
                     for existing_pattern in &mut patterns {
@@ -223,11 +223,11 @@ struct Grid {
     size: (u32, u32),
     cells: Vec<Cell>,
     tile_size: (u32, u32),
-    option_size: (u8, u8),
+    pattern_size: (u8, u8),
     collapsed_count: u32,
 }
 impl Grid {
-    fn new(size: (u32, u32), tile_size: (u32, u32), option_size: (u8, u8)) -> Grid {
+    fn new(size: (u32, u32), tile_size: (u32, u32), pattern_size: (u8, u8)) -> Grid {
         let mut cells = Vec::new();
         for x in 0..size.0 {
             for y in 0..size.1 {
@@ -238,7 +238,7 @@ impl Grid {
             size: size,
             cells: cells,
             tile_size: tile_size,
-            option_size: option_size,
+            pattern_size: pattern_size,
             collapsed_count: 0,
         };
     }
@@ -276,8 +276,14 @@ impl Grid {
         cell.collapse();
         queue.push_back(cell);
         while let Some(cell) = queue.pop_front() {
-            for i in (cell.patterns.len() - 1)..=0 {
-                println!("{} {}", i, cell.patterns.len());
+            let mut allowed_tiles = HashMap::new();
+            for pattern in &cell.patterns {
+                for ((dx, dy), tile) in &pattern.offset_tiles {
+                    allowed_tiles
+                        .entry((dx, dy))
+                        .or_insert_with(HashSet::new)
+                        .insert(tile);
+                }
             }
         }
     }
@@ -316,7 +322,7 @@ impl Grid {
         image: &RgbImage,
         grid_size: (u32, u32),
         tile_size: (u32, u32),
-        option_size: (u8, u8),
+        pattern_size: (u8, u8),
         wrap_around_edges: bool,
         allow_rotations: bool,
     ) -> Result<Grid, String> {
@@ -329,10 +335,10 @@ impl Grid {
                 tile_size.1
             ));
         }
-        if option_size.0 as u32 / tile_size.0 != option_size.1 as u32 / tile_size.1 {
+        if pattern_size.0 as u32 / tile_size.0 != pattern_size.1 as u32 / tile_size.1 {
             return Err(format!(
-                "Option size ({}x{}) does not have the same aspect ratio as the tile size ({}x{}).",
-                option_size.0, option_size.1, tile_size.0, tile_size.1
+                "Pattern size ({}x{}) does not have the same aspect ratio as the tile size ({}x{}).",
+                pattern_size.0, pattern_size.1, tile_size.0, tile_size.1
             ));
         }
         let tiles = create_tiles(image, tile_size);
@@ -340,12 +346,12 @@ impl Grid {
             image,
             &tiles,
             tile_size,
-            option_size,
+            pattern_size,
             wrap_around_edges,
             allow_rotations,
         );
         println!("{} patterns", patterns.len());
-        let mut grid = Grid::new(grid_size, tile_size, option_size);
+        let mut grid = Grid::new(grid_size, tile_size, pattern_size);
         grid.cells.iter_mut().for_each(|cell| {
             cell.initiate_patterns(&patterns, wrap_around_edges);
         });
@@ -359,7 +365,7 @@ fn main() {
         &img,
         GRID_SIZE,
         TILE_SIZE,
-        OPTION_SIZE,
+        PATTERN_SIZE,
         WRAP_AROUND_EDGES,
         ALLOW_ROTATIONS,
     ) {
