@@ -1,21 +1,48 @@
 use image::DynamicImage;
 use image_hasher::HasherConfig;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-const OPTION_SIZE: (u32, u32) = (2, 2);
-const OFFSET: (u32, u32) = (OPTION_SIZE.0 / 2, OPTION_SIZE.1 / 2);
+const TILE_SIZE: (u32, u32) = (1, 1);
+const OPTION_SIZE: (u32, u32) = {
+    let n = 2;
+    (TILE_SIZE.0 * n, TILE_SIZE.1 * n)
+};
+const ALLOW_ROTATIONS: bool = true;
+const WRAP_AROUND_EDGES: bool = true;
 
-struct Option<'a> {
+struct Tile {
     image: DynamicImage,
-    count: u8,
-    hasher: &'a image_hasher::Hasher,
 }
-impl<'a> Option<'a> {
-    fn new(image: DynamicImage, hasher: &'a image_hasher::Hasher) -> Option {
-        return Option {
-            image: image,
+impl Tile {
+    fn new(image: DynamicImage) -> Tile {
+        return Tile { image: image };
+    }
+}
+impl std::hash::Hash for Tile {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        let hasher = HasherConfig::new().to_hasher();
+        let hash = hasher.hash_image(&self.image);
+        hash.hash(state);
+    }
+}
+impl PartialEq for Tile {
+    fn eq(&self, other: &Self) -> bool {
+        return self.image == other.image;
+    }
+}
+impl Eq for Tile {}
+
+struct Pattern {
+    tile: &'static Tile,
+    offset_tiles: HashMap<(i8, i8), &'static Tile>,
+    count: u32,
+}
+impl Pattern {
+    fn new(tile: &'static Tile, offset_tiles: HashMap<(i8, i8), &'static Tile>) -> Pattern {
+        return Pattern {
+            tile: tile,
+            offset_tiles: offset_tiles,
             count: 1,
-            hasher: hasher,
         };
     }
 
@@ -23,40 +50,90 @@ impl<'a> Option<'a> {
         self.count += 1;
     }
 }
-impl std::hash::Hash for Option<'_> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        let hash = self.hasher.hash_image(&self.image);
-        hash.hash(state);
-    }
-}
-impl PartialEq for Option<'_> {
+impl PartialEq for Pattern {
     fn eq(&self, other: &Self) -> bool {
-        let hash1 = self.hasher.hash_image(&self.image);
-        let hash2 = self.hasher.hash_image(&other.image);
-        return hash1 == hash2;
+        return self.tile == other.tile && self.offset_tiles == other.offset_tiles;
     }
 }
-impl Eq for Option<'_> {}
 
-struct Cell<'a> {
+struct Cell {
     x: u32,
     y: u32,
-    options: HashSet<Option<'a>>,
+    patterns: HashSet<Pattern>,
+    tile: Option<Tile>,
 }
-impl<'a> Cell<'a> {
+impl Cell {
     fn is_collapsed(&self) -> bool {
-        return false;
+        return self.tile.is_some();
     }
 }
 
-fn create_options(image: DynamicImage) -> HashSet<Option<'static>> {
-    let hasher = HasherConfig::new().to_hasher();
-    let mut set = HashSet::new();
-    return set;
+struct Grid {}
+
+fn create_grid(
+    image: DynamicImage,
+    tile_size: (u32, u32),
+    option_size: (u32, u32),
+    allow_rotations: bool,
+    wrap_around_edges: bool,
+) -> Result<Grid, String> {
+    if image.width() % tile_size.0 != 0 || image.height() % tile_size.1 != 0 {
+        return Err(format!(
+            "Image dimensions ({}x{}) are not divisible by the tile size ({}x{}).",
+            image.width(),
+            image.height(),
+            tile_size.0,
+            tile_size.1
+        ));
+    }
+    if option_size.0 % tile_size.0 != 0 || option_size.1 % tile_size.1 != 0 {
+        return Err(format!(
+            "Option size ({}x{}) is not divisible by the tile size ({}x{}).",
+            option_size.0, option_size.1, tile_size.0, tile_size.1
+        ));
+    }
+    if option_size.0 / tile_size.0 != option_size.1 / tile_size.1 {
+        return Err(format!(
+            "Option size ({}x{}) does not have the same aspect ratio as the tile size ({}x{}).",
+            option_size.0, option_size.1, tile_size.0, tile_size.1
+        ));
+    }
+    let patterns = create_patterns(
+        image,
+        tile_size,
+        option_size,
+        allow_rotations,
+        wrap_around_edges,
+    )?;
+
+    return Ok(Grid {});
+}
+
+fn create_patterns(
+    image: DynamicImage,
+    tile_size: (u32, u32),
+    option_size: (u32, u32),
+    allow_rotations: bool,
+    wrap_around_edges: bool,
+) -> Result<HashSet<Pattern>, String> {
+    return Ok(HashSet::new());
 }
 
 fn main() {
-    let input = image::open("input.png").unwrap();
-    let options = create_options(input);
-    println!("{:?}", options.len());
+    let hasher = HasherConfig::new().to_hasher();
+    let img = image::open("input.png").unwrap();
+    let grid = match create_grid(
+        img,
+        TILE_SIZE,
+        OPTION_SIZE,
+        ALLOW_ROTATIONS,
+        WRAP_AROUND_EDGES,
+    ) {
+        Ok(patterns) => patterns,
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
+        }
+    };
+    println!("woo done");
 }
