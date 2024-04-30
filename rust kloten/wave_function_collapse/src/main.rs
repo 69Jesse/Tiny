@@ -3,10 +3,7 @@ use image_hasher::HasherConfig;
 use std::collections::{HashMap, HashSet};
 
 const TILE_SIZE: (u32, u32) = (1, 1);
-const OPTION_SIZE: (u32, u32) = {
-    let n = 2;
-    (TILE_SIZE.0 * n, TILE_SIZE.1 * n)
-};
+const OPTION_SIZE: (u8, u8) = (2, 2);  // in amount of tiles, not pixels
 const ALLOW_ROTATIONS: bool = true;
 const WRAP_AROUND_EDGES: bool = true;
 
@@ -68,61 +65,62 @@ impl Cell {
     }
 }
 
-struct Grid {}
-
-fn create_grid(
-    image: DynamicImage,
-    tile_size: (u32, u32),
-    option_size: (u32, u32),
-    allow_rotations: bool,
-    wrap_around_edges: bool,
-) -> Result<Grid, String> {
-    if image.width() % tile_size.0 != 0 || image.height() % tile_size.1 != 0 {
-        return Err(format!(
-            "Image dimensions ({}x{}) are not divisible by the tile size ({}x{}).",
-            image.width(),
-            image.height(),
-            tile_size.0,
-            tile_size.1
-        ));
-    }
-    if option_size.0 % tile_size.0 != 0 || option_size.1 % tile_size.1 != 0 {
-        return Err(format!(
-            "Option size ({}x{}) is not divisible by the tile size ({}x{}).",
-            option_size.0, option_size.1, tile_size.0, tile_size.1
-        ));
-    }
-    if option_size.0 / tile_size.0 != option_size.1 / tile_size.1 {
-        return Err(format!(
-            "Option size ({}x{}) does not have the same aspect ratio as the tile size ({}x{}).",
-            option_size.0, option_size.1, tile_size.0, tile_size.1
-        ));
-    }
-    let patterns = create_patterns(
-        image,
-        tile_size,
-        option_size,
-        allow_rotations,
-        wrap_around_edges,
-    )?;
-
-    return Ok(Grid {});
-}
-
 fn create_patterns(
     image: DynamicImage,
     tile_size: (u32, u32),
-    option_size: (u32, u32),
+    option_size: (u8, u8),
     allow_rotations: bool,
     wrap_around_edges: bool,
 ) -> Result<HashSet<Pattern>, String> {
     return Ok(HashSet::new());
 }
 
+struct Grid {}
+impl Grid {
+    fn from_image(
+        image: DynamicImage,
+        tile_size: (u32, u32),
+        option_size: (u8, u8),
+        allow_rotations: bool,
+        wrap_around_edges: bool,
+    ) -> Result<Grid, String> {
+        if image.width() % tile_size.0 != 0 || image.height() % tile_size.1 != 0 {
+            return Err(format!(
+                "Image dimensions ({}x{}) are not divisible by the tile size ({}x{}).",
+                image.width(),
+                image.height(),
+                tile_size.0,
+                tile_size.1
+            ));
+        }
+        if option_size.0 as u32 % tile_size.0 != 0 || option_size.1 as u32 % tile_size.1 != 0 {
+            return Err(format!(
+                "Option size ({}x{}) is not divisible by the tile size ({}x{}).",
+                option_size.0, option_size.1, tile_size.0, tile_size.1
+            ));
+        }
+        if option_size.0 as u32 / tile_size.0 != option_size.1 as u32 / tile_size.1 {
+            return Err(format!(
+                "Option size ({}x{}) does not have the same aspect ratio as the tile size ({}x{}).",
+                option_size.0, option_size.1, tile_size.0, tile_size.1
+            ));
+        }
+        let patterns = create_patterns(
+            image,
+            tile_size,
+            option_size,
+            allow_rotations,
+            wrap_around_edges,
+        )?;
+    
+        return Ok(Grid {});
+    }
+}
+
 fn main() {
     let hasher = HasherConfig::new().to_hasher();
     let img = image::open("input.png").unwrap();
-    let grid = match create_grid(
+    let grid = match Grid::from_image(
         img,
         TILE_SIZE,
         OPTION_SIZE,
