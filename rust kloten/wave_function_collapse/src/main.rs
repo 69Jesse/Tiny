@@ -225,6 +225,7 @@ fn create_patterns(
             }
         }
     }
+    println!("{} patterns", patterns_map.len());
     patterns_map.values().cloned().collect()
 }
 
