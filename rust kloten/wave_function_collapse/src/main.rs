@@ -65,21 +65,17 @@ impl PartialEq for Pattern {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Copy)]
-struct CellPosition {
-    x: u32,
-    y: u32,
-}
-
 #[derive(Clone)]
 struct Cell {
-    position: CellPosition,
+    x: u32,
+    y: u32,
     patterns: Vec<Pattern>,
 }
 impl Cell {
     fn new(x: u32, y: u32) -> Cell {
         return Cell {
-            position: CellPosition { x: x, y: y },
+            x: x,
+            y: y,
             patterns: Vec::new(),
         };
     }
@@ -90,8 +86,8 @@ impl Cell {
         }
         for (dx, dy) in pattern.offset_tiles.keys() {
             let (x, y) = (
-                self.position.x as i32 + *dx as i32,
-                self.position.y as i32 + *dy as i32,
+                self.x as i32 + *dx as i32,
+                self.y as i32 + *dy as i32,
             );
             if x < 0 || y < 0 || x >= GRID_SIZE.0 as i32 || y >= GRID_SIZE.1 as i32 {
                 return false;
@@ -108,9 +104,6 @@ impl Cell {
             }
         }
         assert!(!self.patterns.is_empty());
-        if self.patterns.len() == 1 {
-            self.collapse();
-        }
     }
 
     fn collapse(&mut self) {
@@ -236,8 +229,8 @@ struct Grid {
 impl Grid {
     fn new(size: (u32, u32), tile_size: (u32, u32), pattern_size: (u8, u8)) -> Grid {
         let mut cells = Vec::new();
-        for x in 0..size.0 {
-            for y in 0..size.1 {
+        for y in 0..size.1 {
+            for x in 0..size.0 {
                 cells.push(Cell::new(x, y));
             }
         }
@@ -250,42 +243,54 @@ impl Grid {
         };
     }
 
-    fn lowest_entropy_cells(&mut self) -> Vec<&mut Cell> {
+    fn lowest_entropy_cell_positions(&self) -> Vec<(u32, u32)> {
         assert!(!self.is_solved());
         let mut lowest_entropy = u32::MAX - 1;
-        let mut cells = Vec::new();
-        for cell in &mut self.cells {
+        let mut cell_positions = Vec::new();
+        for cell in &self.cells {
             let entropy = cell.entropy();
             if entropy < lowest_entropy {
                 lowest_entropy = entropy;
-                cells.clear();
+                cell_positions.clear();
             }
             if entropy == lowest_entropy {
-                cells.push(cell);
+                cell_positions.push((cell.x, cell.y));
             }
         }
-        cells
+        cell_positions
     }
 
-    fn fetch_next_cell(&mut self) -> &mut Cell {
+    fn fetch_next_cell_position(&mut self) -> (u32, u32) {
         let mut rng = rand::thread_rng();
-        let mut cells = self.lowest_entropy_cells();
-        cells.swap_remove(rng.gen_range(0..cells.len()))
+        let mut cell_positions = self.lowest_entropy_cell_positions();
+        cell_positions.swap_remove(rng.gen_range(0..cell_positions.len()))
     }
 
     fn is_solved(&self) -> bool {
         self.cells.iter().all(|cell| cell.is_collapsed())
     }
 
+    fn get_cell_at(&self, x: u32, y: u32) -> &Cell {
+        &self.cells[(x + y * self.size.0) as usize]
+    }
+
+    fn get_mut_cell_at(&mut self, x: u32, y: u32) -> &mut Cell {
+        &mut self.cells[(x + y * self.size.0) as usize]
+    }
+
     fn iteration(&mut self) {
+        let (x, y) = self.fetch_next_cell_position();
+        let cell = self.get_mut_cell_at(x, y);
+        cell.collapse();
+
         let mut queue = VecDeque::new();
         let mut queue_set = HashSet::new();
-        let cell = self.fetch_next_cell();
-        cell.collapse();
-        queue_set.insert(cell.position);
-        queue.push_back(cell);
-        while let Some(cell) = queue.pop_front() {
-            queue_set.remove(&cell.position);
+        queue_set.insert((x, y));
+        queue.push_back((x, y));
+
+        while let Some((x, y)) = queue.pop_front() {
+            let cell = self.get_cell_at(x, y);
+            queue_set.remove(&(cell.x, cell.y));
             let mut allowed_tiles = HashMap::new();
             for pattern in &cell.patterns {
                 for ((dx, dy), tile) in &pattern.offset_tiles {
@@ -295,15 +300,22 @@ impl Grid {
                         .insert(tile);
                 }
             }
-            for i in (cell.patterns.len() - 1)..=0 {
-                let pattern = &cell.patterns[i];
-                for ((dx, dy), tile) in &pattern.offset_tiles {
-                    let (x, y) = (
-                        cell.position.x as i32 + *dx as i32,
-                        cell.position.y as i32 + *dy as i32,
-                    );
-                    let neighbour = &self.cells[(x as u32 + y as u32 * self.size.0) as usize];
-                }
+
+            // TODO idfk its late
+            // for pattern in &cell.patterns {
+            //     for ((dx, dy), tile) in &pattern.offset_tiles {
+            //         let (x, y) = (
+            //             (cell.x as i32 + *dx as i32).rem_euclid(self.size.0 as i32) as u32,
+            //             (cell.y as i32 + *dy as i32).rem_euclid(self.size.1 as i32) as u32,
+            //         );
+            //         let neighbour = self.get_mut_cell_at(x, y);
+            //         for i in (neighbour.patterns.len() - 1)..=0 {
+            //             let neighbour_pattern = &neighbour.patterns[i];
+            //             if !allowed_tiles[&(dx, dy)].contains(&neighbour_pattern.tile) {
+            //                 neighbour.patterns.swap_remove(i);
+            //             }
+            //         }
+            //     }
             }
         }
     }
@@ -325,8 +337,8 @@ impl Grid {
                 None => return Err("Not all cells have been collapsed.".to_string()),
             };
             let (x, y) = (
-                cell.position.x * self.tile_size.0,
-                cell.position.y * self.tile_size.1,
+                cell.x * self.tile_size.0,
+                cell.y * self.tile_size.1,
             );
             for dx in 0..self.tile_size.0 {
                 for dy in 0..self.tile_size.1 {
