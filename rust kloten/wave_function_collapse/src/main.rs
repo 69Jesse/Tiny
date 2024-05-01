@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::hash::Hash;
 
-const GRID_SIZE: (u32, u32) = (16, 16);
+const GRID_SIZE: (u32, u32) = (64, 64);
 const TILE_SIZE: (u32, u32) = (1, 1);
 const PATTERN_SIZE: (u8, u8) = {
     let n = 2;
@@ -59,11 +59,11 @@ impl fmt::Debug for Tile {
 #[derive(Clone, Debug)]
 struct Pattern {
     tile: Tile,
-    offset_tiles: HashMap<(i8, i8), Tile>,
+    offset_tiles: HashMap<(u8, u8), Tile>,
     count: u32,
 }
 impl Pattern {
-    fn new(tile: Tile, offset_tiles: HashMap<(i8, i8), Tile>) -> Pattern {
+    fn new(tile: Tile, offset_tiles: HashMap<(u8, u8), Tile>) -> Pattern {
         return Pattern {
             tile: tile,
             offset_tiles: offset_tiles,
@@ -122,8 +122,8 @@ impl Cell {
             return true;
         }
         for (dx, dy) in pattern.offset_tiles.keys() {
-            let (x, y) = (self.x as i32 + *dx as i32, self.y as i32 + *dy as i32);
-            if x < 0 || y < 0 || x >= GRID_SIZE.0 as i32 || y >= GRID_SIZE.1 as i32 {
+            let (x, y) = (self.x as i64 + *dx as i64, self.y as i64 + *dy as i64);
+            if x < 0 || y < 0 || x >= GRID_SIZE.0 as i64 || y >= GRID_SIZE.1 as i64 {
                 return false;
             }
         }
@@ -213,20 +213,20 @@ fn create_patterns(
                     if dx == 0 && dy == 0 {
                         continue;
                     }
-                    let (tx, ty) = ((x as i32 + dx as i32), (y as i32 + dy as i32));
+                    let (tx, ty) = ((x as i64 + dx as i64), (y as i64 + dy as i64));
                     if !wrap_around_edges
                         && (tx < 0
                             || ty < 0
-                            || tx >= image.width() as i32
-                            || ty >= image.height() as i32)
+                            || tx >= image.width() as i64
+                            || ty >= image.height() as i64)
                     {
                         continue;
                     }
                     let (tx, ty) = (
-                        tx.rem_euclid((image.width() / tile_size.0) as i32) as u32,
-                        ty.rem_euclid((image.height() / tile_size.1) as i32) as u32,
+                        tx.rem_euclid((image.width() / tile_size.0) as i64) as u32,
+                        ty.rem_euclid((image.height() / tile_size.1) as i64) as u32,
                     );
-                    offset_tiles.insert((dx as i8, dy as i8), tiles[&(tx, ty)].clone());
+                    offset_tiles.insert((dx, dy), tiles[&(tx, ty)].clone());
                 }
             }
             assert!(if wrap_around_edges {
@@ -249,9 +249,10 @@ struct Grid {
     size: (u32, u32),
     cells: Vec<Cell>,
     tile_size: (u32, u32),
+    pattern_size: (u8, u8),
 }
 impl Grid {
-    fn new(size: (u32, u32), tile_size: (u32, u32)) -> Grid {
+    fn new(size: (u32, u32), tile_size: (u32, u32), pattern_size: (u8, u8)) -> Grid {
         let mut cells = Vec::new();
         for y in 0..size.1 {
             for x in 0..size.0 {
@@ -262,6 +263,7 @@ impl Grid {
             size: size,
             cells: cells,
             tile_size: tile_size,
+            pattern_size: pattern_size,
         };
     }
 
@@ -305,6 +307,19 @@ impl Grid {
         &mut self.cells[(x + y * self.size.0) as usize]
     }
 
+    fn insert_into_queue(
+        queue: &mut VecDeque<(u32, u32)>,
+        queue_set: &mut HashSet<(u32, u32)>,
+        x: u32,
+        y: u32,
+    ) {
+        if queue_set.contains(&(x, y)) {
+            return;
+        }
+        queue_set.insert((x, y));
+        queue.push_back((x, y));
+    }
+
     fn iteration(&mut self) {
         let (x, y) = self.fetch_next_cell_position();
         self.collapse_cell(x, y);
@@ -319,6 +334,10 @@ impl Grid {
             queue_set.remove(&(cell.x, cell.y));
             let mut all_allowed_tiles = HashMap::new();
             for pattern in &cell.patterns {
+                all_allowed_tiles
+                    .entry((&0, &0))
+                    .or_insert_with(HashSet::new)
+                    .insert(&pattern.tile);
                 for ((dx, dy), tile) in &pattern.offset_tiles {
                     all_allowed_tiles
                         .entry((dx, dy))
@@ -327,27 +346,46 @@ impl Grid {
                 }
             }
 
-            for pattern in &cell.patterns {
-                for (dx, dy) in pattern.offset_tiles.keys() {
+            for dx in 0..self.pattern_size.0 {
+                for dy in 0..self.pattern_size.1 {
                     let (x, y) = (
-                        (cell.x as i32 + *dx as i32).rem_euclid(self.size.0 as i32) as u32,
-                        (cell.y as i32 + *dy as i32).rem_euclid(self.size.1 as i32) as u32,
+                        (cell.x as i64 + dx as i64).rem_euclid(self.size.0 as i64) as u32,
+                        (cell.y as i64 + dy as i64).rem_euclid(self.size.1 as i64) as u32,
                     );
                     let neighbour = self.get_mut_cell_at(x, y);
-                    // if neighbour.is_collapsed() {
-                    //     continue;
-                    // }  // should not be necessary
-                    let allowed_tiles = &all_allowed_tiles[&(dx, dy)];
+                    let allowed_tiles = &all_allowed_tiles[&(&dx, &dy)];
                     for neighbour_pattern in neighbour.patterns.clone() {
                         if allowed_tiles.contains(&neighbour_pattern.tile) {
                             continue;
                         }
                         neighbour.patterns.remove(&neighbour_pattern);
-                        if queue_set.contains(&(x, y)) {
+                        Self::insert_into_queue(&mut queue, &mut queue_set, x, y);
+                    }
+                }
+            }
+
+            for dx in -(self.pattern_size.0 as i16 - 1)..=0 {
+                for dy in -(self.pattern_size.1 as i16 - 1)..=0 {
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
+                    let (x, y) = (
+                        (cell.x as i64 + dx as i64).rem_euclid(self.size.0 as i64) as u32,
+                        (cell.y as i64 + dy as i64).rem_euclid(self.size.1 as i64) as u32,
+                    );
+                    let neighbour = self.get_mut_cell_at(x, y);
+                    let allowed_tiles = &all_allowed_tiles[&(&0, &0)];
+                    for neighbour_pattern in neighbour.patterns.clone() {
+                        let (neighbour_dx, neighbour_dy) = (-dx as u8, -dy as u8);
+                        let tile = neighbour_pattern
+                            .offset_tiles
+                            .get(&(neighbour_dx, neighbour_dy))
+                            .unwrap();
+                        if allowed_tiles.contains(tile) {
                             continue;
                         }
-                        queue_set.insert((x, y));
-                        queue.push_back((x, y));
+                        neighbour.patterns.remove(&neighbour_pattern);
+                        Self::insert_into_queue(&mut queue, &mut queue_set, x, y);
                     }
                 }
             }
@@ -364,20 +402,20 @@ impl Grid {
 
     fn visualize(&self) {
         self.create_image().unwrap().save("output.png").unwrap();
-        println!("\nVisualisation:");
-        for y in 0..self.size.1 {
-            for x in 0..self.size.0 {
-                let cell = self.get_cell_at(x, y);
-                let symbol = if cell.is_collapsed() {
-                    String::from(".X.")
-                } else {
-                    // len of cell.patterns as string
-                    format!("{:03}", cell.patterns.len())
-                };
-                print!("{} ", symbol);
-            }
-            println!();
-        }
+        // println!("\nVisualisation:");
+        // for y in 0..self.size.1 {
+        //     for x in 0..self.size.0 {
+        //         let cell = self.get_cell_at(x, y);
+        //         let symbol = if cell.is_collapsed() {
+        //             String::from(".X.")
+        //         } else {
+        //             // len of cell.patterns as string
+        //             format!("{:03}", cell.patterns.len())
+        //         };
+        //         print!("{} ", symbol);
+        //     }
+        //     println!();
+        // }
     }
 
     fn create_image(&self) -> Result<RgbImage, String> {
@@ -445,7 +483,7 @@ impl Grid {
             allow_rotations,
         );
         println!("{} patterns", patterns.len());
-        let mut grid = Grid::new(grid_size, tile_size);
+        let mut grid = Grid::new(grid_size, tile_size, pattern_size);
         grid.cells.iter_mut().for_each(|cell| {
             cell.initiate_patterns(&patterns, wrap_around_edges);
         });
@@ -454,7 +492,7 @@ impl Grid {
 }
 
 fn main() {
-    let img = image::open("input2.png").unwrap().to_rgb8();
+    let img = image::open("input.png").unwrap().to_rgb8();
     let mut grid = match Grid::from_image(
         &img,
         GRID_SIZE,
