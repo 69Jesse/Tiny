@@ -5,10 +5,10 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::hash::Hash;
 
-const GRID_SIZE: (u32, u32) = (64, 64);
+const GRID_SIZE: (u32, u32) = (32, 32);
 const TILE_SIZE: (u32, u32) = (1, 1);
 const PATTERN_SIZE: (u8, u8) = {
-    let n = 2;
+    let n = 3;
     (n, n)
 }; // in amount of tiles, not pixels
 const WRAP_AROUND_EDGES: bool = true;
@@ -492,7 +492,7 @@ impl Grid {
 }
 
 fn main() {
-    let img = image::open("input.png").unwrap().to_rgb8();
+    let img = image::open("input4.png").unwrap().to_rgb8();
     let mut grid = match Grid::from_image(
         &img,
         GRID_SIZE,
