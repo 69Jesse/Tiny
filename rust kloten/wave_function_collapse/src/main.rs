@@ -59,24 +59,35 @@ impl Pattern {
         self.count += 1;
     }
 }
+impl Hash for Pattern {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.tile.hash(state);
+        for (dx, dy) in self.offset_tiles.keys() {
+            dx.hash(state);
+            dy.hash(state);
+            self.offset_tiles[&(*dx, *dy)].hash(state);
+        }
+    }
+}
 impl PartialEq for Pattern {
     fn eq(&self, other: &Self) -> bool {
         return self.tile == other.tile && self.offset_tiles == other.offset_tiles;
     }
 }
+impl Eq for Pattern {}
 
 #[derive(Clone)]
 struct Cell {
     x: u32,
     y: u32,
-    patterns: Vec<Pattern>,
+    patterns: HashSet<Pattern>,
 }
 impl Cell {
     fn new(x: u32, y: u32) -> Cell {
         return Cell {
             x: x,
             y: y,
-            patterns: Vec::new(),
+            patterns: HashSet::new(),
         };
     }
 
@@ -96,11 +107,11 @@ impl Cell {
         return true;
     }
 
-    fn initiate_patterns(&mut self, patterns: &Vec<Pattern>, wrap_around_edges: bool) {
+    fn initiate_patterns(&mut self, patterns: &HashSet<Pattern>, wrap_around_edges: bool) {
         assert!(self.patterns.is_empty());
         for pattern in patterns {
             if self.pattern_in_bounds(pattern, wrap_around_edges) {
-                self.patterns.push(pattern.clone());
+                self.patterns.insert(pattern.clone());
             }
         }
         assert!(!self.patterns.is_empty());
@@ -109,16 +120,16 @@ impl Cell {
     fn collapse(&mut self) {
         assert!(!self.is_collapsed());
         assert!(self.patterns.len() > 0);
-        let weights = self
-            .patterns
+        let mut patterns: Vec<Pattern> = self.patterns.iter().cloned().collect();
+        let weights = patterns
             .iter()
             .map(|pattern| pattern.count)
             .collect::<Vec<u32>>();
         let mut rng = rand::thread_rng();
         let index = WeightedIndex::new(&weights).unwrap().sample(&mut rng);
-        let pattern = self.patterns.swap_remove(index);
+        let pattern = patterns.swap_remove(index);
         self.patterns.clear();
-        self.patterns.push(pattern);
+        self.patterns.insert(pattern);
     }
 
     fn is_collapsed(&self) -> bool {
@@ -127,7 +138,7 @@ impl Cell {
 
     fn get_tile(&self) -> Option<&Tile> {
         if self.is_collapsed() {
-            Some(&self.patterns[0].tile)
+            Some(&self.patterns.iter().next().unwrap().tile)
         } else {
             None
         }
@@ -164,8 +175,8 @@ fn create_patterns(
     pattern_size: (u8, u8),
     wrap_around_edges: bool,
     allow_rotations: bool, // TODO
-) -> Vec<Pattern> {
-    let mut patterns: Vec<Pattern> = Vec::new();
+) -> HashSet<Pattern> {
+    let mut patterns_map = HashMap::new();
     for x in 0..image.width() / tile_size.0 {
         for y in 0..image.height() / tile_size.1 {
             let tile = tiles[&(x, y)].clone();
@@ -205,18 +216,16 @@ fn create_patterns(
                         offset_tiles.len() <= (pattern_size.0 * pattern_size.1 - 1) as usize
                     });
                     let pattern = Pattern::new(tile.clone(), offset_tiles);
-                    for existing_pattern in &mut patterns {
-                        if *existing_pattern == pattern {
-                            existing_pattern.increment();
-                            continue 'new_pattern;
-                        }
+                    if !patterns_map.contains_key(&pattern) {
+                        patterns_map.insert(pattern.clone(), pattern);
+                        continue 'new_pattern;
                     }
-                    patterns.push(pattern);
+                    patterns_map.get_mut(&pattern).unwrap().increment();
                 }
             }
         }
     }
-    patterns
+    patterns_map.values().cloned().collect()
 }
 
 struct Grid {
@@ -316,7 +325,7 @@ impl Grid {
             //             }
             //         }
             //     }
-            }
+            // }
         }
     }
 
@@ -395,7 +404,7 @@ impl Grid {
 }
 
 fn main() {
-    let img = image::open("input.png").unwrap().to_rgb8();
+    let img = image::open("input2.png").unwrap().to_rgb8();
     let mut grid = match Grid::from_image(
         &img,
         GRID_SIZE,
