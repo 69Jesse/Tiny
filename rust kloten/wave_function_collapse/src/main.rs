@@ -65,17 +65,21 @@ impl PartialEq for Pattern {
     }
 }
 
-#[derive(Clone)]
-struct Cell {
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Copy)]
+struct CellPosition {
     x: u32,
     y: u32,
+}
+
+#[derive(Clone)]
+struct Cell {
+    position: CellPosition,
     patterns: Vec<Pattern>,
 }
 impl Cell {
     fn new(x: u32, y: u32) -> Cell {
         return Cell {
-            x: x,
-            y: y,
+            position: CellPosition { x: x, y: y },
             patterns: Vec::new(),
         };
     }
@@ -85,7 +89,10 @@ impl Cell {
             return true;
         }
         for (dx, dy) in pattern.offset_tiles.keys() {
-            let (x, y) = (self.x as i32 + *dx as i32, self.y as i32 + *dy as i32);
+            let (x, y) = (
+                self.position.x as i32 + *dx as i32,
+                self.position.y as i32 + *dy as i32,
+            );
             if x < 0 || y < 0 || x >= GRID_SIZE.0 as i32 || y >= GRID_SIZE.1 as i32 {
                 return false;
             }
@@ -260,7 +267,7 @@ impl Grid {
         cells
     }
 
-    fn collapse_random_cell(&mut self) -> &mut Cell {
+    fn fetch_next_cell(&mut self) -> &mut Cell {
         let mut rng = rand::thread_rng();
         let mut cells = self.lowest_entropy_cells();
         cells.swap_remove(rng.gen_range(0..cells.len()))
@@ -272,10 +279,13 @@ impl Grid {
 
     fn iteration(&mut self) {
         let mut queue = VecDeque::new();
-        let cell = self.collapse_random_cell();
+        let mut queue_set = HashSet::new();
+        let cell = self.fetch_next_cell();
         cell.collapse();
+        queue_set.insert(cell.position);
         queue.push_back(cell);
         while let Some(cell) = queue.pop_front() {
+            queue_set.remove(&cell.position);
             let mut allowed_tiles = HashMap::new();
             for pattern in &cell.patterns {
                 for ((dx, dy), tile) in &pattern.offset_tiles {
@@ -283,6 +293,16 @@ impl Grid {
                         .entry((dx, dy))
                         .or_insert_with(HashSet::new)
                         .insert(tile);
+                }
+            }
+            for i in (cell.patterns.len() - 1)..=0 {
+                let pattern = &cell.patterns[i];
+                for ((dx, dy), tile) in &pattern.offset_tiles {
+                    let (x, y) = (
+                        cell.position.x as i32 + *dx as i32,
+                        cell.position.y as i32 + *dy as i32,
+                    );
+                    let neighbour = &self.cells[(x as u32 + y as u32 * self.size.0) as usize];
                 }
             }
         }
@@ -304,7 +324,10 @@ impl Grid {
                 Some(tile) => tile,
                 None => return Err("Not all cells have been collapsed.".to_string()),
             };
-            let (x, y) = (cell.x * self.tile_size.0, cell.y * self.tile_size.1);
+            let (x, y) = (
+                cell.position.x * self.tile_size.0,
+                cell.position.y * self.tile_size.1,
+            );
             for dx in 0..self.tile_size.0 {
                 for dy in 0..self.tile_size.1 {
                     image.put_pixel(
