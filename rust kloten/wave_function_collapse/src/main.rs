@@ -1,11 +1,11 @@
-use image::{GenericImageView, RgbImage};
+use image::{GenericImageView, Rgb, RgbImage};
 use rand::distributions::{Distribution, WeightedIndex};
 use rand::{self, Rng};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt;
 use std::hash::Hash;
 
-const GRID_SIZE: (u32, u32) = (2, 2);
+const GRID_SIZE: (u32, u32) = (16, 16);
 const TILE_SIZE: (u32, u32) = (1, 1);
 const PATTERN_SIZE: (u8, u8) = {
     let n = 2;
@@ -300,6 +300,11 @@ impl Grid {
         self.cells.iter().all(|cell| cell.is_collapsed())
     }
 
+    fn collapse_cell(&mut self, x: u32, y: u32) {
+        let cell = self.get_mut_cell_at(x, y);
+        cell.collapse();
+    }
+
     fn get_cell_at(&self, x: u32, y: u32) -> &Cell {
         &self.cells[(x + y * self.size.0) as usize]
     }
@@ -310,8 +315,7 @@ impl Grid {
 
     fn iteration(&mut self) {
         let (x, y) = self.fetch_next_cell_position();
-        let cell = self.get_mut_cell_at(x, y);
-        cell.collapse();
+        self.collapse_cell(x, y);
 
         let mut queue = VecDeque::new();
         let mut queue_set = HashSet::new();
@@ -338,6 +342,9 @@ impl Grid {
                         (cell.y as i32 + *dy as i32).rem_euclid(self.size.1 as i32) as u32,
                     );
                     let neighbour = self.get_mut_cell_at(x, y);
+                    if neighbour.is_collapsed() {
+                        continue;
+                    }
                     let allowed_tiles = &all_allowed_tiles[&(dx, dy)];
                     for neighbour_pattern in neighbour.patterns.clone() {
                         if allowed_tiles.contains(&neighbour_pattern.tile) {
@@ -357,7 +364,27 @@ impl Grid {
 
     fn solve(&mut self) {
         while !self.is_solved() {
+            self.visualize();
             self.iteration();
+        }
+        self.visualize();
+    }
+
+    fn visualize(&self) {
+        self.create_image().unwrap().save("output.png").unwrap();
+        println!("\nVisualisation:");
+        for y in 0..self.size.1 {
+            for x in 0..self.size.0 {
+                let cell = self.get_cell_at(x, y);
+                let symbol = if cell.is_collapsed() {
+                    String::from(".X.")
+                } else {
+                    // len of cell.patterns as string
+                    format!("{:03}", cell.patterns.len())
+                };
+                print!("{} ", symbol);
+            }
+            println!();
         }
     }
 
@@ -367,21 +394,29 @@ impl Grid {
             self.size.1 * self.tile_size.1,
         );
         for cell in &self.cells {
-            let tile = match cell.get_tile() {
-                Some(tile) => tile,
-                None => return Err("Not all cells have been collapsed.".to_string()),
-            };
-            let (x, y) = (
-                cell.x * self.tile_size.0,
-                cell.y * self.tile_size.1,
-            );
-            for dx in 0..self.tile_size.0 {
-                for dy in 0..self.tile_size.1 {
-                    image.put_pixel(
-                        (x + dx) as u32,
-                        (y + dy) as u32,
-                        tile.image.get_pixel(dx, dy).clone(),
-                    );
+            if cell.is_collapsed() {
+                let tile = match cell.get_tile() {
+                    Some(tile) => tile,
+                    None => return Err("Not all cells have been collapsed.".to_string()),
+                };
+                let (x, y) = (
+                    cell.x * self.tile_size.0,
+                    cell.y * self.tile_size.1,
+                );
+                for dx in 0..self.tile_size.0 {
+                    for dy in 0..self.tile_size.1 {
+                        image.put_pixel(
+                            (x + dx) as u32,
+                            (y + dy) as u32,
+                            tile.image.get_pixel(dx, dy).clone(),
+                        );
+                    }
+                }
+            } else {
+                for x in 0..self.tile_size.0 {
+                    for y in 0..self.tile_size.1 {
+                        image.put_pixel(x, y, Rgb([0, 0, 0]));
+                    }
                 }
             }
         }
