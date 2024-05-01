@@ -35,7 +35,8 @@ impl Hash for Tile {
 impl PartialEq for Tile {
     fn eq(&self, other: &Self) -> bool {
         // TODO
-        if self.image.width() != other.image.width() || self.image.height() != other.image.height() {
+        if self.image.width() != other.image.width() || self.image.height() != other.image.height()
+        {
             return false;
         }
         for x in 0..self.image.width() {
@@ -93,9 +94,9 @@ impl PartialEq for Pattern {
             self_keys.sort();
             other_keys.sort();
             self_keys == other_keys
-                && self_keys.iter().all(|key| {
-                    self.offset_tiles[key] == other.offset_tiles[key]
-                })
+                && self_keys
+                    .iter()
+                    .all(|key| self.offset_tiles[key] == other.offset_tiles[key])
         };
     }
 }
@@ -121,10 +122,7 @@ impl Cell {
             return true;
         }
         for (dx, dy) in pattern.offset_tiles.keys() {
-            let (x, y) = (
-                self.x as i32 + *dx as i32,
-                self.y as i32 + *dy as i32,
-            );
+            let (x, y) = (self.x as i32 + *dx as i32, self.y as i32 + *dy as i32);
             if x < 0 || y < 0 || x >= GRID_SIZE.0 as i32 || y >= GRID_SIZE.1 as i32 {
                 return false;
             }
@@ -207,47 +205,41 @@ fn create_patterns(
             let tile = tiles[&(x, y)].clone();
             // O(pattern_size.0 ** 2 * pattern_size.1 ** 2) from here on out
             // size should be very small, its not as bad as it looks
-            for dx in -(pattern_size.0 as i8) + 1..=0 {
-                'new_pattern: for dy in -(pattern_size.1 as i8) + 1..=0 {
-                    let mut offset_tiles = HashMap::new();
-                    for ddx in 0..pattern_size.0 {
-                        for ddy in 0..pattern_size.1 {
-                            if ddx == 0 && ddy == 0 {
-                                continue;
-                            }
-                            let (tx, ty) = (
-                                (x as i32 + dx as i32 + ddx as i32),
-                                (y as i32 + dy as i32 + ddy as i32),
-                            );
-                            if !wrap_around_edges
-                                && (tx < 0
-                                    || ty < 0
-                                    || tx >= image.width() as i32
-                                    || ty >= image.height() as i32)
-                            {
-                                continue 'new_pattern;
-                            }
-                            let (tx, ty) = (
-                                tx.rem_euclid((image.width() / tile_size.0) as i32) as u32,
-                                ty.rem_euclid((image.height() / tile_size.1) as i32) as u32,
-                            );
-                            offset_tiles
-                                .insert((dx + ddx as i8, dy + ddy as i8), tiles[&(tx, ty)].clone());
-                        }
+            // for dx in -(pattern_size.0 as i8) + 1..=0 {
+            //     'new_pattern: for dy in -(pattern_size.1 as i8) + 1..=0 {
+            let mut offset_tiles = HashMap::new();
+            for dx in 0..pattern_size.0 {
+                for dy in 0..pattern_size.1 {
+                    if dx == 0 && dy == 0 {
+                        continue;
                     }
-                    assert!(if wrap_around_edges {
-                        offset_tiles.len() == (pattern_size.0 * pattern_size.1 - 1) as usize
-                    } else {
-                        offset_tiles.len() <= (pattern_size.0 * pattern_size.1 - 1) as usize
-                    });
-                    let pattern = Pattern::new(tile.clone(), offset_tiles);
-                    if !patterns_map.contains_key(&pattern) {
-                        patterns_map.insert(pattern.clone(), pattern);
-                        continue 'new_pattern;
+                    let (tx, ty) = ((x as i32 + dx as i32), (y as i32 + dy as i32));
+                    if !wrap_around_edges
+                        && (tx < 0
+                            || ty < 0
+                            || tx >= image.width() as i32
+                            || ty >= image.height() as i32)
+                    {
+                        continue;
                     }
-                    patterns_map.get_mut(&pattern).unwrap().increment();
+                    let (tx, ty) = (
+                        tx.rem_euclid((image.width() / tile_size.0) as i32) as u32,
+                        ty.rem_euclid((image.height() / tile_size.1) as i32) as u32,
+                    );
+                    offset_tiles.insert((dx as i8, dy as i8), tiles[&(tx, ty)].clone());
                 }
             }
+            assert!(if wrap_around_edges {
+                offset_tiles.len() == (pattern_size.0 * pattern_size.1 - 1) as usize
+            } else {
+                offset_tiles.len() <= (pattern_size.0 * pattern_size.1 - 1) as usize
+            });
+            let pattern = Pattern::new(tile.clone(), offset_tiles);
+            if !patterns_map.contains_key(&pattern) {
+                patterns_map.insert(pattern.clone(), pattern);
+                continue;
+            }
+            patterns_map.get_mut(&pattern).unwrap().increment();
         }
     }
     patterns_map.values().cloned().collect()
@@ -342,9 +334,9 @@ impl Grid {
                         (cell.y as i32 + *dy as i32).rem_euclid(self.size.1 as i32) as u32,
                     );
                     let neighbour = self.get_mut_cell_at(x, y);
-                    if neighbour.is_collapsed() {
-                        continue;
-                    }
+                    // if neighbour.is_collapsed() {
+                    //     continue;
+                    // }  // should not be necessary
                     let allowed_tiles = &all_allowed_tiles[&(dx, dy)];
                     for neighbour_pattern in neighbour.patterns.clone() {
                         if allowed_tiles.contains(&neighbour_pattern.tile) {
@@ -399,10 +391,7 @@ impl Grid {
                     Some(tile) => tile,
                     None => return Err("Not all cells have been collapsed.".to_string()),
                 };
-                let (x, y) = (
-                    cell.x * self.tile_size.0,
-                    cell.y * self.tile_size.1,
-                );
+                let (x, y) = (cell.x * self.tile_size.0, cell.y * self.tile_size.1);
                 for dx in 0..self.tile_size.0 {
                     for dy in 0..self.tile_size.1 {
                         image.put_pixel(
@@ -465,7 +454,7 @@ impl Grid {
 }
 
 fn main() {
-    let img = image::open("input.png").unwrap().to_rgb8();
+    let img = image::open("input2.png").unwrap().to_rgb8();
     let mut grid = match Grid::from_image(
         &img,
         GRID_SIZE,
