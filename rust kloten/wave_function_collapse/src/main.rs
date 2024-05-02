@@ -203,10 +203,6 @@ fn create_patterns(
     for x in 0..image.width() / tile_size.0 {
         for y in 0..image.height() / tile_size.1 {
             let tile = tiles[&(x, y)].clone();
-            // O(pattern_size.0 ** 2 * pattern_size.1 ** 2) from here on out
-            // size should be very small, its not as bad as it looks
-            // for dx in -(pattern_size.0 as i8) + 1..=0 {
-            //     'new_pattern: for dy in -(pattern_size.1 as i8) + 1..=0 {
             let mut offset_tiles = HashMap::new();
             for dx in 0..pattern_size.0 {
                 for dy in 0..pattern_size.1 {
