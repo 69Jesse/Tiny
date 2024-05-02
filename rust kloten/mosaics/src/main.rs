@@ -2,13 +2,13 @@ use image::{DynamicImage, GenericImage, GenericImageView, Pixel};
 use std::{cmp, error::Error, fs, path::PathBuf};
 
 const CELL_SIZE: (u32, u32) = {
-    let n = 16;
+    let n = 64;
     (n, n)
 };
 const MAX_GRID_SIZE: (u32, u32) = {
-    let n = 128;
+    let n = 64;
     (n, n)
-};
+};  // in cells
 
 #[allow(dead_code)]
 enum ComparisonMethod {
@@ -186,6 +186,7 @@ impl Grid {
                 )
             }
         };
+        println!("Grid size: {:?}", grid_size);
         assert!(grid_size.0 <= MAX_GRID_SIZE.0 && grid_size.1 <= MAX_GRID_SIZE.1);
         let img = img.resize_exact(
             grid_size.0 * CELL_SIZE.0,
@@ -244,7 +245,7 @@ impl Grid {
 }
 
 fn fetch_mosaics(method: &ComparisonMethod) -> Result<Vec<Mosaic>, Box<dyn Error>> {
-    let paths = fs::read_dir("./mosaics/")?;
+    let paths = fs::read_dir("./faces/")?;
     let mut mosaics = Vec::new();
     for path in paths {
         let path = path.unwrap().path();
@@ -262,17 +263,17 @@ fn fetch_mosaics(method: &ComparisonMethod) -> Result<Vec<Mosaic>, Box<dyn Error
 }
 
 fn main() {
-    let method = ComparisonMethod::Average;
+    let method = ComparisonMethod::Euclidean;
     let mosaics = match fetch_mosaics(&method) {
         Ok(mosaics) => mosaics,
         Err(e) => {
-            eprintln!("Could not get fetch: {}", e);
+            eprintln!("Could not fetch mosaics: {}", e);
             return;
         }
     };
     let mosaic_references: Vec<&Mosaic> = mosaics.iter().collect();
 
-    let grid = match Grid::from_image(PathBuf::from("./bogdan.png"), &method) {
+    let grid = match Grid::from_image(PathBuf::from("./input.png"), &method) {
         Ok(grid) => grid,
         Err(e) => {
             eprintln!("Could not create grid: {}", e);
