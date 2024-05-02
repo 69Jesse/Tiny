@@ -402,20 +402,20 @@ impl Grid {
 
     fn visualize(&self) {
         self.create_image().unwrap().save("output.png").unwrap();
-        // println!("\nVisualisation:");
-        // for y in 0..self.size.1 {
-        //     for x in 0..self.size.0 {
-        //         let cell = self.get_cell_at(x, y);
-        //         let symbol = if cell.is_collapsed() {
-        //             String::from(".X.")
-        //         } else {
-        //             // len of cell.patterns as string
-        //             format!("{:03}", cell.patterns.len())
-        //         };
-        //         print!("{} ", symbol);
-        //     }
-        //     println!();
-        // }
+        println!("\nVisualisation:");
+        for y in 0..self.size.1 {
+            for x in 0..self.size.0 {
+                let cell = self.get_cell_at(x, y);
+                let symbol = if cell.is_collapsed() {
+                    String::from(".X.")
+                } else {
+                    // len of cell.patterns as string
+                    format!("{:03}", cell.patterns.len())
+                };
+                print!("{} ", symbol);
+            }
+            println!();
+        }
     }
 
     fn create_image(&self) -> Result<RgbImage, String> {
@@ -492,7 +492,7 @@ impl Grid {
 }
 
 fn main() {
-    let img = image::open("input4.png").unwrap().to_rgb8();
+    let img = image::open("input5.png").unwrap().to_rgb8();
     let mut grid = match Grid::from_image(
         &img,
         GRID_SIZE,

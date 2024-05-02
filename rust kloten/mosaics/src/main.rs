@@ -6,7 +6,7 @@ const CELL_SIZE: (u32, u32) = {
     (n, n)
 };
 const MAX_GRID_SIZE: (u32, u32) = {
-    let n = 512;
+    let n = 128;
     (n, n)
 };
 
@@ -262,7 +262,7 @@ fn fetch_mosaics(method: &ComparisonMethod) -> Result<Vec<Mosaic>, Box<dyn Error
 }
 
 fn main() {
-    let method = ComparisonMethod::Euclidean;
+    let method = ComparisonMethod::Average;
     let mosaics = match fetch_mosaics(&method) {
         Ok(mosaics) => mosaics,
         Err(e) => {
@@ -272,7 +272,7 @@ fn main() {
     };
     let mosaic_references: Vec<&Mosaic> = mosaics.iter().collect();
 
-    let grid = match Grid::from_image(PathBuf::from("./input.png"), &method) {
+    let grid = match Grid::from_image(PathBuf::from("./bogdan.png"), &method) {
         Ok(grid) => grid,
         Err(e) => {
             eprintln!("Could not create grid: {}", e);
