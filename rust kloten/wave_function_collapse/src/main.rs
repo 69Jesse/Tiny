@@ -107,6 +107,7 @@ struct Cell {
     x: u32,
     y: u32,
     patterns: HashSet<Pattern>,
+    initial_pattern_count: u32,
 }
 impl Cell {
     fn new(x: u32, y: u32) -> Cell {
@@ -114,6 +115,7 @@ impl Cell {
             x: x,
             y: y,
             patterns: HashSet::new(),
+            initial_pattern_count: 0,
         };
     }
 
@@ -137,10 +139,11 @@ impl Cell {
                 self.patterns.insert(pattern.clone());
             }
         }
+        self.initial_pattern_count = self.patterns.len() as u32;
         assert!(!self.patterns.is_empty());
     }
 
-    fn collapse(&mut self) {
+    fn collapse(&mut self) -> HashSet<Pattern> {
         assert!(!self.is_collapsed());
         assert!(self.patterns.len() > 0);
         let mut patterns: Vec<Pattern> = self.patterns.iter().cloned().collect();
@@ -151,8 +154,10 @@ impl Cell {
         let mut rng = rand::thread_rng();
         let index = WeightedIndex::new(&weights).unwrap().sample(&mut rng);
         let pattern = patterns.swap_remove(index);
+        let old_patterns = self.patterns.clone();
         self.patterns.clear();
         self.patterns.insert(pattern);
+        return old_patterns;
     }
 
     fn is_collapsed(&self) -> bool {
@@ -246,6 +251,11 @@ struct Grid {
     cells: Vec<Cell>,
     tile_size: (u32, u32),
     pattern_size: (u8, u8),
+    history: Vec<(
+        (u32, u32),
+        HashSet<Pattern>,
+        HashMap<(u32, u32), HashSet<Pattern>>,
+    )>,
 }
 impl Grid {
     fn new(size: (u32, u32), tile_size: (u32, u32), pattern_size: (u8, u8)) -> Grid {
@@ -260,6 +270,7 @@ impl Grid {
             cells: cells,
             tile_size: tile_size,
             pattern_size: pattern_size,
+            history: Vec::new(),
         };
     }
 
@@ -290,11 +301,6 @@ impl Grid {
         self.cells.iter().all(|cell| cell.is_collapsed())
     }
 
-    fn collapse_cell(&mut self, x: u32, y: u32) {
-        let cell = self.get_mut_cell_at(x, y);
-        cell.collapse();
-    }
-
     fn get_cell_at(&self, x: u32, y: u32) -> &Cell {
         &self.cells[(x + y * self.size.0) as usize]
     }
@@ -316,9 +322,33 @@ impl Grid {
         queue.push_back((x, y));
     }
 
+    fn backtrack(&mut self) {
+        println!("Backtracking...");
+    }
+
     fn iteration(&mut self) {
         let (x, y) = self.fetch_next_cell_position();
-        self.collapse_cell(x, y);
+
+        let mut history_entry = {
+            match match self.history.last() {
+                Some(entry) => {
+                    if entry.0 == (x, y) {
+                        Some(self.history.pop().unwrap())
+                    } else {
+                        None
+                    }
+                }
+                None => None,
+            } {
+                Some(entry) => entry,
+                None => ((x, y), HashSet::new(), HashMap::new()),
+            }
+        };
+
+        let cell = self.get_mut_cell_at(x, y);
+        let removed = cell.collapse();
+        history_entry.1.insert(cell.patterns.iter().next().unwrap().clone());
+        history_entry.2.entry((x, y)).or_insert_with(HashSet::new).extend(removed);
 
         let mut queue = VecDeque::new();
         let mut queue_set = HashSet::new();
@@ -349,7 +379,10 @@ impl Grid {
                         (cell.y as i64 + dy as i64).rem_euclid(self.size.1 as i64) as u32,
                     );
                     let neighbour = self.get_mut_cell_at(x, y);
-                    let allowed_tiles = &all_allowed_tiles[&(&dx, &dy)];
+                    let allowed_tiles = match all_allowed_tiles.get(&(&dx, &dy)) {
+                        Some(allowed_tiles) => allowed_tiles,
+                        None => return self.backtrack(),
+                    };
                     for neighbour_pattern in neighbour.patterns.clone() {
                         if allowed_tiles.contains(&neighbour_pattern.tile) {
                             continue;
@@ -488,29 +521,23 @@ impl Grid {
 }
 
 fn main() {
-    let img = image::open("input5.png").unwrap().to_rgb8();
-    let mut grid = match Grid::from_image(
+    let img = image::open("input.png").unwrap().to_rgb8();
+    let mut grid = Grid::from_image(
         &img,
         GRID_SIZE,
         TILE_SIZE,
         PATTERN_SIZE,
         WRAP_AROUND_EDGES,
         ALLOW_ROTATIONS,
-    ) {
-        Ok(patterns) => patterns,
-        Err(err) => {
-            eprintln!("{}", err);
-            return;
-        }
-    };
+    ).unwrap_or_else(|err| {
+        eprintln!("{}", err);
+        std::process::exit(1);
+    });
     grid.solve();
-    let img = match grid.create_image() {
-        Ok(img) => img,
-        Err(err) => {
-            eprintln!("{}", err);
-            return;
-        }
-    };
+    let img = grid.create_image().unwrap_or_else(|err| {
+        eprintln!("{}", err);
+        std::process::exit(1);
+    });
     img.save("output.png").unwrap();
     println!("woo done");
 }
