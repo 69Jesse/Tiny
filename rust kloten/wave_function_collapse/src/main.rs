@@ -254,6 +254,7 @@ struct Grid {
     history: Vec<(
         (u32, u32),
         HashSet<Pattern>,
+        Vec<u32>,
         HashMap<(u32, u32), HashSet<Pattern>>,
     )>,
 }
@@ -301,12 +302,18 @@ impl Grid {
         self.cells.iter().all(|cell| cell.is_collapsed())
     }
 
+    fn get_index_at(&self, x: u32, y: u32) -> usize {
+        (x + y * self.size.0) as usize
+    }
+
     fn get_cell_at(&self, x: u32, y: u32) -> &Cell {
-        &self.cells[(x + y * self.size.0) as usize]
+        let index = self.get_index_at(x, y);
+        &self.cells[index]
     }
 
     fn get_mut_cell_at(&mut self, x: u32, y: u32) -> &mut Cell {
-        &mut self.cells[(x + y * self.size.0) as usize]
+        let index = self.get_index_at(x, y);
+        &mut self.cells[index]
     }
 
     fn insert_into_queue(
@@ -330,6 +337,7 @@ impl Grid {
         let (x, y) = self.fetch_next_cell_position();
 
         let mut history_entry = {
+            // TODO: make this less disgusting
             match match self.history.last() {
                 Some(entry) => {
                     if entry.0 == (x, y) {
@@ -341,14 +349,15 @@ impl Grid {
                 None => None,
             } {
                 Some(entry) => entry,
-                None => ((x, y), HashSet::new(), HashMap::new()),
+                None => ((x, y), HashSet::new(), Vec::new(), HashMap::new()),
             }
         };
 
         let cell = self.get_mut_cell_at(x, y);
         let removed = cell.collapse();
         history_entry.1.insert(cell.patterns.iter().next().unwrap().clone());
-        history_entry.2.entry((x, y)).or_insert_with(HashSet::new).extend(removed);
+        // TODO: entry.2 indexes of collapsed patterns in next one???
+        history_entry.3.entry((x, y)).or_insert_with(HashSet::new).extend(removed);
 
         let mut queue = VecDeque::new();
         let mut queue_set = HashSet::new();
@@ -389,6 +398,7 @@ impl Grid {
                         }
                         neighbour.patterns.remove(&neighbour_pattern);
                         Self::insert_into_queue(&mut queue, &mut queue_set, x, y);
+                        history_entry.3.entry((x, y)).or_insert_with(HashSet::new).insert(neighbour_pattern);
                     }
                 }
             }
@@ -415,6 +425,7 @@ impl Grid {
                         }
                         neighbour.patterns.remove(&neighbour_pattern);
                         Self::insert_into_queue(&mut queue, &mut queue_set, x, y);
+                        history_entry.3.entry((x, y)).or_insert_with(HashSet::new).insert(neighbour_pattern);
                     }
                 }
             }
@@ -438,7 +449,6 @@ impl Grid {
                 let symbol = if cell.is_collapsed() {
                     String::from(".X.")
                 } else {
-                    // len of cell.patterns as string
                     format!("{:03}", cell.patterns.len())
                 };
                 print!("{} ", symbol);
