@@ -444,6 +444,7 @@ impl Grid {
                 }
             }
         }
+        self.history.push(history_entry);
     }
 
     fn solve(&mut self) {
