@@ -252,10 +252,10 @@ struct Grid {
     tile_size: (u32, u32),
     pattern_size: (u8, u8),
     history: Vec<(
-        (u32, u32),
-        HashSet<Pattern>,
-        Vec<u32>,
-        HashMap<(u32, u32), HashSet<Pattern>>,
+        (u32, u32),                            // collapsed cell position
+        HashSet<Pattern>,                      // tried patterns so far
+        Vec<(u32, u32)>,                       // cells tried to collapse next iteration
+        HashMap<(u32, u32), HashSet<Pattern>>, // removed patterns from cells
     )>,
 }
 impl Grid {
@@ -355,9 +355,15 @@ impl Grid {
 
         let cell = self.get_mut_cell_at(x, y);
         let removed = cell.collapse();
-        history_entry.1.insert(cell.patterns.iter().next().unwrap().clone());
+        history_entry
+            .1
+            .insert(cell.patterns.iter().next().unwrap().clone());
         // TODO: entry.2 indexes of collapsed patterns in next one???
-        history_entry.3.entry((x, y)).or_insert_with(HashSet::new).extend(removed);
+        history_entry
+            .3
+            .entry((x, y))
+            .or_insert_with(HashSet::new)
+            .extend(removed);
 
         let mut queue = VecDeque::new();
         let mut queue_set = HashSet::new();
@@ -398,7 +404,11 @@ impl Grid {
                         }
                         neighbour.patterns.remove(&neighbour_pattern);
                         Self::insert_into_queue(&mut queue, &mut queue_set, x, y);
-                        history_entry.3.entry((x, y)).or_insert_with(HashSet::new).insert(neighbour_pattern);
+                        history_entry
+                            .3
+                            .entry((x, y))
+                            .or_insert_with(HashSet::new)
+                            .insert(neighbour_pattern);
                     }
                 }
             }
@@ -425,7 +435,11 @@ impl Grid {
                         }
                         neighbour.patterns.remove(&neighbour_pattern);
                         Self::insert_into_queue(&mut queue, &mut queue_set, x, y);
-                        history_entry.3.entry((x, y)).or_insert_with(HashSet::new).insert(neighbour_pattern);
+                        history_entry
+                            .3
+                            .entry((x, y))
+                            .or_insert_with(HashSet::new)
+                            .insert(neighbour_pattern);
                     }
                 }
             }
@@ -539,7 +553,8 @@ fn main() {
         PATTERN_SIZE,
         WRAP_AROUND_EDGES,
         ALLOW_ROTATIONS,
-    ).unwrap_or_else(|err| {
+    )
+    .unwrap_or_else(|err| {
         eprintln!("{}", err);
         std::process::exit(1);
     });
