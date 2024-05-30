@@ -8,7 +8,7 @@ use std::hash::Hash;
 const GRID_SIZE: (u32, u32) = (32, 32);
 const TILE_SIZE: (u32, u32) = (1, 1);
 const PATTERN_SIZE: (u8, u8) = {
-    let n = 3;
+    let n = 2;
     (n, n)
 }; // in amount of tiles, not pixels
 const WRAP_AROUND_EDGES: bool = true;
@@ -143,10 +143,19 @@ impl Cell {
         assert!(!self.patterns.is_empty());
     }
 
-    fn collapse(&mut self) -> HashSet<Pattern> {
+    fn collapse(
+        &mut self,
+        tried_patterns: &HashSet<Pattern>,
+    ) -> Result<HashSet<Pattern>, ()> {
         assert!(!self.is_collapsed());
-        assert!(self.patterns.len() > 0);
+        if self.patterns.is_empty() {
+            return Err(());
+        }
         let mut patterns: Vec<Pattern> = self.patterns.iter().cloned().collect();
+        patterns.retain(|pattern| !tried_patterns.contains(pattern));
+        if patterns.is_empty() {
+            return Err(());
+        }
         let weights = patterns
             .iter()
             .map(|pattern| pattern.count)
@@ -157,7 +166,7 @@ impl Cell {
         let old_patterns = self.patterns.clone();
         self.patterns.clear();
         self.patterns.insert(pattern);
-        return old_patterns;
+        Ok(old_patterns)
     }
 
     fn is_collapsed(&self) -> bool {
@@ -254,7 +263,7 @@ struct Grid {
     history: Vec<(
         (u32, u32),                            // collapsed cell position
         HashSet<Pattern>,                      // tried patterns so far
-        Vec<(u32, u32)>,                       // cells tried to collapse next iteration
+        HashSet<(u32, u32)>,                   // cells tried to collapse next iteration
         HashMap<(u32, u32), HashSet<Pattern>>, // removed patterns from cells
     )>,
 }
@@ -292,10 +301,18 @@ impl Grid {
         cell_positions
     }
 
-    fn fetch_next_cell_position(&mut self) -> (u32, u32) {
+    fn fetch_next_cell_position(&mut self) -> Result<(u32, u32), ()> {
+        let last_history_entry = self.history.last();
         let mut rng = rand::thread_rng();
         let mut cell_positions = self.lowest_entropy_cell_positions();
-        cell_positions.swap_remove(rng.gen_range(0..cell_positions.len()))
+        if let Some(last_history_entry) = last_history_entry {
+            let already_tried = &last_history_entry.2;
+            cell_positions.retain(|(x, y)| !already_tried.contains(&(*x, *y)));
+        }
+        if cell_positions.is_empty() {
+            return Err(());
+        }
+        Ok(cell_positions.swap_remove(rng.gen_range(0..cell_positions.len())))
     }
 
     fn is_solved(&self) -> bool {
@@ -330,11 +347,31 @@ impl Grid {
     }
 
     fn backtrack(&mut self) {
-        println!("Backtracking...");
+        println!("Backtracking, {}", self.history.len());
+        let mut history_entry = match self.history.pop() {
+            Some(history_entry) => history_entry,
+            None => panic!("No solution found."),
+        };
+        for ((x, y), removed_patterns) in history_entry.3.clone() {
+            println!("Adding {} patterns back to ({}, {})", removed_patterns.len(), x, y);
+            let cell = self.get_mut_cell_at(x, y);
+            cell.patterns.extend(removed_patterns);
+        }
+        history_entry.3.clear();
+
+        let cell = self.get_cell_at(history_entry.0.0, history_entry.0.1);
+        if history_entry.1.len() < cell.patterns.len() {
+            self.history.push(history_entry);
+        } else {
+            println!("fuck");
+        }
     }
 
     fn iteration(&mut self) {
-        let (x, y) = self.fetch_next_cell_position();
+        let (x, y) = match self.fetch_next_cell_position() {
+            Ok(cell_position) => cell_position,
+            Err(_) => return self.backtrack(),
+        };
 
         let mut history_entry = {
             // TODO: make this less disgusting
@@ -349,16 +386,19 @@ impl Grid {
                 None => None,
             } {
                 Some(entry) => entry,
-                None => ((x, y), HashSet::new(), Vec::new(), HashMap::new()),
+                None => ((x, y), HashSet::new(), HashSet::new(), HashMap::new()),
             }
         };
+        history_entry.2.insert((x, y));
 
         let cell = self.get_mut_cell_at(x, y);
-        let removed = cell.collapse();
+        let removed = match cell.collapse(&history_entry.1) {
+            Ok(removed) => removed,
+            Err(_) => return self.backtrack(),
+        };
         history_entry
             .1
             .insert(cell.patterns.iter().next().unwrap().clone());
-        // TODO: entry.2 indexes of collapsed patterns in next one???
         history_entry
             .3
             .entry((x, y))
@@ -457,19 +497,19 @@ impl Grid {
 
     fn visualize(&self) {
         self.create_image().unwrap().save("output.png").unwrap();
-        println!("\nVisualisation:");
-        for y in 0..self.size.1 {
-            for x in 0..self.size.0 {
-                let cell = self.get_cell_at(x, y);
-                let symbol = if cell.is_collapsed() {
-                    String::from(".X.")
-                } else {
-                    format!("{:03}", cell.patterns.len())
-                };
-                print!("{} ", symbol);
-            }
-            println!();
-        }
+        // println!("\nVisualisation:");
+        // for y in 0..self.size.1 {
+        //     for x in 0..self.size.0 {
+        //         let cell = self.get_cell_at(x, y);
+        //         let symbol = if cell.is_collapsed() {
+        //             String::from(".X.")
+        //         } else {
+        //             format!("{:03}", cell.patterns.len())
+        //         };
+        //         print!("{} ", symbol);
+        //     }
+        //     println!();
+        // }
     }
 
     fn create_image(&self) -> Result<RgbImage, String> {
