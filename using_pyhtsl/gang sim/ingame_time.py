@@ -33,11 +33,11 @@ def update_timer() -> None:
         TIME_COLOR.value = 7
 
 
-@create_function('On Day Change Once')
+@create_function('Once -> On Day Change')
 def on_day_change() -> None:
     trigger_function(on_day_change_everyone, trigger_for_all_players=True)
 
 
-@create_function('On Day Change Everyone')
+@create_function('Everyone -> On Day Change')
 def on_day_change_everyone() -> None:
     chat(f'&eDay {TIME_DAY} has started!')
