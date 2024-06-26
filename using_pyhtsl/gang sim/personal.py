@@ -5,9 +5,8 @@ from pyhtsl import (
     exit_function,
     DateUnix,
 )
-from stats.globalstats import LAST_UNIX
-from ingame_time import update_timer
-from cookie_goal import check_cookie_goal
+from locations import set_location_id
+from title_action_bar import maybe_update_display_stats, display_action_bar_or_title
 
 
 @create_function('Personal 1s')
@@ -16,4 +15,6 @@ def personal_every_second() -> None:
 
 @create_function('Personal 4ticks')
 def personal_every_4ticks() -> None:
-    ...
+    trigger_function(set_location_id)
+    maybe_update_display_stats()
+    trigger_function(display_action_bar_or_title)

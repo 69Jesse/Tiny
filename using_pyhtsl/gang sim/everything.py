@@ -4,13 +4,15 @@ from pyhtsl import (
     Item,
     Enchantment,
     delete_all_items_from_imports_folder,
+    IfAnd,
+    HasItem,
 )
-from pyhtsl.types import ALL_POSSIBLE_ITEM_KEYS
+from pyhtsl.types import ALL_POSSIBLE_ITEM_KEYS, IfStatement
 
 from enum import Enum, auto
 import re
 
-from typing import Optional
+from typing import Optional, Generator
 
 from stats.playerstats import (
     POWER,
@@ -85,6 +87,14 @@ class ItemType(Enum):
             if item_key == 'fishing_rod':
                 return 'Fishing Rod'
         return self.name
+
+
+class ItemCheck(Enum):
+    IN_INVENTORY = 'inventory'
+    IN_HAND = 'hand'
+    IN_HOTBAR = 'hotbar'
+    WEARING = 'armor'
+    ANYWHERE = 'anywhere'
 
 
 class BuffType(Enum):
@@ -186,6 +196,7 @@ class CustomItem:
     key: ALL_POSSIBLE_ITEM_KEYS
     rarity: ItemRarity
     type: ItemType
+    check: ItemCheck
     enchantments: Optional[list[Enchantment]]
     buffs: Optional[list[Buff]]
     def __init__(
@@ -194,6 +205,7 @@ class CustomItem:
         key: ALL_POSSIBLE_ITEM_KEYS,
         rarity: ItemRarity,
         type: ItemType,
+        check: Optional[ItemCheck] = None,
         enchantments: Optional[list[Enchantment]] = None,
         buffs: Optional[list[Buff]] = None,
     ) -> None:
@@ -201,6 +213,14 @@ class CustomItem:
         self.key = key
         self.rarity = rarity
         self.type = type
+        if check is None:
+            if type is ItemType.Armor:
+                check = ItemCheck.WEARING
+            elif type is ItemType.Weapon:
+                check = ItemCheck.IN_HAND
+            else:
+                check = ItemCheck.ANYWHERE
+        self.check = check
         self.enchantments = enchantments
         self.buffs = self.updated_buffs(buffs)
 
@@ -253,6 +273,11 @@ class CustomItem:
             enchantments=self.enchantments,
             hide_all_flags=True,
             unbreakable=True,
+        )
+
+    def if_has_condition(self) -> IfStatement:
+        return IfAnd(
+            HasItem(self.item, where_to_check=self.check.value),
         )
 
 
@@ -406,8 +431,8 @@ class Items:
             Items.tier_18_weapon,
         ]
 
-
-for weapon in Items.weapons():
-    weapon.item.save()
-    from pyhtsl import give_item
-    give_item(weapon.item, allow_multiple=False)
+    @classmethod
+    def all(cls) -> Generator[CustomItem, None, None]:
+        for item in cls.__dict__.values():
+            if isinstance(item, CustomItem):
+                yield item
