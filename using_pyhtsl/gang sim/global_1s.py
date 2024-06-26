@@ -7,6 +7,7 @@ from pyhtsl import (
 )
 from stats.globalstats import LAST_UNIX
 from ingame_time import update_timer
+from cookie_goal import check_cookie_goal
 
 
 # Have this run every 4 ticks
@@ -16,3 +17,4 @@ def global_every_second() -> None:
         exit_function()
     LAST_UNIX.value = DateUnix
     trigger_function(update_timer)
+    trigger_function(check_cookie_goal)

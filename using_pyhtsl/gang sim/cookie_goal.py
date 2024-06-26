@@ -20,6 +20,10 @@ def check_cookie_goal() -> None:
     ):
         trigger_function(reset_cookie_goal)
         exit_function()
+    with IfAnd(
+        LATEST_COOKIES == HouseCookies,
+    ):
+        exit_function()
     COOKIES_NEEDED.value = COOKIE_GOAL - LATEST_COOKIES
     trigger_function(cookie_receive_message, trigger_for_all_players=True)
     LATEST_COOKIES.value = HouseCookies
