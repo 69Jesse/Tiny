@@ -2,10 +2,10 @@ from pyhtsl import (
     Team,
     PlayerStat,
     Item,
-    ALL_POSSIBLE_ITEM_KEYS,
     Enchantment,
     delete_all_items_from_imports_folder,
 )
+from pyhtsl.types import ALL_POSSIBLE_ITEM_KEYS
 
 from enum import Enum, auto
 import re
