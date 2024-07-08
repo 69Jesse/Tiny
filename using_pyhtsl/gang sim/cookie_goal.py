@@ -37,6 +37,7 @@ def check_cookie_goal() -> None:
 @create_function('Reset Cookie Goal')
 def reset_cookie_goal() -> None:
     COOKIE_GOAL.value = 0
+    LATEST_COOKIES.value = HouseCookies
     trigger_function(increment_cookie_goal)
 
 

@@ -1,0 +1,180 @@
+
+
+
+per gang:
+    1/8 of all playing in 1 gang:
+        everyone in gang strength 1
+
+
+vending machines?:
+    can click every day:
+        small reward
+        tiny chance of big reward??
+
+
+territory:
+    3 spots
+    1 central one, better reward
+    2 outer ones, worse reward
+
+
+switch gang:
+    cred -= min(100, cred / 2)
+
+pick random spot to spawn:
+    every 10 minutes you can pick the spot
+        select menu
+        drop to go to next spot -> every 2 seconds
+    if in spot: take damage gets cancelled, out of spot -> take damage
+    edge of spot & sneaking -> exit spot
+
+
+tips
+    // sleep reward in cells, enter cells at night
+    Between 22:00 and 4:00
+
+
+GANG SIMULATOR
+
+    Gangs
+        Bloods (Bloods)
+            red
+            light: D00000
+            dark:  7A0000
+
+        Crips (Crips)
+            blue
+            light: 061F95
+            dark:  041874
+
+        Latin Kings (Kings)
+            yellow
+            light: C8A639
+            dark:  F6CC46
+
+        Black Disciples (Blacks)
+            black
+            light: 262626
+            dark:  000000
+
+    Guards
+        iron chestplate???
+
+    Everyone
+        boots
+            upgradable?
+        sword
+            upgradable?
+
+    Gang Members
+        chestplate of color
+            unenchanted
+
+    Gang Leader
+        helmet of color
+            enchanted
+                prot 3?
+
+
+
+
+
+
+
+
+&c&l! &7Consumed on use! &c&l!
+
+&6&lTier 1
+&6&lTier &c&l5
+
+
+&b&lLarry&e: Sweet, I gave you &61 Gold &efor &73 Coal &eand &f2 Iron&e!
+
+&b&lLarry&e: So you like &6Gold &ehuh? Hear me out:
+&eI'll trade you &73 Coal &eand &f2 Iron &efor &61 Gold&e.
+&eJust talk to me when you have the items!
+
+&b&lAyden&e: I've upgraded your &6&lTier 4 &f&lPickaxe
+&eto your very own &6&lTier &d&l5 &b&lPickaxe &efor
+&b10 Diamond&e, &630 Gold&e and &750 Cobblestone&e.
+
+&b&lAyden&e: To upgrade your &6&lTier 4 &f&lPickaxe
+&eto a &6&lTier &d&l5 &b&lPickaxe&e, you'll need
+
+&b10 Diamond&e, &630 Gold&e and &750 Cobblestone&e.
+&f50 Iron&e, &620 Gold&e and &810 Coal&e.
+&610 Gold&e, &f5 Iron &eand &85 Coal&e.
+&75 Cobblestone &eand &83 Coal&e.
+
+
+
+
+
+start = {
+    'stonebricks': 5,
+    'stone': 20,
+    'andesite': 25,
+    'cobblestone': 50,
+}
+after = {
+    'stonebricks': 90,
+    'stone': 4,
+    'andesite': 4,
+    'cobblestone': 2,
+}
+
+values = {}
+n = 50
+for i in range(n+1):
+    values[i] = {}
+    for block in start:
+        diff = after[block] - start[block]
+        v = round(start[block] + diff / n * i, 2)
+        values[i][block] = v
+
+print(values)
+
+
+
+
+
+TODO
+[ ] Add contraband to items:
+        on hold / wear:
+            set latest contraband use
+            maybe only if guard is close
+        if guard kills and no contraband:
+            remove hella cred
+        if guard kills and contraband:
+            add like 1 cred
+
+[ ] add all locations
+[ ] add spawns
+
+[ ] gang transfer system
+    cred -= min(100, cred / 5)
+
+
+[ ] gang leader transfer system
+    drop your helmet, on pickup gets leader
+    can only drop helmet every minute?
+    on death reset ^^^ stat
+    if no one has helmet for 30 seconds:
+        give to random member
+
+[ ] turfs, max health = 100 + sum(10 * player.prestige for player in gangplayers)
+    give funds every second:
+        alpha: +3/s, on_destroy -> +(3 * time_held)
+        beta: +2/s, on_destroy -> +(2 * time_held)
+        gamma: +1/s, on_destroy -> +(1 * time_held)
+    on_destroy:
+        add the funds 
+        mark as empty
+    on click empty one:
+        if has no gang:
+            do nothing
+        if gang has no turf or turf is better than current:
+            claim turf
+
+[ ] daily vending machine reward
+[ ] enter cells daily reward
