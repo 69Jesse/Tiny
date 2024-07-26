@@ -1,0 +1,12 @@
+werewolves
+
+
+Everyone has a block
+
+2 maps, one with barriers
+point at player to do action
+
+
+menu to see everyones roles on death or relevant:
+click on block -> quickly change group to this and display menu then change back??
+
