@@ -1,11 +1,26 @@
 from pyhtsl import (
     create_function,
+    IfAnd,
+    PlayerGroupPriority,
+    set_player_team,
 )
+from stats import PLAYER_ID, TOTAL_PLAYERS_JOINED, SpawnTeam
 
 
 @create_function('On Player Join')
 def on_player_join() -> None:
-    pass
+    with IfAnd(
+        PlayerGroupPriority < 20,
+        PLAYER_ID == 0,
+    ):
+        pass
+
+
+@create_function('On Player Join First Time')
+def on_player_join_first_time() -> None:
+    TOTAL_PLAYERS_JOINED.value += 1
+    PLAYER_ID.value = TOTAL_PLAYERS_JOINED
+    set_player_team(SpawnTeam.TEAM)
 
 
 # Seems to consistently be ran BEFORE Player Kill event so thats really nice

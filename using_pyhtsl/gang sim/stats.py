@@ -1,6 +1,7 @@
 from pyhtsl import GlobalStat, PlayerStat, Team, TeamStat
 
 
+TOTAL_PLAYERS_JOINED = GlobalStat('playersjoined')
 LAST_UNIX = GlobalStat('lastunix')
 
 LATEST_COOKIES = GlobalStat('latestcookies')
@@ -34,7 +35,13 @@ TURF_3_MAX_HP = GlobalStat('turf3/mhp')
 TURF_3_FUNDS = GlobalStat('turf3/funds')
 TURF_3_FUNDS_PER_SECOND = GlobalStat('turf3/af')
 
+LATEST_DEATH_TIME = GlobalStat('ld/time')
+LATEST_DEATH_PLAYER_ID = GlobalStat('ld/pid')
+LATEST_DEATH_GANG = GlobalStat('ld/gang')
+LATEST_DEATH_WAS_LEADER = GlobalStat('ld/wasl')
 
+
+PLAYER_ID = PlayerStat('id')
 CRED = PlayerStat('cred')
 FUNDS = PlayerStat('funds')
 
@@ -61,10 +68,6 @@ BIG_LOCATION_ID = PlayerStat('blocationid')
 BIGGEST_LOCATION_ID = PlayerStat('bblocationid')
 
 PREVIOUS_LOCATION_ID = PlayerStat('plocationid')
-
-
-LATEST_DEATH_GANG = PlayerStat('ld/gang')
-LATEST_DEATH_WAS_LEADER = PlayerStat('ld/wasleader')
 
 
 

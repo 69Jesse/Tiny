@@ -32,8 +32,8 @@ from abc import ABC, abstractmethod
 from typing import final
 
 
-# run every 4 ticks
-def maybe_update_display_stats() -> None:
+@create_function('Update Display Stats')
+def update_display_stats() -> None:
     with IfAnd(
         DISPLAY_TIMER > 0,
     ):
