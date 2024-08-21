@@ -35,7 +35,7 @@ TURF_3_FUNDS = GlobalStat('turf3/funds')
 TURF_3_FUNDS_PER_SECOND = GlobalStat('turf3/af')
 
 
-CRED = PlayerStat('credibility')
+CRED = PlayerStat('cred')
 FUNDS = PlayerStat('funds')
 
 POWER = PlayerStat('power')
@@ -50,17 +50,22 @@ FORAGING_FORTUNE = PlayerStat('forafortune')
 
 DAMAGE = PlayerStat('damage')
 
-DISPLAY_ID = PlayerStat('displayid')
-DISPLAY_TIMER = PlayerStat('displaytimer')
-DISPLAY_ARG_1 = PlayerStat('displayarg1')
-DISPLAY_ARG_2 = PlayerStat('displayarg2')
-DISPLAY_ARG_3 = PlayerStat('displayarg3')
+DISPLAY_ID = PlayerStat('display/id')
+DISPLAY_TIMER = PlayerStat('display/timer')
+DISPLAY_ARG_1 = PlayerStat('display/arg1')
+DISPLAY_ARG_2 = PlayerStat('display/arg2')
+DISPLAY_ARG_3 = PlayerStat('display/arg3')
 
 LOCATION_ID = PlayerStat('locationid')
 BIG_LOCATION_ID = PlayerStat('blocationid')
 BIGGEST_LOCATION_ID = PlayerStat('bblocationid')
 
-LAST_LOCATION_ID = PlayerStat('llocationid')
+PREVIOUS_LOCATION_ID = PlayerStat('plocationid')
+
+
+LATEST_DEATH_GANG = PlayerStat('ld/gang')
+LATEST_DEATH_WAS_LEADER = PlayerStat('ld/wasleader')
+
 
 
 TEAM_ID = TeamStat('id')

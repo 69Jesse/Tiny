@@ -12,6 +12,7 @@ from stats import (
     COOKIES_NEEDED,
 )
 from misc import IMPORTANT_MESSAGE_PREFIX
+from currency import add_funds
 
 
 @create_function('Check Cookie Goal')
@@ -62,4 +63,5 @@ def cookie_receive_message() -> None:
 @create_function('Cookie Reward')
 def cookie_reward() -> None:
     chat(IMPORTANT_MESSAGE_PREFIX + '&aWe hit the&6 Cookie Goal&a!&e Thank you&a so much!!')
-    chat('&aYou received&e +10⛁ Funds&7 (will change soon)')
+    chat('&aYou received&e +100⛁ Funds&7 (will change soon)')
+    add_funds(100)

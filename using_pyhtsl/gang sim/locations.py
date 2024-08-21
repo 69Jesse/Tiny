@@ -11,7 +11,7 @@ from pyhtsl import (
 )
 from pyhtsl.types import IfStatement
 
-from stats import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, LAST_LOCATION_ID
+from stats import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, PREVIOUS_LOCATION_ID
 
 from typing import Callable, Generator
 
@@ -274,6 +274,20 @@ class LocationInstances:
         20100,
     )
 
+    # https://www.youtube.com/watch?v=yj18bIGL_CQ walks through a lot of rooms
+    basement_corridor = Location(
+        (45, 101, -24),
+        (21, 92, -79),
+        'Basement Corridor',
+        -1,
+    )
+    the_deep = Location(
+        (19, 91, -65),
+        (-22, 100, -27),
+        'The Deep',
+        -2,
+    )
+
     @classmethod
     def get_all_locations(cls) -> Generator[Location, None, None]:
         for location in cls.__dict__.values():
@@ -331,19 +345,20 @@ LOCATIONS = Locations()
 @create_function('Set Location ID')
 def set_location_id() -> None:
     LOCATION_ID.value = 0
-    for location in LOCATIONS.walk():
-        with location.if_inside_condition():
-            LOCATION_ID.value = location.id
+    if False:  # TODO add all locations but its fucking boring as shit
+        for location in LOCATIONS.walk():
+            with location.if_inside_condition():
+                LOCATION_ID.value = location.id
     BIG_LOCATION_ID.value = LOCATION_ID // 100
     BIGGEST_LOCATION_ID.value = BIG_LOCATION_ID // 100
     with IfOr(
         LOCATION_ID == 0,
-        LAST_LOCATION_ID == LOCATION_ID,
+        PREVIOUS_LOCATION_ID == LOCATION_ID,
     ):
         pass
     with Else:
         trigger_function(on_new_location_enter)
-        LAST_LOCATION_ID.value = LOCATION_ID
+        PREVIOUS_LOCATION_ID.value = LOCATION_ID
 
 
 @create_function('On New Location Enter')
