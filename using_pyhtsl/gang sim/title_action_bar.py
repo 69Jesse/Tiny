@@ -48,8 +48,8 @@ def maybe_update_display_stats() -> None:
         DISPLAY_ARG_3.value = 0
 
 
-def seconds_to_ticks(seconds: int) -> int:
-    return seconds * 20
+def seconds_to_every_4_ticks(seconds: int) -> int:
+    return seconds * 5
 
 
 class TitleActionBar(ABC):
@@ -62,9 +62,9 @@ class TitleActionBar(ABC):
     def set_id(cls) -> None:
         DISPLAY_ID.value = cls.get_id()
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def apply() -> None:
+    def apply(cls) -> None:
         pass
 
     @staticmethod
@@ -85,6 +85,11 @@ def regular_action_bar_display() -> None:
         with Else:
             display_arg.value = 7
 
+    def display_with_location(location_name: str) -> None:
+        display_action_bar(
+            f'&b⏣ {location_name}&4 {POWER}/{MAX_POWER}⸎&{DISPLAY_ARG_1} &l✯&{DISPLAY_ARG_2}&l✯&{DISPLAY_ARG_3}&l✯',
+        )
+
     visited_ids: set[int] = set()
     for location in LOCATIONS.walk():
         if location.id in visited_ids:
@@ -93,9 +98,9 @@ def regular_action_bar_display() -> None:
         with IfAnd(
             LOCATION_ID == location.id,
         ):
-            display_action_bar(
-                f'&b⏣ {location.name}&4 {POWER}/{MAX_POWER}⸎&{DISPLAY_ARG_1} &l✯&{DISPLAY_ARG_2}&l✯&{DISPLAY_ARG_3}&l✯',
-            )
+            display_with_location(location.name)
+            exit_function()
+    display_with_location('Unknown')
 
 
 @final
@@ -104,8 +109,8 @@ class RegularTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 0
 
-    @staticmethod
-    def apply() -> None:
+    @classmethod
+    def apply(cls) -> None:
         raise ValueError('Regular Action Bar cannot be applied')
 
     @staticmethod
@@ -119,17 +124,19 @@ class RemovePowerTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 1
 
-    @staticmethod
+    @classmethod
     def apply(
+        cls,
         power: int | PlayerStat,
     ) -> None:
+        cls.set_id()
         DISPLAY_ARG_1.value = power
-        DISPLAY_TIMER.value = seconds_to_ticks(1)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
 
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎ -{DISPLAY_ARG_1}',
+            f'&4{POWER}/{MAX_POWER}⸎&c -&4{DISPLAY_ARG_1}⸎ Power',
         )
 
 
@@ -139,17 +146,19 @@ class AddCredTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 2
 
-    @staticmethod
+    @classmethod
     def apply(
+        cls,
         cred: int | PlayerStat,
     ) -> None:
+        cls.set_id()
         DISPLAY_ARG_1.value = cred
-        DISPLAY_TIMER.value = seconds_to_ticks(3)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(3)
 
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&2 +{DISPLAY_ARG_1}© Cred',
+            f'&4{POWER}/{MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}© Cred',
         )
 
 
@@ -159,17 +168,19 @@ class AddFundsTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 3
 
-    @staticmethod
+    @classmethod
     def apply(
+        cls,
         funds: int | PlayerStat,
     ) -> None:
+        cls.set_id()
         DISPLAY_ARG_1.value = funds
-        DISPLAY_TIMER.value = seconds_to_ticks(3)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(3)
 
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&e +{DISPLAY_ARG_1}⛁ Funds',
+            f'&4{POWER}/{MAX_POWER}⸎&a +&e{DISPLAY_ARG_1}⛁ Funds',
         )
 
 
@@ -179,17 +190,19 @@ class RemoveCredTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 4
 
-    @staticmethod
+    @classmethod
     def apply(
+        cls,
         removed_cred: int | PlayerStat,
     ) -> None:
+        cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
-        DISPLAY_TIMER.value = seconds_to_ticks(3)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(3)
 
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&c -{DISPLAY_ARG_1}© Cred',
+            f'&4{POWER}/{MAX_POWER}⸎&c -&2{DISPLAY_ARG_1}© Cred',
         )
 
 
@@ -199,17 +212,19 @@ class RemoveFundsTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 5
 
-    @staticmethod
+    @classmethod
     def apply(
+        cls,
         removed_funds: int | PlayerStat,
     ) -> None:
+        cls.set_id()
         DISPLAY_ARG_1.value = removed_funds
-        DISPLAY_TIMER.value = seconds_to_ticks(3)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(3)
 
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&6 -{DISPLAY_ARG_1}⛁ Funds',
+            f'&4{POWER}/{MAX_POWER}⸎&c -&e{DISPLAY_ARG_1}⛁ Funds',
         )
 
 
@@ -219,19 +234,21 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
     def get_id() -> int:
         return 6
 
-    @staticmethod
+    @classmethod
     def apply(
+        cls,
         cred: int | PlayerStat,
         funds: int | PlayerStat,
     ) -> None:
+        cls.set_id()
         DISPLAY_ARG_1.value = cred
         DISPLAY_ARG_2.value = funds
-        DISPLAY_TIMER.value = seconds_to_ticks(3)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(3)
 
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&2 +{DISPLAY_ARG_1}©&e +{DISPLAY_ARG_2}⛁',
+            f'&4{POWER}/{MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         )
 
 

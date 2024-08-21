@@ -5,10 +5,13 @@ from pyhtsl import (
     PlayerLocationZ,
     create_function,
     exit_function,
+    trigger_function,
+    IfOr,
+    Else,
 )
 from pyhtsl.types import IfStatement
 
-from stats import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID
+from stats import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, LAST_LOCATION_ID
 
 from typing import Callable, Generator
 
@@ -77,22 +80,67 @@ class Location:
 
     def if_inside_condition(self) -> 'IfStatement':
         return IfAnd(
-            *(
-                PlayerLocationX >= self.low[0],
-                PlayerLocationX <= self.high[0],
-                PlayerLocationY >= self.low[1],
-                PlayerLocationY <= self.high[1],
-                PlayerLocationZ >= self.low[2],
-                PlayerLocationZ <= self.high[2],
-            ),
+            LOCATION_ID == 0,
+            PlayerLocationX >= self.low[0],
+            PlayerLocationX <= self.high[0],
+            PlayerLocationY >= self.low[1],
+            PlayerLocationY <= self.high[1],
+            PlayerLocationZ >= self.low[2],
+            PlayerLocationZ <= self.high[2],
         )
 
     def __repr__(self) -> str:
         return f'Location({self.low}, {self.high}, {self.name}, {len(self.contains)})'
 
 
+SPAWN_N = 43
+SPAWN_MIDDLE = (-1, 43, -41)
 class LocationInstances:
     __slots__ = ()
+    spawn = Location(
+        (
+            SPAWN_MIDDLE[0] - (SPAWN_N * 3),
+            SPAWN_MIDDLE[1] - SPAWN_N,
+            SPAWN_MIDDLE[2] - (SPAWN_N * 3),
+        ),
+        (
+            SPAWN_MIDDLE[0] + (SPAWN_N * 3),
+            SPAWN_MIDDLE[1] + SPAWN_N,
+            SPAWN_MIDDLE[2] + (SPAWN_N * 3),
+        ),
+        'Spawn',
+        10000,
+    )
+    spawn_bloods_area = Location(
+        (-10, 42, -48),
+        (-20, 50, -58),
+        'Bloods Spawn Area',
+        10100,
+    )
+    spawn_crips_area = Location(
+        (8, 42, -48),
+        (18, 50, -58),
+        'Crips Spawn Area',
+        10200,
+    )
+    spawn_kings_area = Location(
+        (11, 42, -38),
+        (21, 50, -28),
+        'Kings Spawn Area',
+        10300,
+    )
+    spawn_grapes_area = Location(
+        (-13, 42, -38),
+        (-23, 50, -28),
+        'Grapes Spawn Area',
+        10400,
+    )
+    spawn_guards_area = Location(
+        (4, 42, -27),
+        (-6, 50, -18),
+        'Guards Spawn Area',
+        10500,
+    )
     cell_block = Location(
         (-22, 115, -28),
         (18, 102, -54),
@@ -286,4 +334,18 @@ def set_location_id() -> None:
     for location in LOCATIONS.walk():
         with location.if_inside_condition():
             LOCATION_ID.value = location.id
-            exit_function()
+    BIG_LOCATION_ID.value = LOCATION_ID // 100
+    BIGGEST_LOCATION_ID.value = BIG_LOCATION_ID // 100
+    with IfOr(
+        LOCATION_ID == 0,
+        LAST_LOCATION_ID == LOCATION_ID,
+    ):
+        pass
+    with Else:
+        trigger_function(on_new_location_enter)
+        LAST_LOCATION_ID.value = LOCATION_ID
+
+
+@create_function('On New Location Enter')
+def on_new_location_enter() -> None:
+    pass

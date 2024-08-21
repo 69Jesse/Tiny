@@ -6,11 +6,12 @@ from pyhtsl import (
     IfAnd,
     exit_function,
 )
-from stats.globalstats import (
+from stats import (
     LATEST_COOKIES,
     COOKIE_GOAL,
     COOKIES_NEEDED,
 )
+from misc import IMPORTANT_MESSAGE_PREFIX
 
 
 @create_function('Check Cookie Goal')
@@ -20,13 +21,15 @@ def check_cookie_goal() -> None:
     ):
         trigger_function(reset_cookie_goal)
         exit_function()
+
     with IfAnd(
         LATEST_COOKIES == HouseCookies,
     ):
         exit_function()
+
+    LATEST_COOKIES.value = HouseCookies
     COOKIES_NEEDED.value = COOKIE_GOAL - LATEST_COOKIES
     trigger_function(cookie_receive_message, trigger_for_all_players=True)
-    LATEST_COOKIES.value = HouseCookies
     with IfAnd(
         LATEST_COOKIES >= COOKIE_GOAL,
     ):
@@ -52,10 +55,11 @@ def cookie_receive_message() -> None:
         COOKIES_NEEDED <= 0,
     ):
         exit_function()
-    chat('&eSomeone gave cookies! Thanks so much! We only')
-    chat(f'&eneed&6 {COOKIES_NEEDED} &emore to hit the &6&lCookie Goal&e!')
+    chat(IMPORTANT_MESSAGE_PREFIX + '&aSomeone gave cookies!&e Thank you&a so much!')
+    chat(f'&aWe only need&6 {COOKIES_NEEDED}&a more to hit the&6 Cookie Goal&a!')
 
 
 @create_function('Cookie Reward')
 def cookie_reward() -> None:
-    chat('&eWe hit the &6&lCookie Goal&e! Here is your reward!')
+    chat(IMPORTANT_MESSAGE_PREFIX + '&aWe hit the&6 Cookie Goal&a!&e Thank you&a so much!!')
+    chat('&aYou received&e +10⛁ Funds&7 (will change soon)')

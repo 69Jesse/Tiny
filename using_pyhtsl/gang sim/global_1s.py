@@ -5,7 +5,7 @@ from pyhtsl import (
     exit_function,
     DateUnix,
 )
-from stats.globalstats import LAST_UNIX
+from stats import LAST_UNIX
 from ingame_time import update_timer
 from cookie_goal import check_cookie_goal
 

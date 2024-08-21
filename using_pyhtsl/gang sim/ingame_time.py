@@ -5,7 +5,7 @@ from pyhtsl import (
     IfAnd,
     Else,
 )
-from stats.globalstats import (
+from stats import (
     TIME_TEMP,
     TIME_HOUR,
     TIME_MINUTES,

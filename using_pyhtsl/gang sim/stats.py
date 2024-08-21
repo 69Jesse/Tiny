@@ -13,8 +13,30 @@ TIME_HOUR = GlobalStat('time/hour')
 TIME_MINUTES = GlobalStat('time/minutes')
 TIME_COLOR = GlobalStat('time/color')
 
+TURF_1_GANG = GlobalStat('turf1/gang')
+TURF_1_HELD_FOR = GlobalStat('turf1/held')
+TURF_1_HP = GlobalStat('turf1/hp')
+TURF_1_MAX_HP = GlobalStat('turf1/mhp')
+TURF_1_FUNDS = GlobalStat('turf1/funds')
+TURF_1_FUNDS_PER_SECOND = GlobalStat('turf1/af')
+
+TURF_2_GANG = GlobalStat('turf2/gang')
+TURF_2_HELD_FOR = GlobalStat('turf2/held')
+TURF_2_HP = GlobalStat('turf2/hp')
+TURF_2_MAX_HP = GlobalStat('turf2/mhp')
+TURF_2_FUNDS = GlobalStat('turf2/funds')
+TURF_2_FUNDS_PER_SECOND = GlobalStat('turf2/af')
+
+TURF_3_GANG = GlobalStat('turf3/gang')
+TURF_3_HELD_FOR = GlobalStat('turf3/held')
+TURF_3_HP = GlobalStat('turf3/hp')
+TURF_3_MAX_HP = GlobalStat('turf3/mhp')
+TURF_3_FUNDS = GlobalStat('turf3/funds')
+TURF_3_FUNDS_PER_SECOND = GlobalStat('turf3/af')
+
 
 CRED = PlayerStat('credibility')
+FUNDS = PlayerStat('funds')
 
 POWER = PlayerStat('power')
 MAX_POWER = PlayerStat('maxpower')
@@ -38,26 +60,7 @@ LOCATION_ID = PlayerStat('locationid')
 BIG_LOCATION_ID = PlayerStat('blocationid')
 BIGGEST_LOCATION_ID = PlayerStat('bblocationid')
 
-TURF_1_GANG = PlayerStat('turf1/gang')
-TURF_1_HELD_FOR = PlayerStat('turf1/held')
-TURF_1_HP = PlayerStat('turf1/hp')
-TURF_1_MAX_HP = PlayerStat('turf1/mhp')
-TURF_1_FUNDS = PlayerStat('turf1/funds')
-TURF_1_FUNDS_PER_SECOND = PlayerStat('turf1/af')
-
-TURF_2_GANG = PlayerStat('turf2/gang')
-TURF_2_HELD_FOR = PlayerStat('turf2/held')
-TURF_2_HP = PlayerStat('turf2/hp')
-TURF_2_MAX_HP = PlayerStat('turf2/mhp')
-TURF_2_FUNDS = PlayerStat('turf2/funds')
-TURF_2_FUNDS_PER_SECOND = PlayerStat('turf2/af')
-
-TURF_3_GANG = PlayerStat('turf3/gang')
-TURF_3_HELD_FOR = PlayerStat('turf3/held')
-TURF_3_HP = PlayerStat('turf3/hp')
-TURF_3_MAX_HP = PlayerStat('turf3/mhp')
-TURF_3_FUNDS = PlayerStat('turf3/funds')
-TURF_3_FUNDS_PER_SECOND = PlayerStat('turf3/af')
+LAST_LOCATION_ID = PlayerStat('llocationid')
 
 
 TEAM_ID = TeamStat('id')
