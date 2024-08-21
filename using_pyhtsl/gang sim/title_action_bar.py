@@ -2,14 +2,17 @@ from pyhtsl import (
     create_function,
     trigger_function,
     IfAnd,
+    IfOr,
+    Else,
     exit_function,
     DateUnix,
     Function,
     display_action_bar,
     PlayerStat,
+    RequiredTeam,
 )
 
-from stats.playerstats import (
+from stats import (
     POWER,
     MAX_POWER,
     DISPLAY_ID,
@@ -17,8 +20,11 @@ from stats.playerstats import (
     DISPLAY_ARG_1,
     DISPLAY_ARG_2,
     DISPLAY_ARG_3,
-    FUNDS_PER_SECOND,
     LOCATION_ID,
+    TEAM_ID,
+    TURF_1_GANG,
+    TURF_2_GANG,
+    TURF_3_GANG,
 )
 from locations import LOCATIONS
 
@@ -52,6 +58,10 @@ class TitleActionBar(ABC):
     def get_id() -> int:
         pass
 
+    @classmethod
+    def set_id(cls) -> None:
+        DISPLAY_ID.value = cls.get_id()
+
     @staticmethod
     @abstractmethod
     def apply() -> None:
@@ -65,12 +75,26 @@ class TitleActionBar(ABC):
 
 @create_function('Regular Action Bar Display')
 def regular_action_bar_display() -> None:
+    for display_arg, turf_gang_args in (
+        (DISPLAY_ARG_1, (TURF_1_GANG, TURF_2_GANG, TURF_3_GANG)),
+        (DISPLAY_ARG_2, (TURF_2_GANG, TURF_3_GANG)),
+        (DISPLAY_ARG_3, (TURF_3_GANG,)),
+    ):
+        with IfOr(*(turf_gang_arg == TEAM_ID for turf_gang_arg in turf_gang_args)):
+            display_arg.value = TEAM_ID
+        with Else:
+            display_arg.value = 7
+
+    visited_ids: set[int] = set()
     for location in LOCATIONS.walk():
+        if location.id in visited_ids:
+            continue
+        visited_ids.add(location.id)
         with IfAnd(
             LOCATION_ID == location.id,
         ):
             display_action_bar(
-                f'&b⏣ {location.name}&3 &4{POWER}/{MAX_POWER} &e+{FUNDS_PER_SECOND}⛁/s',
+                f'&b⏣ {location.name}&4 {POWER}/{MAX_POWER}⸎&{DISPLAY_ARG_1} &l✯&{DISPLAY_ARG_2}&l✯&{DISPLAY_ARG_3}&l✯',
             )
 
 
@@ -105,7 +129,7 @@ class RemovePowerTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER} -{DISPLAY_ARG_1}',
+            f'&4{POWER}/{MAX_POWER}⸎ -{DISPLAY_ARG_1}',
         )
 
 
@@ -125,7 +149,7 @@ class AddCredTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}&2 +{DISPLAY_ARG_1}© Cred',
+            f'&4{POWER}/{MAX_POWER}⸎&2 +{DISPLAY_ARG_1}© Cred',
         )
 
 
@@ -145,7 +169,47 @@ class AddFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}&e +{DISPLAY_ARG_1}⛁ Funds',
+            f'&4{POWER}/{MAX_POWER}⸎&e +{DISPLAY_ARG_1}⛁ Funds',
+        )
+
+
+@final
+class RemoveCredTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 4
+
+    @staticmethod
+    def apply(
+        removed_cred: int | PlayerStat,
+    ) -> None:
+        DISPLAY_ARG_1.value = removed_cred
+        DISPLAY_TIMER.value = seconds_to_ticks(3)
+
+    @staticmethod
+    def display() -> None:
+        display_action_bar(
+            f'&4{POWER}/{MAX_POWER}⸎&c -{DISPLAY_ARG_1}© Cred',
+        )
+
+
+@final
+class RemoveFundsTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 5
+
+    @staticmethod
+    def apply(
+        removed_funds: int | PlayerStat,
+    ) -> None:
+        DISPLAY_ARG_1.value = removed_funds
+        DISPLAY_TIMER.value = seconds_to_ticks(3)
+
+    @staticmethod
+    def display() -> None:
+        display_action_bar(
+            f'&4{POWER}/{MAX_POWER}⸎&6 -{DISPLAY_ARG_1}⛁ Funds',
         )
 
 
@@ -153,7 +217,7 @@ class AddFundsTitleActionBar(TitleActionBar):
 class AddCredAndFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def get_id() -> int:
-        return 4
+        return 6
 
     @staticmethod
     def apply(
@@ -167,7 +231,7 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}&2 +{DISPLAY_ARG_1}©&e +{DISPLAY_ARG_2}⛁',
+            f'&4{POWER}/{MAX_POWER}⸎&2 +{DISPLAY_ARG_1}©&e +{DISPLAY_ARG_2}⛁',
         )
 
 

@@ -7,14 +7,14 @@ from pyhtsl import (
     IfAnd,
     HasItem,
 )
-from pyhtsl.types import ALL_POSSIBLE_ITEM_KEYS, IfStatement
+from pyhtsl.types import ALL_ITEM_KEYS, IfStatement
 
 from enum import Enum, auto
 import re
 
 from typing import Optional, Generator
 
-from stats.playerstats import (
+from stats import (
     POWER,
     MAX_POWER,
     MINING_SPEED,
@@ -74,7 +74,7 @@ class ItemType(Enum):
     Consumable = auto()
     Material = auto()
 
-    def better_name(self, item_key: ALL_POSSIBLE_ITEM_KEYS) -> str:
+    def better_name(self, item_key: ALL_ITEM_KEYS) -> str:
         if self is ItemType.Tool:
             if item_key.endswith('_pickaxe'):
                 return 'Pickaxe'
@@ -128,7 +128,10 @@ class BuffType(Enum):
                 v = int(v)
             else:
                 v = f'{v:.1f}'
+        try:
             v = str(v).replace(str(int(float(v))), f'{int(float(v)):,}')
+        except ValueError:
+            pass
         return self.value[4].format(value=v)
 
     @property
@@ -149,7 +152,7 @@ class Buff:
 
 
 MINING_SPEED_PER_EFF_LEVEL: int = 60
-DEFAULT_MINING_SPEED: dict[ALL_POSSIBLE_ITEM_KEYS, int] = {
+DEFAULT_MINING_SPEED: dict[ALL_ITEM_KEYS, int] = {
     'wooden_pickaxe': 70,
     'stone_pickaxe': 110,
     'iron_pickaxe': 160,
@@ -164,7 +167,7 @@ DEFAULT_MINING_SPEED: dict[ALL_POSSIBLE_ITEM_KEYS, int] = {
 }
 
 DAMAGE_PER_SHARPNESS_LEVEL: float = 1.25
-DEFAULT_DAMAGE: dict[ALL_POSSIBLE_ITEM_KEYS, float] = {
+DEFAULT_DAMAGE: dict[ALL_ITEM_KEYS, float] = {
     'wooden_sword': 4,
     'stone_sword': 5,
     'iron_sword': 6,
@@ -193,7 +196,7 @@ DEFAULT_DAMAGE: dict[ALL_POSSIBLE_ITEM_KEYS, float] = {
 
 class CustomItem:
     name: str
-    key: ALL_POSSIBLE_ITEM_KEYS
+    key: ALL_ITEM_KEYS
     rarity: ItemRarity
     type: ItemType
     check: ItemCheck
@@ -202,7 +205,7 @@ class CustomItem:
     def __init__(
         self,
         name: str,
-        key: ALL_POSSIBLE_ITEM_KEYS,
+        key: ALL_ITEM_KEYS,
         rarity: ItemRarity,
         type: ItemType,
         check: Optional[ItemCheck] = None,
@@ -288,6 +291,7 @@ class Items:
         'wooden_sword',
         ItemRarity.COMMON,
         ItemType.Weapon,
+        buffs=[Buff(BuffType.power, 0)],
     )
     tier_2_weapon = CustomItem(
         'Tier 2 Weapon',
@@ -295,6 +299,7 @@ class Items:
         ItemRarity.UNCOMMON,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
+        buffs=[Buff(BuffType.power, 0)],
     )
     tier_3_weapon = CustomItem(
         'Tier 3 Weapon',
@@ -302,6 +307,7 @@ class Items:
         ItemRarity.UNCOMMON,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 2)],
+        buffs=[Buff(BuffType.power, 5)],
     )
     tier_4_weapon = CustomItem(
         'Tier 4 Weapon',
@@ -309,12 +315,14 @@ class Items:
         ItemRarity.UNCOMMON,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3)],
+        buffs=[Buff(BuffType.power, 10)],
     )
     tier_5_weapon = CustomItem(
         'Tier 5 Weapon',
         'stone_sword',
         ItemRarity.UNCOMMON,
         ItemType.Weapon,
+        buffs=[Buff(BuffType.power, 15)],
     )
     tier_6_weapon = CustomItem(
         'Tier 6 Weapon',
@@ -322,6 +330,7 @@ class Items:
         ItemRarity.RARE,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
+        buffs=[Buff(BuffType.power, 20)],
     )
     tier_7_weapon = CustomItem(
         'Tier 7 Weapon',
@@ -329,6 +338,7 @@ class Items:
         ItemRarity.RARE,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 2)],
+        buffs=[Buff(BuffType.power, 25)],
     )
     tier_8_weapon = CustomItem(
         'Tier 8 Weapon',
@@ -336,6 +346,7 @@ class Items:
         ItemRarity.RARE,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3), Enchantment('efficiency', 2)],
+        buffs=[Buff(BuffType.power, 30)],
     )
     tier_9_weapon = CustomItem(
         'Tier 9 Weapon',
@@ -343,6 +354,7 @@ class Items:
         ItemRarity.RARE,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 4)],
+        buffs=[Buff(BuffType.power, 35)],
     )
     tier_10_weapon = CustomItem(
         'Tier 10 Weapon',
@@ -350,6 +362,7 @@ class Items:
         ItemRarity.EPIC,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
+        buffs=[Buff(BuffType.power, 40)],
     )
     tier_11_weapon = CustomItem(
         'Tier 11 Weapon',
@@ -357,6 +370,7 @@ class Items:
         ItemRarity.EPIC,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 2)],
+        buffs=[Buff(BuffType.power, 45)],
     )
     tier_12_weapon = CustomItem(
         'Tier 12 Weapon',
@@ -364,6 +378,7 @@ class Items:
         ItemRarity.EPIC,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3), Enchantment('efficiency', 2)],
+        buffs=[Buff(BuffType.power, 50)],
     )
     tier_13_weapon = CustomItem(
         'Tier 13 Weapon',
@@ -371,6 +386,7 @@ class Items:
         ItemRarity.EPIC,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 4)],
+        buffs=[Buff(BuffType.power, 55)],
     )
     tier_14_weapon = CustomItem(
         'Tier 14 Weapon',
@@ -378,6 +394,7 @@ class Items:
         ItemRarity.LEGENDARY,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
+        buffs=[Buff(BuffType.power, 60)],
     )
     tier_15_weapon = CustomItem(
         'Tier 15 Weapon',
@@ -385,6 +402,7 @@ class Items:
         ItemRarity.LEGENDARY,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 6)],
+        buffs=[Buff(BuffType.power, 65)],
     )
     tier_16_weapon = CustomItem(
         'Tier 16 Weapon',
@@ -392,6 +410,7 @@ class Items:
         ItemRarity.LEGENDARY,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3)],
+        buffs=[Buff(BuffType.power, 70)],
     )
     tier_17_weapon = CustomItem(
         'Tier 17 Weapon',
@@ -399,6 +418,7 @@ class Items:
         ItemRarity.LEGENDARY,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 4)],
+        buffs=[Buff(BuffType.power, 75)],
     )
     tier_18_weapon = CustomItem(
         'Tier 18 Weapon',
@@ -406,6 +426,7 @@ class Items:
         ItemRarity.MYTHIC,
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
+        buffs=[Buff(BuffType.power, 80)],
     )
 
     @staticmethod
