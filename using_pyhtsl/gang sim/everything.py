@@ -97,17 +97,32 @@ class ItemCheck(Enum):
     ANYWHERE = 'anywhere'
 
 
+ROMAN_NUMERALS: dict[int, str] = {
+    1: 'I',
+    2: 'II',
+    3: 'III',
+    4: 'IV',
+    5: 'V',
+    6: 'VI',
+    7: 'VII',
+    8: 'VIII',
+    9: 'IX',
+    10: 'X',
+}
+
+
 class BuffType(Enum):
-    damage =           (DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',  '&7Attack Damage:&c +{value}',        '')
-    power =            (MAX_POWER,          0,      -1,     lambda x: x,           '&7Power:&a +{value}',              '')
-    mining_speed =     (MINING_SPEED,       0,      -1,     lambda x: x,           '&7Mining Speed:&a +{value}',       '')
-    foraging_speed =   (FORAGING_SPEED,     0,      -1,     lambda x: x,           '&7Foraging Speed:&a +{value}',     '')
-    mining_fortune =   (MINING_FORTUNE,     100,    500,    lambda x: x,           '&7Mining Fortune:&a +{value}',     '')
-    farming_fortune =  (FARMING_FORTUNE,    100,    500,    lambda x: x,           '&7Farming Fortune:&a +{value}',    '')
-    foraging_fortune = (FORAGING_FORTUNE,   100,    500,    lambda x: x,           '&7Foraging Fortune:&a +{value}',   '')
+    damage =           (DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',         '&7Attack Damage:&c +{value}',        '')
+    protection =       (None,               0,      -1,     lambda x: ROMAN_NUMERALS[x],  '&7Protection&a {value}',          '')
+    power =            (MAX_POWER,          0,      -1,     lambda x: x,                  '&7Power:&a +{value}',              '')
+    mining_speed =     (MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
+    foraging_speed =   (FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
+    mining_fortune =   (MINING_FORTUNE,     100,    500,    lambda x: x,                  '&7Mining Fortune:&a +{value}',     '')
+    farming_fortune =  (FARMING_FORTUNE,    100,    500,    lambda x: x,                  '&7Farming Fortune:&a +{value}',    '')
+    foraging_fortune = (FORAGING_FORTUNE,   100,    500,    lambda x: x,                  '&7Foraging Fortune:&a +{value}',   '')
 
     @property
-    def stat(self) -> PlayerStat:
+    def stat(self) -> PlayerStat | None:
         return self.value[0]
 
     @property

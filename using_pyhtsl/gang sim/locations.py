@@ -10,6 +10,8 @@ from pyhtsl import (
     Else,
 )
 from pyhtsl.types import IfStatement
+import colorsys
+import random
 
 from stats import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, PREVIOUS_LOCATION_ID
 
@@ -93,7 +95,7 @@ class Location:
         return f'Location({self.low}, {self.high}, {self.name}, {len(self.contains)})'
 
 
-SPAWN_N = 43
+SPAWN_N = 10  # 43
 SPAWN_MIDDLE = (-1, 43, -41)
 class LocationInstances:
     __slots__ = ()
@@ -141,6 +143,7 @@ class LocationInstances:
         'Guards Spawn Area',
         10500,
     )
+
     cell_block = Location(
         (-22, 115, -28),
         (18, 102, -54),
@@ -275,6 +278,13 @@ class LocationInstances:
     )
 
     # https://www.youtube.com/watch?v=yj18bIGL_CQ walks through a lot of rooms
+    corridors = Location(
+        (19, 114, -28),
+        (57, 102, -61),
+        'Corridors',
+        30000,
+    )
+
     basement_corridor = Location(
         (45, 101, -24),
         (21, 92, -79),
@@ -342,13 +352,91 @@ class Locations:
 LOCATIONS = Locations()
 
 
+def random_neon_color_prefix() -> str:
+    r, g, b = tuple(int(c * 255) for c in colorsys.hsv_to_rgb(random.random(), 0.7, 1.0))
+    return f'\033[38;2;{r};{g};{b}m'
+
+
+def display_locations_blocking() -> None:
+    low: tuple[int, int, int] = (
+        min(LOCATIONS.walk(), key=lambda p: p.low[0]).low[0],
+        min(LOCATIONS.walk(), key=lambda p: p.low[1]).low[1],
+        min(LOCATIONS.walk(), key=lambda p: p.low[2]).low[2],
+    )
+    high: tuple[int, int, int] = (
+        max(LOCATIONS.walk(), key=lambda p: p.high[0]).high[0],
+        max(LOCATIONS.walk(), key=lambda p: p.high[1]).high[1],
+        max(LOCATIONS.walk(), key=lambda p: p.high[2]).high[2],
+    )
+    y_level_has_location: set[int] = set()
+    mapping: dict[tuple[int, int, int], str] = {}
+    for location in LOCATIONS.walk():
+        value = random_neon_color_prefix() + f'{location.id:05d}' + '\033[0m'
+        for x in range(location.low[0], location.high[0] + 1):
+            for y in range(location.low[1], location.high[1] + 1):
+                for z in range(location.low[2], location.high[2] + 1):
+                    key = (x, y, z)
+                    if key in mapping:
+                        continue
+                    mapping[key] = value
+                    y_level_has_location.add(y)
+
+    y = low[1]
+    action = ''
+
+    while True:
+        layer: list[list[str]] = [
+            [
+                mapping.get((x, y, z), '.' * 5)
+                for z in range(low[2], high[2] + 1)
+            ]
+            for x in range(low[0], high[0] + 1)
+        ]
+        corners: list[str] = [
+            f'({x}, {y}, {z})'
+            for x, z in (
+                (low[0], low[2]),
+                (high[0], low[2]),
+                (low[0], high[2]),
+                (high[0], high[2]),
+            )
+        ]
+        lines: list[str] = []
+        for x in range(low[0], high[0] + 1):
+            if x == low[0]:
+                prefix, suffix = corners[0], corners[1]
+            elif x == high[0]:
+                prefix, suffix = corners[2], corners[3]
+            else:
+                prefix, suffix = '', ''
+            prefix, suffix = ' ' * (max(len(corners[0]), len(corners[1])) - len(prefix)) + prefix, suffix + ' ' * (max(len(corners[2]), len(corners[3])) - len(suffix))
+            lines.append(f'{prefix} {' '.join(layer[x - low[0]])} {suffix}')
+
+        print('\n' + '\n'.join(lines))
+
+        try:
+            action = input('\n(u)p, (d)own: ')[0]
+        except IndexError:
+            pass
+        if action == 'u':
+            y = min(high[1], y + 1)
+            while y not in y_level_has_location:
+                y = min(high[1], y + 1)
+        elif action == 'd':
+            y = max(low[1], y - 1)
+            while y not in y_level_has_location:
+                y = max(low[1], y - 1)
+
+
+display_locations_blocking()
+
+
 @create_function('Set Location ID')
 def set_location_id() -> None:
     LOCATION_ID.value = 0
-    if False:  # TODO add all locations but its fucking boring as shit
-        for location in LOCATIONS.walk():
-            with location.if_inside_condition():
-                LOCATION_ID.value = location.id
+    for location in LOCATIONS.walk():
+        with location.if_inside_condition():
+            LOCATION_ID.value = location.id
     BIG_LOCATION_ID.value = LOCATION_ID // 100
     BIGGEST_LOCATION_ID.value = BIG_LOCATION_ID // 100
     with IfOr(

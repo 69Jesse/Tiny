@@ -3,6 +3,7 @@ from pyhtsl import (
     IfAnd,
     PlayerGroupPriority,
     set_player_team,
+    reset_inventory,
 )
 from stats import PLAYER_ID, TOTAL_PLAYERS_JOINED, SpawnTeam
 
@@ -21,6 +22,8 @@ def on_player_join_first_time() -> None:
     TOTAL_PLAYERS_JOINED.value += 1
     PLAYER_ID.value = TOTAL_PLAYERS_JOINED
     set_player_team(SpawnTeam.TEAM)
+    reset_inventory()
+    
 
 
 # Seems to consistently be ran BEFORE Player Kill event so thats really nice
