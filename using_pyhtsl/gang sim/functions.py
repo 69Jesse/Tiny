@@ -16,7 +16,75 @@ from pyhtsl import (
     HouseCookies,
     display_action_bar,
 )
-from constants import *
+from constants import (
+    TOTAL_PLAYERS_JOINED,
+    LAST_UNIX,
+    LATEST_COOKIES,
+    COOKIE_GOAL,
+    COOKIES_NEEDED,
+    TIME_TEMP,
+    TIME_DAY,
+    TIME_HOUR,
+    TIME_MINUTES,
+    TIME_COLOR,
+    TURF_1_GANG,
+    TURF_1_HELD_FOR,
+    TURF_1_HP,
+    TURF_1_MAX_HP,
+    TURF_1_FUNDS,
+    TURF_1_FUNDS_PER_SECOND,
+    TURF_2_GANG,
+    TURF_2_HELD_FOR,
+    TURF_2_HP,
+    TURF_2_MAX_HP,
+    TURF_2_FUNDS,
+    TURF_2_FUNDS_PER_SECOND,
+    TURF_3_GANG,
+    TURF_3_HELD_FOR,
+    TURF_3_HP,
+    TURF_3_MAX_HP,
+    TURF_3_FUNDS,
+    TURF_3_FUNDS_PER_SECOND,
+    LATEST_DEATH_TIME,
+    LATEST_DEATH_PLAYER_ID,
+    LATEST_DEATH_GANG,
+    LATEST_DEATH_WAS_LEADER,
+    LATEST_DEATH_FUNDS,
+    LATEST_DEATH_CRED,
+    PLAYER_ID,
+    PLAYER_GANG,
+    PLAYER_CRED,
+    PLAYER_FUNDS,
+    PLAYER_POWER,
+    PLAYER_MAX_POWER,
+    PLAYER_MINING_SPEED,
+    PLAYER_FORAGING_SPEED,
+    PLAYER_MINING_FORTUNE,
+    PLAYER_FARMING_FORTUNE,
+    PLAYER_FORAGING_FORTUNE,
+    PLAYER_DAMAGE,
+    DISPLAY_ID,
+    DISPLAY_TIMER,
+    DISPLAY_ARG_1,
+    DISPLAY_ARG_2,
+    DISPLAY_ARG_3,
+    LOCATION_ID,
+    BIG_LOCATION_ID,
+    BIGGEST_LOCATION_ID,
+    PREVIOUS_LOCATION_ID,
+    TEAM_ID,
+    TEAM_LEADER_ID,
+    GangSimTeam,
+    Bloods,
+    Crips,
+    Kings,
+    Grapes,
+    Guards,
+    SpawnTeam,
+    SPAWN,
+    SPAWN_WITH_ROTATION,
+    IMPORTANT_MESSAGE_PREFIX,
+)
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
 from currency import add_funds
@@ -33,7 +101,7 @@ def on_player_join() -> None:
         PlayerGroupPriority < 20,
         PLAYER_ID == 0,
     ):
-        pass
+        trigger_function(on_player_join_first_time)
 
 
 @create_function('On Player Join First Time')
@@ -54,8 +122,13 @@ def on_player_join_first_time() -> None:
 def on_player_death() -> None:
     LATEST_DEATH_TIME.value = DateUnix
     LATEST_DEATH_PLAYER_ID.value = PLAYER_ID
-    LATEST_DEATH_GANG.value = PLAYER_GANG
-    LATEST_DEATH_WAS_LEADER.value = 
+    LATEST_DEATH_GANG.value = TEAM_ID
+    with IfAnd(
+        TEAM_LEADER_ID == PLAYER_ID,
+    ):
+        LATEST_DEATH_WAS_LEADER.value = 1
+    with Else:
+        LATEST_DEATH_WAS_LEADER.value = 0
     LATEST_DEATH_CRED.value = PLAYER_CRED
     LATEST_DEATH_FUNDS.value = PLAYER_FUNDS
 

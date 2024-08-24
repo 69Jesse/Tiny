@@ -1,15 +1,6 @@
 from pyhtsl import (
-    create_function,
-    trigger_function,
-    IfAnd,
-    IfOr,
-    Else,
-    exit_function,
-    DateUnix,
-    Function,
     display_action_bar,
     PlayerStat,
-    RequiredTeam,
 )
 
 from constants import (
@@ -20,13 +11,7 @@ from constants import (
     DISPLAY_ARG_1,
     DISPLAY_ARG_2,
     DISPLAY_ARG_3,
-    LOCATION_ID,
-    TEAM_ID,
-    TURF_1_GANG,
-    TURF_2_GANG,
-    TURF_3_GANG,
 )
-from locations import LOCATIONS
 
 from abc import ABC, abstractmethod
 from typing import final

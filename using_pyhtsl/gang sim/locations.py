@@ -8,7 +8,7 @@ from pyhtsl.types import IfStatement
 import colorsys
 import random
 
-from constants import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, PREVIOUS_LOCATION_ID
+from constants import LOCATION_ID
 
 from typing import Callable, Generator
 
@@ -93,8 +93,8 @@ class Location:
 class LocationInstances:
     __slots__ = ()
     spawn = Location(
-        (-13, 42, -51),
-        (49, 1, 9),
+        (-51, 1, -91),
+        (49, 80, 9),
         'Spawn',
         10000,
     )
