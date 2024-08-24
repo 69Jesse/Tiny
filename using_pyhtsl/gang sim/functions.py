@@ -145,7 +145,7 @@ def on_player_kill() -> None:
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
-    teleport_player(SPAWN_WITH_ROTATION)
+    teleport_player(SPAWN)
     play_sound('Enderman Teleport')
 
 
