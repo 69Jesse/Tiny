@@ -114,7 +114,7 @@ ROMAN_NUMERALS: dict[int, str] = {
 class BuffType(Enum):
     damage =           (PLAYER_DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',         '&7Attack Damage:&c +{value}',        '')
     protection =       (None,               0,      -1,     lambda x: ROMAN_NUMERALS[x],  '&7Protection&a {value}',          '')
-    power =            (PLAYER_MAX_POWER,          0,      -1,     lambda x: x,                  '&7Power:&a +{value}',              '')
+    power =            (PLAYER_MAX_POWER,          0,      -1,     lambda x: x,                  '&7Power:&4 +{value}',              '')
     mining_speed =     (PLAYER_MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
     foraging_speed =   (PLAYER_FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
     mining_fortune =   (PLAYER_MINING_FORTUNE,     100,    500,    lambda x: x,                  '&7Mining Fortune:&a +{value}',     '')
@@ -266,6 +266,10 @@ class CustomItem:
                 self.find_buff(buffs, buff_type).value += MINING_SPEED_PER_EFF_LEVEL * enchantment.level
             elif enchantment.name == 'sharpness':
                 self.find_buff(buffs, BuffType.damage).value += DAMAGE_PER_SHARPNESS_LEVEL * enchantment.level
+        for i in range(len(buffs) - 1, -1, -1):
+            buff = buffs[i]
+            if buff.value == 0:
+                buffs.pop(i)
         buffs.sort(key=lambda buff: list(BuffType).index(buff.type))
         return buffs
 
