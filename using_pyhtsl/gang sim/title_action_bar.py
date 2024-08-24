@@ -12,9 +12,9 @@ from pyhtsl import (
     RequiredTeam,
 )
 
-from stats import (
-    POWER,
-    MAX_POWER,
+from constants import (
+    PLAYER_POWER,
+    PLAYER_MAX_POWER,
     DISPLAY_ID,
     DISPLAY_TIMER,
     DISPLAY_ARG_1,
@@ -30,22 +30,6 @@ from locations import LOCATIONS
 
 from abc import ABC, abstractmethod
 from typing import final
-
-
-@create_function('Update Display Stats')
-def update_display_stats() -> None:
-    with IfAnd(
-        DISPLAY_TIMER > 0,
-    ):
-        DISPLAY_TIMER.value -= 1
-    with IfAnd(
-        DISPLAY_TIMER <= 0,
-    ):
-        DISPLAY_ID.value = 0
-        DISPLAY_TIMER.value = 0
-        DISPLAY_ARG_1.value = 0
-        DISPLAY_ARG_2.value = 0
-        DISPLAY_ARG_3.value = 0
 
 
 def seconds_to_every_4_ticks(seconds: int) -> int:
@@ -73,51 +57,6 @@ class TitleActionBar(ABC):
         pass
 
 
-@create_function('Regular Action Bar Display')
-def regular_action_bar_display() -> None:
-    for display_arg, turf_gang_args in (
-        (DISPLAY_ARG_1, (TURF_1_GANG, TURF_2_GANG, TURF_3_GANG)),
-        (DISPLAY_ARG_2, (TURF_2_GANG, TURF_3_GANG)),
-        (DISPLAY_ARG_3, (TURF_3_GANG,)),
-    ):
-        with IfOr(*(turf_gang_arg == TEAM_ID for turf_gang_arg in turf_gang_args)):
-            display_arg.value = TEAM_ID
-        with Else:
-            display_arg.value = 7
-
-    def display_with_location(location_name: str) -> None:
-        display_action_bar(
-            f'&b⏣ {location_name}&4 {POWER}/{MAX_POWER}⸎&{DISPLAY_ARG_1} &l✯&{DISPLAY_ARG_2}&l✯&{DISPLAY_ARG_3}&l✯',
-        )
-
-    visited_ids: set[int] = set()
-    for location in LOCATIONS.walk():
-        if location.id in visited_ids:
-            continue
-        visited_ids.add(location.id)
-        with IfAnd(
-            LOCATION_ID == location.id,
-        ):
-            display_with_location(location.name)
-            exit_function()
-    display_with_location('Unknown')
-
-
-@final
-class RegularTitleActionBar(TitleActionBar):
-    @staticmethod
-    def get_id() -> int:
-        return 0
-
-    @classmethod
-    def apply(cls) -> None:
-        raise ValueError('Regular Action Bar cannot be applied')
-
-    @staticmethod
-    def display() -> None:
-        trigger_function(regular_action_bar_display)
-
-
 @final
 class RemovePowerTitleActionBar(TitleActionBar):
     @staticmethod
@@ -136,7 +75,7 @@ class RemovePowerTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&c -&4{DISPLAY_ARG_1}⸎ Power',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&c -&4{DISPLAY_ARG_1}⸎ Power',
         )
 
 
@@ -158,7 +97,7 @@ class AddCredTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}© Cred',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}© Cred',
         )
 
 
@@ -180,7 +119,7 @@ class AddFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&a +&e{DISPLAY_ARG_1}⛁ Funds',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&e{DISPLAY_ARG_1}⛁ Funds',
         )
 
 
@@ -202,7 +141,7 @@ class RemoveCredTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&c -&2{DISPLAY_ARG_1}© Cred',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&c -&2{DISPLAY_ARG_1}© Cred',
         )
 
 
@@ -224,7 +163,7 @@ class RemoveFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&c -&e{DISPLAY_ARG_1}⛁ Funds',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&c -&e{DISPLAY_ARG_1}⛁ Funds',
         )
 
 
@@ -248,7 +187,7 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{POWER}/{MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         )
 
 
@@ -257,12 +196,3 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
 
 def get_title_action_bars() -> list[type[TitleActionBar]]:
     return TitleActionBar.__subclasses__()
-
-
-@create_function('Display Action Bar or Title')
-def display_action_bar_or_title() -> None:
-    for action_bar in get_title_action_bars():
-        with IfAnd(
-            DISPLAY_ID == action_bar.get_id(),
-        ):
-            action_bar.display()

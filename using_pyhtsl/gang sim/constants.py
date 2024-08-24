@@ -39,23 +39,26 @@ LATEST_DEATH_TIME = GlobalStat('ld/time')
 LATEST_DEATH_PLAYER_ID = GlobalStat('ld/pid')
 LATEST_DEATH_GANG = GlobalStat('ld/gang')
 LATEST_DEATH_WAS_LEADER = GlobalStat('ld/wasl')
+LATEST_DEATH_FUNDS = GlobalStat('ld/funds')
+LATEST_DEATH_CRED = GlobalStat('ld/cred')
 
 
 PLAYER_ID = PlayerStat('id')
-CRED = PlayerStat('cred')
-FUNDS = PlayerStat('funds')
+PLAYER_GANG = PlayerStat('gang')
+PLAYER_CRED = PlayerStat('cred')
+PLAYER_FUNDS = PlayerStat('funds')
 
-POWER = PlayerStat('power')
-MAX_POWER = PlayerStat('maxpower')
+PLAYER_POWER = PlayerStat('power')
+PLAYER_MAX_POWER = PlayerStat('maxpower')
 
-MINING_SPEED = PlayerStat('minespeed')
-FORAGING_SPEED = PlayerStat('foraspeed')
+PLAYER_MINING_SPEED = PlayerStat('minespeed')
+PLAYER_FORAGING_SPEED = PlayerStat('foraspeed')
 
-MINING_FORTUNE = PlayerStat('minefortune')
-FARMING_FORTUNE = PlayerStat('farmfortune')
-FORAGING_FORTUNE = PlayerStat('forafortune')
+PLAYER_MINING_FORTUNE = PlayerStat('minefortune')
+PLAYER_FARMING_FORTUNE = PlayerStat('farmfortune')
+PLAYER_FORAGING_FORTUNE = PlayerStat('forafortune')
 
-DAMAGE = PlayerStat('damage')
+PLAYER_DAMAGE = PlayerStat('damage')
 
 DISPLAY_ID = PlayerStat('display/id')
 DISPLAY_TIMER = PlayerStat('display/timer')
@@ -70,8 +73,8 @@ BIGGEST_LOCATION_ID = PlayerStat('bblocationid')
 PREVIOUS_LOCATION_ID = PlayerStat('plocationid')
 
 
-
 TEAM_ID = TeamStat('id')
+TEAM_LEADER_ID = TeamStat('leaderid')
 
 
 class GangSimTeam:
@@ -128,3 +131,8 @@ class SpawnTeam(GangSimTeam):
     EXPERIENCE = PlayerStat('s/xp')
     REQUIRED_EXPERIENCE = PlayerStat('s/xpr')
     ID = 7
+
+
+SPAWN = (-0.5, 46, -40.5)
+SPAWN_WITH_ROTATION = (-0.5, 46, -40.5, -180, 0)
+IMPORTANT_MESSAGE_PREFIX = '&f[&a!&f] '

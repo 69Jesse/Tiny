@@ -14,15 +14,15 @@ import re
 
 from typing import Optional, Generator
 
-from stats import (
-    POWER,
-    MAX_POWER,
-    MINING_SPEED,
-    FORAGING_SPEED,
-    MINING_FORTUNE,
-    FARMING_FORTUNE,
-    FORAGING_FORTUNE,
-    DAMAGE,
+from constants import (
+    PLAYER_POWER,
+    PLAYER_MAX_POWER,
+    PLAYER_MINING_SPEED,
+    PLAYER_FORAGING_SPEED,
+    PLAYER_MINING_FORTUNE,
+    PLAYER_FARMING_FORTUNE,
+    PLAYER_FORAGING_FORTUNE,
+    PLAYER_DAMAGE,
 )
 
 
@@ -112,14 +112,14 @@ ROMAN_NUMERALS: dict[int, str] = {
 
 
 class BuffType(Enum):
-    damage =           (DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',         '&7Attack Damage:&c +{value}',        '')
+    damage =           (PLAYER_DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',         '&7Attack Damage:&c +{value}',        '')
     protection =       (None,               0,      -1,     lambda x: ROMAN_NUMERALS[x],  '&7Protection&a {value}',          '')
-    power =            (MAX_POWER,          0,      -1,     lambda x: x,                  '&7Power:&a +{value}',              '')
-    mining_speed =     (MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
-    foraging_speed =   (FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
-    mining_fortune =   (MINING_FORTUNE,     100,    500,    lambda x: x,                  '&7Mining Fortune:&a +{value}',     '')
-    farming_fortune =  (FARMING_FORTUNE,    100,    500,    lambda x: x,                  '&7Farming Fortune:&a +{value}',    '')
-    foraging_fortune = (FORAGING_FORTUNE,   100,    500,    lambda x: x,                  '&7Foraging Fortune:&a +{value}',   '')
+    power =            (PLAYER_MAX_POWER,          0,      -1,     lambda x: x,                  '&7Power:&a +{value}',              '')
+    mining_speed =     (PLAYER_MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
+    foraging_speed =   (PLAYER_FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
+    mining_fortune =   (PLAYER_MINING_FORTUNE,     100,    500,    lambda x: x,                  '&7Mining Fortune:&a +{value}',     '')
+    farming_fortune =  (PLAYER_FARMING_FORTUNE,    100,    500,    lambda x: x,                  '&7Farming Fortune:&a +{value}',    '')
+    foraging_fortune = (PLAYER_FORAGING_FORTUNE,   100,    500,    lambda x: x,                  '&7Foraging Fortune:&a +{value}',   '')
 
     @property
     def stat(self) -> PlayerStat | None:

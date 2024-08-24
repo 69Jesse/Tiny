@@ -3,17 +3,12 @@ from pyhtsl import (
     PlayerLocationX,
     PlayerLocationY,
     PlayerLocationZ,
-    create_function,
-    exit_function,
-    trigger_function,
-    IfOr,
-    Else,
 )
 from pyhtsl.types import IfStatement
 import colorsys
 import random
 
-from stats import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, PREVIOUS_LOCATION_ID
+from constants import LOCATION_ID, BIG_LOCATION_ID, BIGGEST_LOCATION_ID, PREVIOUS_LOCATION_ID
 
 from typing import Callable, Generator
 
@@ -95,21 +90,11 @@ class Location:
         return f'Location({self.low}, {self.high}, {self.name}, {len(self.contains)})'
 
 
-SPAWN_N = 10  # 43
-SPAWN_MIDDLE = (-1, 43, -41)
 class LocationInstances:
     __slots__ = ()
     spawn = Location(
-        (
-            SPAWN_MIDDLE[0] - (SPAWN_N * 3),
-            SPAWN_MIDDLE[1] - SPAWN_N,
-            SPAWN_MIDDLE[2] - (SPAWN_N * 3),
-        ),
-        (
-            SPAWN_MIDDLE[0] + (SPAWN_N * 3),
-            SPAWN_MIDDLE[1] + SPAWN_N,
-            SPAWN_MIDDLE[2] + (SPAWN_N * 3),
-        ),
+        (-13, 42, -51),
+        (49, 1, 9),
         'Spawn',
         10000,
     )
@@ -144,159 +129,159 @@ class LocationInstances:
         10500,
     )
 
-    cell_block = Location(
-        (-22, 115, -28),
-        (18, 102, -54),
-        'Cell Block',
-        20000,
-    )
-    cell_block_cell_1 = Location(
-        (15, 103, -34),
-        (11, 107, -29),
-        'Cell 1',
-        20001,
-    )
-    cell_block_cell_2 = Location(
-        (8, 103, -34),
-        (4, 107, -29),
-        'Cell 2',
-        20002,
-    )
-    cell_block_cell_3 = Location(
-        (1, 103, -34),
-        (-3, 107, -29),
-        'Cell 3',
-        20003,
-    )
-    cell_block_cell_4 = Location(
-        (-6, 103, -34),
-        (-10, 107, -29),
-        'Cell 4',
-        20004,
-    )
-    cell_block_cell_5 = Location(
-        (-13, 103, -34),
-        (-17, 107, -29),
-        'Cell 5',
-        20005,
-    )
-    cell_block_cell_6 = Location(
-        (-17, 103, -48),
-        (-13, 107, -53),
-        'Cell 6',
-        20006,
-    )
-    cell_block_cell_7 = Location(
-        (-10, 103, -48),
-        (-6, 107, -53),
-        'Cell 7',
-        20007,
-    )
-    cell_block_cell_8 = Location(
-        (-3, 103, -48),
-        (1, 107, -53),
-        'Cell 8',
-        20008,
-    )
-    cell_block_cell_9 = Location(
-        (4, 103, -48),
-        (8, 107, -53),
-        'Cell 9',
-        20009,
-    )
-    cell_block_cell_10 = Location(
-        (11, 103, -48),
-        (15, 107, -53),
-        'Cell 10',
-        20010,
-    )
-    cell_block_cell_11 = Location(
-        (15, 110, -34),
-        (11, 114, -29),
-        'Cell 11',
-        20011,
-    )
-    cell_block_cell_12 = Location(
-        (8, 110, -34),
-        (4, 114, -29),
-        'Cell 12',
-        20012,
-    )
-    cell_block_cell_13 = Location(
-        (1, 110, -34),
-        (-3, 114, -29),
-        'Cell 13',
-        20013,
-    )
-    cell_block_cell_14 = Location(
-        (-6, 110, -34),
-        (-10, 114, -29),
-        'Cell 14',
-        20014,
-    )
-    cell_block_cell_15 = Location(
-        (-13, 110, -34),
-        (-17, 114, -29),
-        'Cell 15',
-        20015,
-    )
-    cell_block_cell_16 = Location(
-        (-17, 110, -48),
-        (-13, 114, -53),
-        'Cell 16',
-        20016,
-    )
-    cell_block_cell_17 = Location(
-        (-10, 110, -48),
-        (-6, 114, -53),
-        'Cell 17',
-        20017,
-    )
-    cell_block_cell_18 = Location(
-        (-3, 110, -48),
-        (1, 114, -53),
-        'Cell 18',
-        20018,
-    )
-    cell_block_cell_19 = Location(
-        (4, 110, -48),
-        (8, 114, -53),
-        'Cell 19',
-        20019,
-    )
-    cell_block_cell_20 = Location(
-        (11, 110, -48),
-        (15, 114, -53),
-        'Cell 20',
-        20020,
-    )
-    cell_block_roof = Location(
-        (-24, 116, -26),
-        (21, 128, -56),
-        'Cell Block Roof',
-        20100,
-    )
+    # cell_block = Location(
+    #     (-22, 115, -28),
+    #     (18, 102, -54),
+    #     'Cell Block',
+    #     20000,
+    # )
+    # cell_block_cell_1 = Location(
+    #     (15, 103, -34),
+    #     (11, 107, -29),
+    #     'Cell 1',
+    #     20001,
+    # )
+    # cell_block_cell_2 = Location(
+    #     (8, 103, -34),
+    #     (4, 107, -29),
+    #     'Cell 2',
+    #     20002,
+    # )
+    # cell_block_cell_3 = Location(
+    #     (1, 103, -34),
+    #     (-3, 107, -29),
+    #     'Cell 3',
+    #     20003,
+    # )
+    # cell_block_cell_4 = Location(
+    #     (-6, 103, -34),
+    #     (-10, 107, -29),
+    #     'Cell 4',
+    #     20004,
+    # )
+    # cell_block_cell_5 = Location(
+    #     (-13, 103, -34),
+    #     (-17, 107, -29),
+    #     'Cell 5',
+    #     20005,
+    # )
+    # cell_block_cell_6 = Location(
+    #     (-17, 103, -48),
+    #     (-13, 107, -53),
+    #     'Cell 6',
+    #     20006,
+    # )
+    # cell_block_cell_7 = Location(
+    #     (-10, 103, -48),
+    #     (-6, 107, -53),
+    #     'Cell 7',
+    #     20007,
+    # )
+    # cell_block_cell_8 = Location(
+    #     (-3, 103, -48),
+    #     (1, 107, -53),
+    #     'Cell 8',
+    #     20008,
+    # )
+    # cell_block_cell_9 = Location(
+    #     (4, 103, -48),
+    #     (8, 107, -53),
+    #     'Cell 9',
+    #     20009,
+    # )
+    # cell_block_cell_10 = Location(
+    #     (11, 103, -48),
+    #     (15, 107, -53),
+    #     'Cell 10',
+    #     20010,
+    # )
+    # cell_block_cell_11 = Location(
+    #     (15, 110, -34),
+    #     (11, 114, -29),
+    #     'Cell 11',
+    #     20011,
+    # )
+    # cell_block_cell_12 = Location(
+    #     (8, 110, -34),
+    #     (4, 114, -29),
+    #     'Cell 12',
+    #     20012,
+    # )
+    # cell_block_cell_13 = Location(
+    #     (1, 110, -34),
+    #     (-3, 114, -29),
+    #     'Cell 13',
+    #     20013,
+    # )
+    # cell_block_cell_14 = Location(
+    #     (-6, 110, -34),
+    #     (-10, 114, -29),
+    #     'Cell 14',
+    #     20014,
+    # )
+    # cell_block_cell_15 = Location(
+    #     (-13, 110, -34),
+    #     (-17, 114, -29),
+    #     'Cell 15',
+    #     20015,
+    # )
+    # cell_block_cell_16 = Location(
+    #     (-17, 110, -48),
+    #     (-13, 114, -53),
+    #     'Cell 16',
+    #     20016,
+    # )
+    # cell_block_cell_17 = Location(
+    #     (-10, 110, -48),
+    #     (-6, 114, -53),
+    #     'Cell 17',
+    #     20017,
+    # )
+    # cell_block_cell_18 = Location(
+    #     (-3, 110, -48),
+    #     (1, 114, -53),
+    #     'Cell 18',
+    #     20018,
+    # )
+    # cell_block_cell_19 = Location(
+    #     (4, 110, -48),
+    #     (8, 114, -53),
+    #     'Cell 19',
+    #     20019,
+    # )
+    # cell_block_cell_20 = Location(
+    #     (11, 110, -48),
+    #     (15, 114, -53),
+    #     'Cell 20',
+    #     20020,
+    # )
+    # cell_block_roof = Location(
+    #     (-24, 116, -26),
+    #     (21, 128, -56),
+    #     'Cell Block Roof',
+    #     20100,
+    # )
 
-    # https://www.youtube.com/watch?v=yj18bIGL_CQ walks through a lot of rooms
-    corridors = Location(
-        (19, 114, -28),
-        (57, 102, -61),
-        'Corridors',
-        30000,
-    )
+    # # https://www.youtube.com/watch?v=yj18bIGL_CQ walks through a lot of rooms
+    # corridors = Location(
+    #     (19, 114, -28),
+    #     (57, 102, -61),
+    #     'Corridors',
+    #     30000,
+    # )
 
-    basement_corridor = Location(
-        (45, 101, -24),
-        (21, 92, -79),
-        'Basement Corridor',
-        -1,
-    )
-    the_deep = Location(
-        (19, 91, -65),
-        (-22, 100, -27),
-        'The Deep',
-        -2,
-    )
+    # basement_corridor = Location(
+    #     (45, 101, -24),
+    #     (21, 92, -79),
+    #     'Basement Corridor',
+    #     -1,
+    # )
+    # the_deep = Location(
+    #     (19, 91, -65),
+    #     (-22, 100, -27),
+    #     'The Deep',
+    #     -2,
+    # )
 
     @classmethod
     def get_all_locations(cls) -> Generator[Location, None, None]:
@@ -428,27 +413,5 @@ def display_locations_blocking() -> None:
                 y = max(low[1], y - 1)
 
 
-display_locations_blocking()
-
-
-@create_function('Set Location ID')
-def set_location_id() -> None:
-    LOCATION_ID.value = 0
-    for location in LOCATIONS.walk():
-        with location.if_inside_condition():
-            LOCATION_ID.value = location.id
-    BIG_LOCATION_ID.value = LOCATION_ID // 100
-    BIGGEST_LOCATION_ID.value = BIG_LOCATION_ID // 100
-    with IfOr(
-        LOCATION_ID == 0,
-        PREVIOUS_LOCATION_ID == LOCATION_ID,
-    ):
-        pass
-    with Else:
-        trigger_function(on_new_location_enter)
-        PREVIOUS_LOCATION_ID.value = LOCATION_ID
-
-
-@create_function('On New Location Enter')
-def on_new_location_enter() -> None:
-    pass
+if __name__ == '__main__':
+    display_locations_blocking()

@@ -1,3 +1,0 @@
-
-
-IMPORTANT_MESSAGE_PREFIX = '&f[&a!&f] '
