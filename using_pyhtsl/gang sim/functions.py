@@ -15,6 +15,7 @@ from pyhtsl import (
     chat,
     HouseCookies,
     display_action_bar,
+    give_item,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -110,7 +111,7 @@ def on_player_join_first_time() -> None:
     PLAYER_ID.value = TOTAL_PLAYERS_JOINED
     set_player_team(SpawnTeam.TEAM)
     reset_inventory()
-    
+    give_item(Items.tier_1_weapon.item)
 
 
 # DEATH / KILLS ======================================================================
