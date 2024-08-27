@@ -108,6 +108,7 @@ from constants import (
     PAYOUT_REST,
     PAYOUT_WHOLE,
     TURF_FUNDS_PER_SECOND_MAPPING,
+    PLAYTIME_SECONDS,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
@@ -164,7 +165,7 @@ def on_player_death() -> None:
 # NOTE have this get called by the actual event
 @create_function('On Player Kill')
 def on_player_kill() -> None:
-    pass
+    play_sound('Successful Hit')
 
 
 # MISC?? =================================
@@ -173,12 +174,18 @@ def on_player_kill() -> None:
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
+    PLAYER_GANG.value = EMPTY_TURF_ID
     teleport_player(SPAWN)
     play_sound('Enderman Teleport')
 
 
 @create_function('Check Out Of Spawn')
 def check_out_of_spawn() -> None:
+    with IfAnd(
+        PlayerGroupPriority >= 19
+    ):
+        exit_function()
+
     with IfOr(
         BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
         RequiredTeam(SpawnTeam.TEAM),
@@ -190,6 +197,10 @@ def check_out_of_spawn() -> None:
         exit_function()
 
     # is not at spawn or has spawn team
+    with IfAnd(
+        PlayerGroupPriority >= 18
+    ):
+        exit_function()
 
     with IfAnd(
         RequiredTeam(SpawnTeam.TEAM),
@@ -240,7 +251,7 @@ def set_most_stats() -> None:
 # NOTE have this run every 20 ticks
 @create_function('Personal 1s')
 def personal_every_second() -> None:
-    ...
+    PLAYTIME_SECONDS.value += 1
 
 
 # NOTE have this run every 4 ticks
@@ -248,8 +259,26 @@ def personal_every_second() -> None:
 def personal_every_4ticks() -> None:
     trigger_function(set_location_id)
     trigger_function(check_out_of_spawn)
+    trigger_function(set_most_stats)
     trigger_function(update_display_stats)
     trigger_function(display_action_bar_and_title)
+
+    with IfOr(*(
+        RequiredTeam(team.TEAM)
+        for team in (
+            Bloods, Crips, Kings, Grapes, Guards,
+        )
+    )):
+        PLAYER_GANG.value = TEAM_ID
+    with IfOr(*(
+        PLAYER_GANG == team.ID
+        for team in (
+            Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
+        )
+    )):
+        pass
+    with Else:
+        trigger_function(move_to_spawn)
 
 
 # NOTE have this run every 4 ticks
@@ -260,6 +289,10 @@ def global_every_second() -> None:
     LAST_UNIX.value = DateUnix
     trigger_function(update_timer)
     trigger_function(check_cookie_goal)
+    for team in (
+        Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
+    ):
+        team.TEAM.stat('id').value = team.ID
 
 
 # LOCATIONS ========================================
@@ -399,8 +432,8 @@ def update_display_stats() -> None:
 def regular_action_bar_display() -> None:
     for display_arg, turf_gang_args in (
         (DISPLAY_ARG_1, (TURF_1_GANG, TURF_2_GANG, TURF_3_GANG)),
-        (DISPLAY_ARG_2, (TURF_2_GANG, TURF_3_GANG)),
-        (DISPLAY_ARG_3, (TURF_3_GANG,)),
+        (DISPLAY_ARG_2, (TURF_1_GANG, TURF_2_GANG)),
+        (DISPLAY_ARG_3, (TURF_1_GANG,)),
     ):
         with IfOr(*(turf_gang_arg == TEAM_ID for turf_gang_arg in turf_gang_args)):
             display_arg.value = TEAM_ID
@@ -457,6 +490,8 @@ def payout_turf_funds() -> None:
     with IfAnd(
         PLAYER_GANG == PAYOUT_GANG,
     ):
+        pass
+    with Else:
         exit_function()
     temp = PlayerStat('temp')
     temp.value = PAYOUT_WHOLE
@@ -466,6 +501,7 @@ def payout_turf_funds() -> None:
         PAYOUT_REST.value -= 1
         temp += 1
     add_funds(temp)
+    play_sound('Item Pickup')
 
 
 def DESTROY_TURF(
@@ -625,7 +661,6 @@ def ON_CLICK_TURF(
     with IfAnd(
         TURF_HIT_COOLDOWN > 0
     ):
-        play_unable_sound()
         exit_function()
 
     with IfAnd(
@@ -633,7 +668,7 @@ def ON_CLICK_TURF(
     ):
         trigger_function(set_most_stats)
         TURF_HP.value -= PLAYER_DAMAGE
-        play_sound('Note Sticks')
+        play_sound('Blaze Hit')
 
     with IfAnd(
         TURF_HP > 0

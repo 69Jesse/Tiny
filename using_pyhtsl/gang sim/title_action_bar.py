@@ -227,7 +227,7 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = added_funds
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
-        play_sound('Ambience Thunder')
+        play_sound('Wither Death')
 
     @staticmethod
     def apply_globals(
@@ -317,7 +317,7 @@ class TurfCapturedTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
-        play_sound('Guardian Hit')
+        play_sound('Wither Death')
 
     @staticmethod
     def apply_globals(

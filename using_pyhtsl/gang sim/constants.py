@@ -93,6 +93,8 @@ BIGGEST_LOCATION_ID = PlayerStat('bblocationid')
 
 PREVIOUS_LOCATION_ID = PlayerStat('plocationid')
 
+PLAYTIME_SECONDS = PlayerStat('playtime')
+
 
 TEAM_ID = TeamStat('id')
 TEAM_LEADER_ID = TeamStat('leaderid')
@@ -158,7 +160,7 @@ class SpawnTeam(GangSimTeam):
     LEVEL = PlayerStat('spawn lvl')
     EXPERIENCE = PlayerStat('s/xp')
     REQUIRED_EXPERIENCE = PlayerStat('s/xpr')
-    ID = 7
+    ID = EMPTY_TURF_ID
 
 
 SPAWN = (-0.5, 46, -40.5)
