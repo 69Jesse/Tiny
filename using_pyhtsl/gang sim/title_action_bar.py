@@ -213,6 +213,8 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
 
 @final
 class TurfDestroyedTitleActionBar(TitleActionBar):
+    PROMOTION_PLAYER_ID = -999999999
+
     @staticmethod
     def get_id() -> int:
         return 7
@@ -244,6 +246,10 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         GLOBAL_DISPLAY_ARG_6.value = seconds_held
 
     @staticmethod
+    def set_promotion_player_id() -> None:
+        GLOBAL_DISPLAY_ARG_3.value = TurfDestroyedTitleActionBar.PROMOTION_PLAYER_ID
+
+    @staticmethod
     def is_regular() -> bool:
         return False
 
@@ -264,10 +270,23 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
             with IfAnd(
                 cls.get_condition(),
                 GLOBAL_DISPLAY_ARG_1.value == number,
+                GLOBAL_DISPLAY_ARG_3 > cls.PROMOTION_PLAYER_ID,
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED',
                     subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}&a, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l✯✯✯&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
+                    fadein=0,
+                    stay=1,
+                    fadeout=0,
+                )
+            with IfAnd(
+                cls.get_condition(),
+                GLOBAL_DISPLAY_ARG_1.value == number,
+                GLOBAL_DISPLAY_ARG_3 == cls.PROMOTION_PLAYER_ID,
+            ):
+                display_title(
+                    title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED',
+                    subtitle=f'&aPROMOTION, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l✯✯✯&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
@@ -279,7 +298,10 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
             trigger_function(
                 TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
             )
-        with Else:
+        with IfAnd(
+            cls.get_condition(),
+            DISPLAY_ARG_1 > 0,
+        ):
             AddFundsTitleActionBar.display()
 
 
@@ -338,9 +360,12 @@ class TurfCapturedTitleActionBar(TitleActionBar):
                     stay=1,
                     fadeout=0,
                 )
-        trigger_function(
-            TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
-        )
+        with IfAnd(
+            cls.get_condition(),
+        ):
+            trigger_function(
+                TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
+            )
 
 
 # TODO add more action bars? prestige with title instead of action bar and shit

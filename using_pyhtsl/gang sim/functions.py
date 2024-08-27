@@ -540,6 +540,9 @@ def CLAIM_TURF(
         ):
             cannot_downgrade()
 
+    did_promote = PlayerStat('temp')
+    did_promote.value = 0
+
     if TURF_ID == TURF_2_ID:
         with IfAnd(
             TURF_3_GANG == PLAYER_GANG
@@ -549,6 +552,8 @@ def CLAIM_TURF(
             PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
             trigger_function(payout_turf_funds, trigger_for_all_players=True)
             trigger_function(destroy_turf_3)
+            TurfDestroyedTitleActionBar.set_promotion_player_id()
+            did_promote.value = 1
     elif TURF_ID == TURF_1_ID:
         with IfAnd(
             TURF_2_GANG == PLAYER_GANG
@@ -558,6 +563,8 @@ def CLAIM_TURF(
             PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
             trigger_function(payout_turf_funds, trigger_for_all_players=True)
             trigger_function(destroy_turf_2)
+            TurfDestroyedTitleActionBar.set_promotion_player_id()
+            did_promote.value = 1
         with IfAnd(
             TURF_3_GANG == PLAYER_GANG
         ):
@@ -566,6 +573,8 @@ def CLAIM_TURF(
             PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
             trigger_function(payout_turf_funds, trigger_for_all_players=True)
             trigger_function(destroy_turf_3)
+            TurfDestroyedTitleActionBar.set_promotion_player_id()
+            did_promote.value = 1
 
     TURF_GANG.value = PLAYER_GANG
     TURF_HELD_FOR.value = 0
@@ -579,8 +588,14 @@ def CLAIM_TURF(
         PLAYER_ID,
         TURF_FUNDS_PER_SECOND,
     )
-    trigger_function(apply_turf_captured_title, trigger_for_all_players=True)
     TURF_HIT_COOLDOWN.value = 4
+
+    with IfAnd(
+        did_promote.value == 1
+    ):
+        pause_execution(20)
+
+    trigger_function(apply_turf_captured_title, trigger_for_all_players=True)
 
 
 def ON_CLICK_TURF(
