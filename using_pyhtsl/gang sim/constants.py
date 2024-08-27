@@ -14,34 +14,55 @@ TIME_HOUR = GlobalStat('time/hour')
 TIME_MINUTES = GlobalStat('time/minutes')
 TIME_COLOR = GlobalStat('time/color')
 
-TURF_1_ID = 1
-TURF_1_GANG = GlobalStat('turf1/gang')
-TURF_1_HELD_FOR = GlobalStat('turf1/held')
-TURF_1_HP = GlobalStat('turf1/hp')
-TURF_1_MAX_HP = GlobalStat('turf1/mhp')
-TURF_1_FUNDS = GlobalStat('turf1/funds')
-TURF_1_FUNDS_PER_SECOND = GlobalStat('turf1/af')
-TURF_1_HIT_COOLDOWN = GlobalStat('turf1/hco')
 
-TURF_2_ID = 2
-TURF_2_GANG = GlobalStat('turf2/gang')
-TURF_2_HELD_FOR = GlobalStat('turf2/held')
-TURF_2_HP = GlobalStat('turf2/hp')
-TURF_2_MAX_HP = GlobalStat('turf2/mhp')
-TURF_2_FUNDS = GlobalStat('turf2/funds')
-TURF_2_FUNDS_PER_SECOND = GlobalStat('turf2/af')
-TURF_2_HIT_COOLDOWN = GlobalStat('turf2/hco')
+class BaseTurf:
+    ID: int
+    DEFAULT_FUNDS_PER_SECOND: int
+    GANG: GlobalStat
+    HELD_FOR: GlobalStat
+    HP: GlobalStat
+    MAX_HP: GlobalStat
+    FUNDS: GlobalStat
+    FUNDS_PER_SECOND: GlobalStat
+    HIT_COOLDOWN: GlobalStat
+    HEAL_COOLDOWN: GlobalStat
 
-TURF_3_ID = 3
-TURF_3_GANG = GlobalStat('turf3/gang')
-TURF_3_HELD_FOR = GlobalStat('turf3/held')
-TURF_3_HP = GlobalStat('turf3/hp')
-TURF_3_MAX_HP = GlobalStat('turf3/mhp')
-TURF_3_FUNDS = GlobalStat('turf3/funds')
-TURF_3_FUNDS_PER_SECOND = GlobalStat('turf3/af')
-TURF_3_HIT_COOLDOWN = GlobalStat('turf3/hco')
 
-EMPTY_TURF_ID = 7
+class Turf1(BaseTurf):
+    ID = 1
+    DEFAULT_FUNDS_PER_SECOND = 3
+    GANG = GlobalStat('turf1/gang')
+    HELD_FOR = GlobalStat('turf1/held')
+    HP = GlobalStat('turf1/hp')
+    MAX_HP = GlobalStat('turf1/mhp')
+    FUNDS = GlobalStat('turf1/funds')
+    FUNDS_PER_SECOND = GlobalStat('turf1/af')
+    HIT_COOLDOWN = GlobalStat('turf1/hcd')
+
+class Turf2(BaseTurf):
+    ID = 2
+    DEFAULT_FUNDS_PER_SECOND = 2
+    GANG = GlobalStat('turf2/gang')
+    HELD_FOR = GlobalStat('turf2/held')
+    HP = GlobalStat('turf2/hp')
+    MAX_HP = GlobalStat('turf2/mhp')
+    FUNDS = GlobalStat('turf2/funds')
+    FUNDS_PER_SECOND = GlobalStat('turf2/af')
+    HIT_COOLDOWN = GlobalStat('turf2/hcd')
+
+class Turf3(BaseTurf):
+    ID = 3
+    DEFAULT_FUNDS_PER_SECOND = 1
+    GANG = GlobalStat('turf3/gang')
+    HELD_FOR = GlobalStat('turf3/held')
+    HP = GlobalStat('turf3/hp')
+    MAX_HP = GlobalStat('turf3/mhp')
+    FUNDS = GlobalStat('turf3/funds')
+    FUNDS_PER_SECOND = GlobalStat('turf3/af')
+    HIT_COOLDOWN = GlobalStat('turf3/hcd')
+
+
+EMPTY_TURF_GANG = 7
 TURF_DEFAULT_MAX_HP = 100
 TURF_HP_PER_PRESTIGE = 10
 
@@ -68,6 +89,9 @@ PLAYER_ID = PlayerStat('id')
 PLAYER_GANG = PlayerStat('gang')
 PLAYER_CRED = PlayerStat('cred')
 PLAYER_FUNDS = PlayerStat('funds')
+PLAYER_PRESTIGE = PlayerStat('prestige')
+
+PLAYER_LAST_GANG = PlayerStat('lastgang')
 
 PLAYER_POWER = PlayerStat('power')
 PLAYER_MAX_POWER = PlayerStat('maxpower')
@@ -98,13 +122,6 @@ PLAYTIME_SECONDS = PlayerStat('playtime')
 
 TEAM_ID = TeamStat('id')
 TEAM_LEADER_ID = TeamStat('leaderid')
-
-
-TURF_FUNDS_PER_SECOND_MAPPING: dict[int, int] = {
-    TURF_1_ID: 3,
-    TURF_2_ID: 2,
-    TURF_3_ID: 1,
-}
 
 
 class GangSimTeam:
@@ -160,7 +177,7 @@ class SpawnTeam(GangSimTeam):
     LEVEL = PlayerStat('spawn lvl')
     EXPERIENCE = PlayerStat('s/xp')
     REQUIRED_EXPERIENCE = PlayerStat('s/xpr')
-    ID = EMPTY_TURF_ID
+    ID = EMPTY_TURF_GANG
 
 
 SPAWN = (-0.5, 46, -40.5)

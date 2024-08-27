@@ -21,6 +21,7 @@ from pyhtsl import (
     TeamPlayers,
     PlayerStat,
     pause_execution,
+    display_title,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -33,31 +34,11 @@ from constants import (
     TIME_HOUR,
     TIME_MINUTES,
     TIME_COLOR,
-    TURF_1_ID,
-    TURF_1_GANG,
-    TURF_1_HELD_FOR,
-    TURF_1_HP,
-    TURF_1_MAX_HP,
-    TURF_1_FUNDS,
-    TURF_1_FUNDS_PER_SECOND,
-    TURF_1_HIT_COOLDOWN,
-    TURF_2_ID,
-    TURF_2_GANG,
-    TURF_2_HELD_FOR,
-    TURF_2_HP,
-    TURF_2_MAX_HP,
-    TURF_2_FUNDS,
-    TURF_2_FUNDS_PER_SECOND,
-    TURF_2_HIT_COOLDOWN,
-    TURF_3_ID,
-    TURF_3_GANG,
-    TURF_3_HELD_FOR,
-    TURF_3_HP,
-    TURF_3_MAX_HP,
-    TURF_3_FUNDS,
-    TURF_3_FUNDS_PER_SECOND,
-    TURF_3_HIT_COOLDOWN,
-    EMPTY_TURF_ID,
+    BaseTurf,
+    Turf1,
+    Turf2,
+    Turf3,
+    EMPTY_TURF_GANG,
     LATEST_DEATH_TIME,
     LATEST_DEATH_PLAYER_ID,
     LATEST_DEATH_GANG,
@@ -66,6 +47,7 @@ from constants import (
     LATEST_DEATH_CRED,
     PLAYER_ID,
     PLAYER_GANG,
+    PLAYER_LAST_GANG,
     PLAYER_CRED,
     PLAYER_FUNDS,
     PLAYER_POWER,
@@ -107,8 +89,9 @@ from constants import (
     PAYOUT_GANG,
     PAYOUT_REST,
     PAYOUT_WHOLE,
-    TURF_FUNDS_PER_SECOND_MAPPING,
     PLAYTIME_SECONDS,
+    PLAYER_PRESTIGE,
+    TURF_HP_PER_PRESTIGE,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
@@ -174,7 +157,7 @@ def on_player_kill() -> None:
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
-    PLAYER_GANG.value = EMPTY_TURF_ID
+    PLAYER_GANG.value = EMPTY_TURF_GANG
     teleport_player(SPAWN)
     play_sound('Enderman Teleport')
 
@@ -245,28 +228,12 @@ def set_most_stats() -> None:
             buff_type.stat.value = buff_type.max
 
 
-# LOOPS ==========================================================
-
-
-# NOTE have this run every 20 ticks
-@create_function('Personal 1s')
-def personal_every_second() -> None:
-    PLAYTIME_SECONDS.value += 1
-
-
-# NOTE have this run every 4 ticks
-@create_function('Personal 0.2s')
-def personal_every_4ticks() -> None:
-    trigger_function(set_location_id)
-    trigger_function(check_out_of_spawn)
-    trigger_function(set_most_stats)
-    trigger_function(update_display_stats)
-    trigger_function(display_action_bar_and_title)
-
+@create_function('Check Player Gang')
+def check_player_gang() -> None:
     with IfOr(*(
         RequiredTeam(team.TEAM)
         for team in (
-            Bloods, Crips, Kings, Grapes, Guards,
+            Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
         )
     )):
         PLAYER_GANG.value = TEAM_ID
@@ -279,6 +246,109 @@ def personal_every_4ticks() -> None:
         pass
     with Else:
         trigger_function(move_to_spawn)
+    with IfAnd(
+        PLAYER_GANG == SpawnTeam.ID
+    ):
+        pass
+    with Else:
+        PLAYER_LAST_GANG.value = PLAYER_GANG
+
+
+def set_team_ids() -> None:
+    for team in (
+        Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
+    ):
+        team.TEAM.stat('id').value = team.ID
+
+
+def quiet_reset_turf(turf: type[BaseTurf]) -> None:
+    turf.GANG.value = EMPTY_TURF_GANG
+    turf.FUNDS.value = 0
+    turf.FUNDS_PER_SECOND.value = 0
+
+
+def UPDATE_TURF(turf: type[BaseTurf]) -> None:
+    turf.HIT_COOLDOWN -= 1
+    turf.HEAL_COOLDOWN -= 1
+
+    with IfOr(*(
+        turf.GANG == gang_number
+        for gang_number in (
+            Bloods.ID,
+            Crips.ID,
+            Kings.ID,
+            Grapes.ID,
+        )
+    )):
+        pass
+    with Else:
+        quiet_reset_turf(turf)
+        exit_function()
+
+    turf.HELD_FOR += 1
+    turf.FUNDS_PER_SECOND.value = turf.DEFAULT_FUNDS_PER_SECOND
+    for amount in (100, 200, 400, 600):
+        with IfAnd(
+            turf.HELD_FOR >= amount
+        ):
+            turf.FUNDS_PER_SECOND.value += turf.DEFAULT_FUNDS_PER_SECOND
+    turf.FUNDS.value += turf.FUNDS_PER_SECOND
+
+
+@create_function('Update Turf 1')
+def update_turf_1() -> None:
+    UPDATE_TURF(Turf1)
+@create_function('Update Turf 2')
+def update_turf_2() -> None:
+    UPDATE_TURF(Turf2)
+@create_function('Update Turf 3')
+def update_turf_3() -> None:
+    UPDATE_TURF(Turf3)
+
+
+@create_function('Add Onto Turf Max HP')
+def add_onto_turf_max_hp() -> None:
+    with IfAnd(
+        PLAYER_GANG == EMPTY_TURF_GANG
+    ):
+        exit_function()
+    addition = PLAYER_PRESTIGE * 10
+    for turf in (Turf1, Turf2, Turf3):
+        with IfAnd(
+            turf.GANG == PLAYER_GANG
+        ):
+            turf.MAX_HP += addition
+
+
+@create_function('Update Turfs')
+def update_turfs() -> None:
+    Turf1.MAX_HP.value = TURF_DEFAULT_MAX_HP
+    Turf2.MAX_HP.value = TURF_DEFAULT_MAX_HP
+    Turf3.MAX_HP.value = TURF_DEFAULT_MAX_HP
+    trigger_function(add_onto_turf_max_hp, trigger_for_all_players=True)
+    trigger_function(update_turf_1)
+    trigger_function(update_turf_2)
+    trigger_function(update_turf_3)
+
+
+# LOOPS ==========================================================
+
+
+# NOTE have this run every 20 ticks
+@create_function('Personal 1s')
+def personal_every_second() -> None:
+    PLAYTIME_SECONDS.value += 1
+
+
+# NOTE have this run every 4 ticks
+@create_function('Personal 0.2s')
+def personal_every_4ticks() -> None:
+    trigger_function(check_player_gang)
+    trigger_function(set_location_id)
+    trigger_function(check_out_of_spawn)
+    trigger_function(set_most_stats)
+    trigger_function(update_display_stats)
+    trigger_function(display_action_bar_and_title)
 
 
 # NOTE have this run every 4 ticks
@@ -287,12 +357,10 @@ def global_every_second() -> None:
     with IfAnd(DateUnix <= LAST_UNIX):
         exit_function()
     LAST_UNIX.value = DateUnix
+    trigger_function(update_turfs)
     trigger_function(update_timer)
     trigger_function(check_cookie_goal)
-    for team in (
-        Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
-    ):
-        team.TEAM.stat('id').value = team.ID
+    
 
 
 # LOCATIONS ========================================
@@ -431,9 +499,9 @@ def update_display_stats() -> None:
 @create_function('Regular Action Bar Display')
 def regular_action_bar_display() -> None:
     for display_arg, turf_gang_args in (
-        (DISPLAY_ARG_1, (TURF_1_GANG, TURF_2_GANG, TURF_3_GANG)),
-        (DISPLAY_ARG_2, (TURF_1_GANG, TURF_2_GANG)),
-        (DISPLAY_ARG_3, (TURF_1_GANG,)),
+        (DISPLAY_ARG_1, (Turf1.GANG, Turf2.GANG, Turf3.GANG)),
+        (DISPLAY_ARG_2, (Turf1.GANG, Turf2.GANG)),
+        (DISPLAY_ARG_3, (Turf1.GANG,)),
     ):
         with IfOr(*(turf_gang_arg == TEAM_ID for turf_gang_arg in turf_gang_args)):
             display_arg.value = TEAM_ID
@@ -501,49 +569,30 @@ def payout_turf_funds() -> None:
         PAYOUT_REST.value -= 1
         temp += 1
     add_funds(temp)
-    play_sound('Item Pickup')
 
 
-def DESTROY_TURF(
-    TURF_ID: int,
-    TURF_GANG: GlobalStat,
-    TURF_HELD_FOR: GlobalStat,
-    TURF_HP: GlobalStat,
-    TURF_MAX_HP: GlobalStat,
-    TURF_FUNDS: GlobalStat,
-    TURF_FUNDS_PER_SECOND: GlobalStat,
-    TURF_HIT_COOLDOWN: GlobalStat,
-) -> None:
+def DESTROY_TURF(turf: type[BaseTurf]) -> None:
     TurfDestroyedTitleActionBar.apply_globals(
-        TURF_ID,
-        TURF_GANG,
+        turf.ID,
+        turf.GANG,
         PLAYER_ID,
         PLAYER_GANG,
-        TURF_FUNDS,
-        TURF_HELD_FOR,
+        turf.FUNDS,
+        turf.HELD_FOR,
     )
     trigger_function(apply_turf_destroyed_title, trigger_for_all_players=True)
-    TurfDestroyedTitleActionBar.apply(TURF_FUNDS)
-    TURF_GANG.value = EMPTY_TURF_ID
-    PLAYER_FUNDS.value += TURF_FUNDS
-    TURF_FUNDS.value = 0
-    TURF_HP.value = TURF_DEFAULT_MAX_HP
-    TURF_MAX_HP.value = TURF_DEFAULT_MAX_HP
-    TURF_FUNDS.value = 0
-    TURF_FUNDS_PER_SECOND.value = 0
-    TURF_HIT_COOLDOWN.value = 4
+    TurfDestroyedTitleActionBar.apply(turf.FUNDS)
+    turf.GANG.value = EMPTY_TURF_GANG
+    PLAYER_FUNDS.value += turf.FUNDS
+    turf.FUNDS.value = 0
+    turf.HP.value = TURF_DEFAULT_MAX_HP
+    turf.MAX_HP.value = TURF_DEFAULT_MAX_HP
+    turf.FUNDS.value = 0
+    turf.FUNDS_PER_SECOND.value = 0
+    turf.HIT_COOLDOWN.value = 4
 
 
-def CLAIM_TURF(
-    TURF_ID: int,
-    TURF_GANG: GlobalStat,
-    TURF_HELD_FOR: GlobalStat,
-    TURF_HP: GlobalStat,
-    TURF_MAX_HP: GlobalStat,
-    TURF_FUNDS: GlobalStat,
-    TURF_FUNDS_PER_SECOND: GlobalStat,
-    TURF_HIT_COOLDOWN: GlobalStat,
-) -> None:
+def CLAIM_TURF(turf: type[BaseTurf]) -> None:
     with IfOr(*(
         PLAYER_GANG == team.ID
         for team in (
@@ -561,122 +610,127 @@ def CLAIM_TURF(
         play_unable_sound()
         exit_function()
 
-    if TURF_ID == TURF_2_ID:
+    if turf.ID == Turf2.ID:
         with IfAnd(
-            TURF_1_GANG == PLAYER_GANG
+            Turf1.GANG == PLAYER_GANG
         ):
             cannot_downgrade()
-    elif TURF_ID == TURF_3_ID:
+    elif turf.ID == Turf3.ID:
         with IfAnd(
-            TURF_1_GANG == PLAYER_GANG
+            Turf1.GANG == PLAYER_GANG
         ):
             cannot_downgrade()
         with IfAnd(
-            TURF_2_GANG == PLAYER_GANG
+            Turf2.GANG == PLAYER_GANG
         ):
             cannot_downgrade()
 
     did_promote = PlayerStat('temp')
     did_promote.value = 0
 
-    if TURF_ID == TURF_2_ID:
+    if turf.ID == Turf2.ID:
         with IfAnd(
-            TURF_3_GANG == PLAYER_GANG
+            Turf3.GANG == PLAYER_GANG
         ):
-            PAYOUT_GANG.value = TURF_3_GANG
-            PAYOUT_WHOLE.value = TURF_3_FUNDS // TeamPlayers(None)
+            PAYOUT_GANG.value = Turf3.GANG
+            PAYOUT_WHOLE.value = Turf3.FUNDS // TeamPlayers(None)
             PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
             trigger_function(payout_turf_funds, trigger_for_all_players=True)
             trigger_function(destroy_turf_3)
             TurfDestroyedTitleActionBar.set_promotion_player_id()
             did_promote.value = 1
-    elif TURF_ID == TURF_1_ID:
+    elif turf.ID == Turf1.ID:
         with IfAnd(
-            TURF_2_GANG == PLAYER_GANG
+            Turf2.GANG == PLAYER_GANG
         ):
-            PAYOUT_GANG.value = TURF_2_GANG
-            PAYOUT_WHOLE.value = TURF_2_FUNDS // TeamPlayers(None)
+            PAYOUT_GANG.value = Turf2.GANG
+            PAYOUT_WHOLE.value = Turf2.FUNDS // TeamPlayers(None)
             PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
             trigger_function(payout_turf_funds, trigger_for_all_players=True)
             trigger_function(destroy_turf_2)
             TurfDestroyedTitleActionBar.set_promotion_player_id()
             did_promote.value = 1
         with IfAnd(
-            TURF_3_GANG == PLAYER_GANG
+            Turf3.GANG == PLAYER_GANG
         ):
-            PAYOUT_GANG.value = TURF_3_GANG
-            PAYOUT_WHOLE.value = TURF_3_FUNDS // TeamPlayers(None)
+            PAYOUT_GANG.value = Turf3.GANG
+            PAYOUT_WHOLE.value = Turf3.FUNDS // TeamPlayers(None)
             PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
             trigger_function(payout_turf_funds, trigger_for_all_players=True)
             trigger_function(destroy_turf_3)
             TurfDestroyedTitleActionBar.set_promotion_player_id()
             did_promote.value = 1
 
-    TURF_GANG.value = PLAYER_GANG
-    TURF_HELD_FOR.value = 0
-    TURF_HP.value = TURF_DEFAULT_MAX_HP
-    TURF_MAX_HP.value = TURF_DEFAULT_MAX_HP
-    TURF_FUNDS.value = 0
-    TURF_FUNDS_PER_SECOND.value = TURF_FUNDS_PER_SECOND_MAPPING[TURF_ID]
+    turf.GANG.value = PLAYER_GANG
+    turf.HELD_FOR.value = 0
+    turf.HP.value = TURF_DEFAULT_MAX_HP
+    turf.MAX_HP.value = TURF_DEFAULT_MAX_HP
+    turf.FUNDS.value = 0
+    turf.FUNDS_PER_SECOND.value = turf.DEFAULT_FUNDS_PER_SECOND
     TurfCapturedTitleActionBar.apply_globals(
-        TURF_ID,
-        TURF_GANG,
+        turf.ID,
+        turf.GANG,
         PLAYER_ID,
-        TURF_FUNDS_PER_SECOND,
+        turf.FUNDS_PER_SECOND,
     )
-    TURF_HIT_COOLDOWN.value = 4
+    turf.HIT_COOLDOWN.value = 4
 
     with IfAnd(
         did_promote.value == 1
     ):
-        pause_execution(20)
+        pause_execution(60)
 
     trigger_function(apply_turf_captured_title, trigger_for_all_players=True)
 
 
 def ON_CLICK_TURF(
-    TURF_ID: int,
-    TURF_GANG: GlobalStat,
-    TURF_HELD_FOR: GlobalStat,
-    TURF_HP: GlobalStat,
-    TURF_MAX_HP: GlobalStat,
-    TURF_FUNDS: GlobalStat,
-    TURF_FUNDS_PER_SECOND: GlobalStat,
-    TURF_HIT_COOLDOWN: GlobalStat,
-    destroy_turf: Function,
+    turf: type[BaseTurf],
     claim_turf: Function,
+    destroy_turf: Function,
 ) -> None:
     with IfAnd(
-        TURF_GANG == PLAYER_GANG
+        turf.GANG == PLAYER_GANG
     ):
         # clicked own gang turf, claim funds
-        PAYOUT_GANG.value = TURF_GANG
-        PAYOUT_WHOLE.value = TURF_FUNDS // TeamPlayers(None)
+        PAYOUT_GANG.value = turf.GANG
+        PAYOUT_WHOLE.value = turf.FUNDS // TeamPlayers(None)
         PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
-        TURF_FUNDS.value = 0
-        TURF_HELD_FOR.value = 0
+        turf.FUNDS.value = 0
+        turf.HELD_FOR.value = 0
         trigger_function(payout_turf_funds, trigger_for_all_players=True)
         exit_function()
 
     with IfAnd(
-        TURF_HIT_COOLDOWN > 0
+        turf.HIT_COOLDOWN > 0
     ):
         exit_function()
 
     with IfAnd(
-        TURF_HP > 0
+        turf.HP > 0
     ):
         trigger_function(set_most_stats)
-        TURF_HP.value -= PLAYER_DAMAGE
-        play_sound('Blaze Hit')
+        turf.HP.value -= PLAYER_DAMAGE
+        turf.HEAL_COOLDOWN.value = 4
+        play_sound('Zombie Metal', pitch=2.0)
+    with IfAnd(
+        turf.HP < 0
+    ):
+        turf.HP.value = 0
 
     with IfAnd(
-        TURF_HP > 0
+        turf.HP > 0
     ):
+        display_title(
+            '&r',
+            f'&c{turf.HP}/{turf.MAX_HP}❤ -{PLAYER_DAMAGE}',
+            fadein=0,
+            stay=1,
+            fadeout=0,
+        )
         exit_function()
 
     with IfAnd(
-        TURF_GANG == EMPTY_TURF_ID
+        turf.GANG == EMPTY_TURF_GANG
     ):
         trigger_function(claim_turf)
     with Else:
@@ -685,28 +739,28 @@ def ON_CLICK_TURF(
 
 @create_function('Destroy Turf 1')
 def destroy_turf_1() -> None:
-    DESTROY_TURF(TURF_1_ID, TURF_1_GANG, TURF_1_HELD_FOR, TURF_1_HP, TURF_1_MAX_HP, TURF_1_FUNDS, TURF_1_FUNDS_PER_SECOND, TURF_1_HIT_COOLDOWN)
+    DESTROY_TURF(Turf1)
 @create_function('Try Claim Turf 1')
 def claim_turf_1() -> None:
-    CLAIM_TURF(TURF_1_ID, TURF_1_GANG, TURF_1_HELD_FOR, TURF_1_HP, TURF_1_MAX_HP, TURF_1_FUNDS, TURF_1_FUNDS_PER_SECOND, TURF_1_HIT_COOLDOWN)
+    CLAIM_TURF(Turf1)
 @create_function('On Click Turf 1')
 def on_click_turf_1() -> None:
-    ON_CLICK_TURF(TURF_1_ID, TURF_1_GANG, TURF_1_HELD_FOR, TURF_1_HP, TURF_1_MAX_HP, TURF_1_FUNDS, TURF_1_FUNDS_PER_SECOND, TURF_1_HIT_COOLDOWN, destroy_turf_1, claim_turf_1)
+    ON_CLICK_TURF(Turf1, claim_turf_1, destroy_turf_1)
 @create_function('Destroy Turf 2')
 def destroy_turf_2() -> None:
-    DESTROY_TURF(TURF_2_ID, TURF_2_GANG, TURF_2_HELD_FOR, TURF_2_HP, TURF_2_MAX_HP, TURF_2_FUNDS, TURF_2_FUNDS_PER_SECOND, TURF_2_HIT_COOLDOWN)
+    DESTROY_TURF(Turf2)
 @create_function('Try Claim Turf 2')
 def claim_turf_2() -> None:
-    CLAIM_TURF(TURF_2_ID, TURF_2_GANG, TURF_2_HELD_FOR, TURF_2_HP, TURF_2_MAX_HP, TURF_2_FUNDS, TURF_2_FUNDS_PER_SECOND, TURF_2_HIT_COOLDOWN)
+    CLAIM_TURF(Turf2)
 @create_function('On Click Turf 2')
 def on_click_turf_2() -> None:
-    ON_CLICK_TURF(TURF_2_ID, TURF_2_GANG, TURF_2_HELD_FOR, TURF_2_HP, TURF_2_MAX_HP, TURF_2_FUNDS, TURF_2_FUNDS_PER_SECOND, TURF_2_HIT_COOLDOWN, destroy_turf_2, claim_turf_2)
+    ON_CLICK_TURF(Turf2, claim_turf_2, destroy_turf_2)
 @create_function('Destroy Turf 3')
 def destroy_turf_3() -> None:
-    DESTROY_TURF(TURF_3_ID, TURF_3_GANG, TURF_3_HELD_FOR, TURF_3_HP, TURF_3_MAX_HP, TURF_3_FUNDS, TURF_3_FUNDS_PER_SECOND, TURF_3_HIT_COOLDOWN)
+    DESTROY_TURF(Turf3)
 @create_function('Try Claim Turf 3')
 def claim_turf_3() -> None:
-    CLAIM_TURF(TURF_3_ID, TURF_3_GANG, TURF_3_HELD_FOR, TURF_3_HP, TURF_3_MAX_HP, TURF_3_FUNDS, TURF_3_FUNDS_PER_SECOND, TURF_3_HIT_COOLDOWN)
+    CLAIM_TURF(Turf3)
 @create_function('On Click Turf 3')
 def on_click_turf_3() -> None:
-    ON_CLICK_TURF(TURF_3_ID, TURF_3_GANG, TURF_3_HELD_FOR, TURF_3_HP, TURF_3_MAX_HP, TURF_3_FUNDS, TURF_3_FUNDS_PER_SECOND, TURF_3_HIT_COOLDOWN, destroy_turf_3, claim_turf_3)
+    ON_CLICK_TURF(Turf3, claim_turf_3, destroy_turf_3)

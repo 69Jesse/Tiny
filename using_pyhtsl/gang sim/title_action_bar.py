@@ -25,9 +25,9 @@ from constants import (
     GLOBAL_DISPLAY_ARG_4,
     GLOBAL_DISPLAY_ARG_5,
     GLOBAL_DISPLAY_ARG_6,
-    TURF_1_ID,
-    TURF_2_ID,
-    TURF_3_ID,
+    Turf1,
+    Turf2,
+    Turf3,
 )
 
 from abc import ABC, abstractmethod
@@ -113,6 +113,7 @@ class AddCredTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = cred
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        play_sound('Successful Hit')
 
     @staticmethod
     def display() -> None:
@@ -135,6 +136,7 @@ class AddFundsTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = funds
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        play_sound('Item Pickup')
 
     @staticmethod
     def display() -> None:
@@ -203,6 +205,7 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
         DISPLAY_ARG_1.value = cred
         DISPLAY_ARG_2.value = funds
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        play_sound('Successful Hit')
 
     @staticmethod
     def display() -> None:
@@ -263,9 +266,9 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         #     f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         # )
         for number, name in (
-            (TURF_1_ID, 'Alpha'),
-            (TURF_2_ID, 'Beta'),
-            (TURF_3_ID, 'Gamma'),
+            (Turf1.ID, 'Alpha'),
+            (Turf2.ID, 'Beta'),
+            (Turf3.ID, 'Gamma'),
         ):
             with IfAnd(
                 cls.get_condition(),
@@ -316,7 +319,7 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         cls,
     ) -> None:
         cls.set_id()
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
         play_sound('Wither Death')
 
     @staticmethod
@@ -345,9 +348,9 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         #     f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         # )
         for number, name in (
-            (TURF_1_ID, 'Alpha'),
-            (TURF_2_ID, 'Beta'),
-            (TURF_3_ID, 'Gamma'),
+            (Turf1.ID, 'Alpha'),
+            (Turf2.ID, 'Beta'),
+            (Turf3.ID, 'Gamma'),
         ):
             with IfAnd(
                 cls.get_condition(),
