@@ -154,6 +154,50 @@ def on_player_kill() -> None:
 # MISC?? =================================
 
 
+TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
+
+
+def ON_TEAM_JOIN(team: type[GangSimTeam]) -> None:
+    set_player_team(team.TEAM)
+    trigger_function(check_player_gang)
+    teleport_player(TEMPORARY_SPAWN)
+    # TODO
+
+
+@create_function('On Bloods Join')
+def on_bloods_join() -> None:
+    ON_TEAM_JOIN(Bloods)
+@create_function('On Crips Join')
+def on_crips_join() -> None:
+    ON_TEAM_JOIN(Crips)
+@create_function('On Kings Join')
+def on_kings_join() -> None:
+    ON_TEAM_JOIN(Kings)
+@create_function('On Grapes Join')
+def on_grapes_join() -> None:
+    ON_TEAM_JOIN(Grapes)
+@create_function('On Guards Join')
+def on_guards_join() -> None:
+    ON_TEAM_JOIN(Guards)
+
+
+# NOTE have this get called by the actual event
+@create_function('On Portal Enter')
+def on_portal_enter() -> None:
+    trigger_function(set_location_id)
+    for location, function in (
+        (LocationInstances.spawn_bloods_area, on_bloods_join),
+        (LocationInstances.spawn_crips_area, on_crips_join),
+        (LocationInstances.spawn_kings_area, on_kings_join),
+        (LocationInstances.spawn_grapes_area, on_grapes_join),
+        (LocationInstances.spawn_guards_area, on_guards_join),
+    ):
+        with IfAnd(
+            LOCATION_ID == location.id
+        ):
+            trigger_function(function)
+
+
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
@@ -285,6 +329,13 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
         quiet_reset_turf(turf)
         exit_function()
 
+    add_hp = turf.MAX_HP // 20
+    turf.HP += add_hp
+    with IfAnd(
+        turf.HP > turf.MAX_HP,
+    ):
+        turf.HP.value = turf.MAX_HP
+
     turf.HELD_FOR += 1
     turf.FUNDS_PER_SECOND.value = turf.DEFAULT_FUNDS_PER_SECOND
     for amount in (100, 200, 400, 600):
@@ -322,13 +373,30 @@ def add_onto_turf_max_hp() -> None:
 
 @create_function('Update Turfs')
 def update_turfs() -> None:
+    # set max hp
     Turf1.MAX_HP.value = TURF_DEFAULT_MAX_HP
     Turf2.MAX_HP.value = TURF_DEFAULT_MAX_HP
     Turf3.MAX_HP.value = TURF_DEFAULT_MAX_HP
     trigger_function(add_onto_turf_max_hp, trigger_for_all_players=True)
+
+    # reset / heal, add held for and funds
     trigger_function(update_turf_1)
     trigger_function(update_turf_2)
     trigger_function(update_turf_3)
+
+    # check duplicates
+    with IfAnd(
+        Turf2.GANG == Turf3.GANG,
+    ):
+        quiet_reset_turf(Turf3)
+    with IfAnd(
+        Turf1.GANG == Turf3.GANG,
+    ):
+        quiet_reset_turf(Turf3)
+    with IfAnd(
+        Turf1.GANG == Turf2.GANG,
+    ):
+        quiet_reset_turf(Turf2)
 
 
 # LOOPS ==========================================================
@@ -387,7 +455,6 @@ def set_location_id() -> None:
 @create_function('On New Location Enter')
 def on_new_location_enter() -> None:
     pass
-
 
 
 # COOKIE GOAL ===================================
