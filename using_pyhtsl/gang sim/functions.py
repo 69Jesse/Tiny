@@ -612,16 +612,16 @@ def CLAIM_TURF(turf: type[BaseTurf]) -> None:
 
     if turf.ID == Turf2.ID:
         with IfAnd(
-            Turf1.GANG == PLAYER_GANG
+            Turf1.GANG == PLAYER_GANG,
         ):
             cannot_downgrade()
     elif turf.ID == Turf3.ID:
         with IfAnd(
-            Turf1.GANG == PLAYER_GANG
+            Turf1.GANG == PLAYER_GANG,
         ):
             cannot_downgrade()
         with IfAnd(
-            Turf2.GANG == PLAYER_GANG
+            Turf2.GANG == PLAYER_GANG,
         ):
             cannot_downgrade()
 
@@ -704,6 +704,29 @@ def ON_CLICK_TURF(
         turf.HIT_COOLDOWN > 0
     ):
         exit_function()
+
+    def cannot_downgrade() -> None:
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cFailed to damage. You cannot downgrade your gangs turf.')
+        play_unable_sound()
+        exit_function()
+
+    if turf.ID == Turf2.ID:
+        with IfAnd(
+            turf.GANG == EMPTY_TURF_GANG,
+            Turf1.GANG == PLAYER_GANG,
+        ):
+            cannot_downgrade()
+    elif turf.ID == Turf3.ID:
+        with IfAnd(
+            turf.GANG == EMPTY_TURF_GANG,
+            Turf1.GANG == PLAYER_GANG,
+        ):
+            cannot_downgrade()
+        with IfAnd(
+            turf.GANG == EMPTY_TURF_GANG,
+            Turf2.GANG == PLAYER_GANG,
+        ):
+            cannot_downgrade()
 
     with IfAnd(
         turf.HP > 0

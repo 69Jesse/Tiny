@@ -37,7 +37,8 @@ class Turf1(BaseTurf):
     MAX_HP = GlobalStat('turf1/mhp')
     FUNDS = GlobalStat('turf1/funds')
     FUNDS_PER_SECOND = GlobalStat('turf1/af')
-    HIT_COOLDOWN = GlobalStat('turf1/hcd')
+    HIT_COOLDOWN = GlobalStat('turf1/hicd')
+    HEAL_COOLDOWN = GlobalStat('turf1/hecd')
 
 class Turf2(BaseTurf):
     ID = 2
@@ -48,7 +49,8 @@ class Turf2(BaseTurf):
     MAX_HP = GlobalStat('turf2/mhp')
     FUNDS = GlobalStat('turf2/funds')
     FUNDS_PER_SECOND = GlobalStat('turf2/af')
-    HIT_COOLDOWN = GlobalStat('turf2/hcd')
+    HIT_COOLDOWN = GlobalStat('turf2/hicd')
+    HEAL_COOLDOWN = GlobalStat('turf2/hecd')
 
 class Turf3(BaseTurf):
     ID = 3
@@ -59,7 +61,8 @@ class Turf3(BaseTurf):
     MAX_HP = GlobalStat('turf3/mhp')
     FUNDS = GlobalStat('turf3/funds')
     FUNDS_PER_SECOND = GlobalStat('turf3/af')
-    HIT_COOLDOWN = GlobalStat('turf3/hcd')
+    HIT_COOLDOWN = GlobalStat('turf3/hicd')
+    HEAL_COOLDOWN = GlobalStat('turf3/hecd')
 
 
 EMPTY_TURF_GANG = 7
