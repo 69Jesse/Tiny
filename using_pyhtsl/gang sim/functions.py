@@ -3,7 +3,7 @@ from pyhtsl import (
     IfAnd,
     IfOr,
     Else,
-    PlayerGroupPriority,
+    GroupPriority,
     set_player_team,
     reset_inventory,
     DateUnix,
@@ -22,6 +22,7 @@ from pyhtsl import (
     PlayerStat,
     pause_execution,
     display_title,
+    rename,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -98,11 +99,20 @@ from constants import (
     PLAYER_GLOBAL_LEVEL,
     ALL_TEAMS,
     ALL_GANG_TEAMS,
+    PLAYER_KILL_STREAK,
+    ADD_EXPERIENCE,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
 from currency import add_funds
-from title_action_bar import get_title_action_bars, TurfDestroyedTitleActionBar, TurfCapturedTitleActionBar
+from title_action_bar import (
+    get_title_action_bars,
+    TurfDestroyedTitleActionBar,
+    TurfCapturedTitleActionBar,
+    OnDeathTitleActionBar,
+    OnKillTitleActionBar,
+    OnBadKillTitleActionBar,
+)
 
 
 def play_unable_sound() -> None:
@@ -116,7 +126,7 @@ def play_unable_sound() -> None:
 @create_function('On Player Join')
 def on_player_join() -> None:
     with IfAnd(
-        PlayerGroupPriority < 20,
+        GroupPriority < 20,
         PLAYER_ID == 0,
     ):
         trigger_function(on_player_join_first_time)
@@ -140,7 +150,7 @@ def on_player_join_first_time() -> None:
 def on_player_death() -> None:
     LATEST_DEATH_TIME.value = DateUnix
     LATEST_DEATH_PLAYER_ID.value = PLAYER_ID
-    LATEST_DEATH_GANG.value = TEAM_ID
+    LATEST_DEATH_GANG.value = PLAYER_GANG
     with IfAnd(
         TEAM_LEADER_ID == PLAYER_ID,
     ):
@@ -150,26 +160,101 @@ def on_player_death() -> None:
     LATEST_DEATH_CRED.value = PLAYER_CRED
     LATEST_DEATH_FUNDS.value = PLAYER_FUNDS
 
-    PLAYER_CRED.value -= 1
+    removing_cred = PlayerStat('temp')
+    removing_cred.value = 1
     for cred_req in (
-        # 25 or less = -1
-        25,  # 26 - 100 = -2
-        100,  # 101 - 250 = -3
-        250,  # 251 - 500 = -4
-        500,  # 501 or more = -5
+        # RULES:
+        # 25 or less cred = -1 cred
+        25,  # 26 - 100 cred = -2 cred
+        100,  # 101 - 250 cred = -3 cred
+        250,  # 251 - 500 cred = -4 cred
+        500,  # 501 or more cred = -5 cred
     ):
         with IfAnd(
             PLAYER_CRED > cred_req,
         ):
-            PLAYER_CRED.value -= 1
+            removing_cred.value += 1
+    PLAYER_CRED.value -= removing_cred
 
     trigger_function(move_to_spawn)
+    OnDeathTitleActionBar.apply(
+        removing_cred,
+        PLAYER_KILL_STREAK,
+    )
+    PLAYER_KILL_STREAK.value = 0
 
 
 # NOTE have this get called by the actual event
 @create_function('On Player Kill')
 def on_player_kill() -> None:
-    play_sound('Successful Hit')
+    with IfAnd(
+        PLAYER_GANG == SpawnTeam.ID,
+    ):
+        exit_function()
+
+    # RULES:
+    # ON BAD KILL: (killed person from same gang)
+    #    -5 cred if wasnt leader
+    #    -3 cred if was leader because its funny
+    #    no rewards
+    # ON GOOD KILL:
+    #    + (
+    #        min(3 + killstreak/5, 10) + prestige
+    #    ) xp  -> +3xp to +10xp
+    #    + (10 + prestige) funds
+    #    + 3 cred
+    #    if was leader:
+    #        xp doubled
+    #        funds doubled
+    #        + 5 cred
+
+    with IfAnd(
+        PLAYER_GANG == LATEST_DEATH_GANG,
+    ):
+        trigger_function(on_bad_player_kill)
+        exit_function()
+
+    added_funds = PlayerStat('temp1')
+    added_cred = PlayerStat('temp2')
+
+    ADD_EXPERIENCE.value = 3 + (PLAYER_KILL_STREAK // 5)
+    with IfAnd(
+        ADD_EXPERIENCE > 10,
+    ):
+        ADD_EXPERIENCE.value = 10
+    ADD_EXPERIENCE.value += PLAYER_PRESTIGE
+
+    added_funds.value = 10 + PLAYER_PRESTIGE
+    added_cred.value = 3
+
+    with IfAnd(
+        LATEST_DEATH_WAS_LEADER == 1,
+    ):
+        ADD_EXPERIENCE.value *= 2
+        added_funds.value *= 2
+        added_cred.value = 5
+
+    trigger_function(add_experience)
+    PLAYER_FUNDS.value += added_funds
+    PLAYER_CRED.value += added_cred
+    OnKillTitleActionBar.apply(
+        added_funds,
+        added_cred,
+        ADD_EXPERIENCE,
+    )
+
+
+@create_function('On Bad Player Kill')
+def on_bad_player_kill() -> None:
+    removed_cred = PlayerStat('temp2')
+    with IfAnd(
+        LATEST_DEATH_WAS_LEADER == 1,
+    ):
+        removed_cred.value = 3
+    with Else:
+        removed_cred.value = 5
+    PLAYER_CRED.value -= removed_cred
+    OnBadKillTitleActionBar.apply(removed_cred)
 
 
 # MISC?? =================================
@@ -178,7 +263,9 @@ def on_player_kill() -> None:
 TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
 
 
-def ON_TEAM_JOIN(team: type[GangSimTeam]) -> None:
+def ON_TEAM_JOIN(
+    team: type[GangSimTeam],
+) -> None:
     set_player_team(team.TEAM)
     trigger_function(check_player_gang)
     teleport_player(TEMPORARY_SPAWN)
@@ -230,7 +317,7 @@ def move_to_spawn() -> None:
 @create_function('Check Out Of Spawn')
 def check_out_of_spawn() -> None:
     with IfAnd(
-        PlayerGroupPriority >= 19
+        GroupPriority >= 19
     ):
         exit_function()
 
@@ -246,7 +333,7 @@ def check_out_of_spawn() -> None:
 
     # is not at spawn or has spawn team
     with IfAnd(
-        PlayerGroupPriority >= 18
+        GroupPriority >= 18
     ):
         exit_function()
 
@@ -290,6 +377,17 @@ def check_levels() -> None:
         trigger_function(level_up)
 
 
+@create_function('Add Experience')
+def add_experience() -> None:
+    """Make sure to set ADD_EXPERIENCE before triggering this"""
+    for team in ALL_TEAMS:
+        with IfAnd(
+            PLAYER_GANG == team.ID,
+        ):
+            team.EXPERIENCE.value += ADD_EXPERIENCE
+            PLAYER_CURRENT_XP.value = team.EXPERIENCE
+
+
 @create_function('Level Up')
 def level_up() -> None:
     for team in ALL_TEAMS:
@@ -302,7 +400,6 @@ def level_up() -> None:
             PLAYER_CURRENT_XP.value = team.EXPERIENCE
     
     PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * 100
-
 
 
 @create_function('Set Most Stats')
@@ -332,6 +429,11 @@ def set_most_stats() -> None:
             buff_type.stat.value = buff_type.max
 
 
+@create_function('Remove Illegal Items')
+def remove_illegal_items() -> None:
+    pass  # TODO remove leader helmet if youre not leader + other gang armor
+
+
 @create_function('Check Player Gang')
 def check_player_gang() -> None:
     with IfOr(*(
@@ -352,6 +454,7 @@ def check_player_gang() -> None:
         pass
     with Else:
         PLAYER_LAST_GANG.value = PLAYER_GANG
+    trigger_function(remove_illegal_items)
 
 
 def set_team_ids() -> None:
@@ -486,7 +589,7 @@ def global_every_second() -> None:
     trigger_function(update_turfs)
     trigger_function(update_timer)
     trigger_function(check_cookie_goal)
-    
+    set_team_ids()
 
 
 # LOCATIONS ========================================

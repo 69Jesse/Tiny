@@ -118,6 +118,8 @@ PLAYER_FORAGING_FORTUNE = PlayerStat('forafortune')
 
 PLAYER_DAMAGE = PlayerStat('damage')
 
+ADD_EXPERIENCE = PlayerStat('addxp')
+
 DISPLAY_ID = PlayerStat('dp/id')
 DISPLAY_TIMER = PlayerStat('dp/timer')
 DISPLAY_ARG_1 = PlayerStat('dp/arg1')

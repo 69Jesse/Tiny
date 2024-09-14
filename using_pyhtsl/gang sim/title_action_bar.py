@@ -385,8 +385,8 @@ class OnKillTitleActionBar(TitleActionBar):
     @classmethod
     def apply(
         cls,
-        added_funds: int | GlobalStat,
-        added_cred: int | GlobalStat,
+        added_funds: int | PlayerStat,
+        added_cred: int | PlayerStat,
         added_experience: int | PlayerStat,
     ) -> None:
         cls.set_id()
@@ -411,7 +411,7 @@ class OnBadKillTitleActionBar(TitleActionBar):
     @classmethod
     def apply(
         cls,
-        removed_cred: int | GlobalStat,
+        removed_cred: int | PlayerStat,
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
@@ -433,8 +433,8 @@ class OnDeathTitleActionBar(TitleActionBar):
     @classmethod
     def apply(
         cls,
-        removed_cred: int | GlobalStat,
-        previous_streak: int | GlobalStat,
+        removed_cred: int | PlayerStat,
+        previous_streak: int | PlayerStat,
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
