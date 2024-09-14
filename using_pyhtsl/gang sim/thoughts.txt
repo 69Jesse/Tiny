@@ -49,13 +49,13 @@ GANG SIMULATOR
 
         Latin Kings (Kings)
             yellow
-            light: C8A639
-            dark:  F6CC46
+            light: F6CC46
+            dark:  C8A639
 
-        Black Disciples (Blacks)
-            black
-            light: 262626
-            dark:  000000
+        Grapes (Grapes)
+            purple
+            light: FF55FF
+            dark:  4A1F5A
 
     Guards
         iron chestplate???

@@ -99,6 +99,16 @@ PLAYER_LAST_GANG = PlayerStat('lastgang')
 PLAYER_POWER = PlayerStat('power')
 PLAYER_MAX_POWER = PlayerStat('maxpower')
 
+PLAYER_KILLS = PlayerStat('kills')
+PLAYER_DEATHS = PlayerStat('deaths')
+PLAYER_KILL_STREAK = PlayerStat('killstreak')
+
+PLAYER_CURRENT_LEVEL = PlayerStat('currlvl')
+PLAYER_CURRENT_XP = PlayerStat('currxp')
+PLAYER_CURRENT_REQUIRED_XP = PlayerStat('creqxp')
+
+PLAYER_GLOBAL_LEVEL = PlayerStat('global level')
+
 PLAYER_MINING_SPEED = PlayerStat('minespeed')
 PLAYER_FORAGING_SPEED = PlayerStat('foraspeed')
 
@@ -131,56 +141,60 @@ class GangSimTeam:
     TEAM: Team
     LEVEL: PlayerStat
     EXPERIENCE: PlayerStat
-    REQUIRED_EXPERIENCE: PlayerStat
     ID: int
 
 
 class Bloods(GangSimTeam):
     TEAM = Team('BLOOD')
-    LEVEL = PlayerStat('blood lvl')
+    LEVEL = PlayerStat('blood level')
     EXPERIENCE = PlayerStat('b/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('b/xpr')
     ID = 4
 
 
 class Crips(GangSimTeam):
     TEAM = Team('CRIP')
-    LEVEL = PlayerStat('crip lvl')
+    LEVEL = PlayerStat('crip level')
     EXPERIENCE = PlayerStat('c/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('c/xpr')
     ID = 9
 
 
 class Kings(GangSimTeam):
     TEAM = Team('KING')
-    LEVEL = PlayerStat('king lvl')
+    LEVEL = PlayerStat('king level')
     EXPERIENCE = PlayerStat('k/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('k/xpr')
     ID = 6
 
 
 class Grapes(GangSimTeam):
     TEAM = Team('GRAPE')
-    LEVEL = PlayerStat('grape lvl')
+    LEVEL = PlayerStat('grape level')
     EXPERIENCE = PlayerStat('g/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('g/xpr')
     ID = 5
 
 
 class Guards(GangSimTeam):
     TEAM = Team('GUARD')
-    LEVEL = PlayerStat('guard lvl')
+    LEVEL = PlayerStat('guard level')
     EXPERIENCE = PlayerStat('u/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('u/xpr')
     ID = 3
 
 
 class SpawnTeam(GangSimTeam):
     TEAM = Team('SPAWN')
-    LEVEL = PlayerStat('spawn lvl')
+    LEVEL = PlayerStat('spawn level')
     EXPERIENCE = PlayerStat('s/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('s/xpr')
     ID = EMPTY_TURF_GANG
+
+
+ALL_TEAMS = (
+    Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
+)
+
+
+ALL_GANG_TEAMS = (
+    Bloods, Crips, Kings, Grapes,
+)
+
 
 
 SPAWN = (-0.5, 46, -40.5)

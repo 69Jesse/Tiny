@@ -92,6 +92,12 @@ from constants import (
     PLAYTIME_SECONDS,
     PLAYER_PRESTIGE,
     TURF_HP_PER_PRESTIGE,
+    PLAYER_CURRENT_LEVEL,
+    PLAYER_CURRENT_XP,
+    PLAYER_CURRENT_REQUIRED_XP,
+    PLAYER_GLOBAL_LEVEL,
+    ALL_TEAMS,
+    ALL_GANG_TEAMS,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
@@ -143,6 +149,21 @@ def on_player_death() -> None:
         LATEST_DEATH_WAS_LEADER.value = 0
     LATEST_DEATH_CRED.value = PLAYER_CRED
     LATEST_DEATH_FUNDS.value = PLAYER_FUNDS
+
+    PLAYER_CRED.value -= 1
+    for cred_req in (
+        # 25 or less = -1
+        25,  # 26 - 100 = -2
+        100,  # 101 - 250 = -3
+        250,  # 251 - 500 = -4
+        500,  # 501 or more = -5
+    ):
+        with IfAnd(
+            PLAYER_CRED > cred_req,
+        ):
+            PLAYER_CRED.value -= 1
+
+    trigger_function(move_to_spawn)
 
 
 # NOTE have this get called by the actual event
@@ -245,6 +266,45 @@ def check_out_of_spawn() -> None:
         trigger_function(move_to_spawn)
 
 
+@create_function('Check Levels')
+def check_levels() -> None:
+    PLAYER_GLOBAL_LEVEL.value = -len(ALL_TEAMS) + 1
+    PLAYER_CURRENT_LEVEL.value = 0
+    PLAYER_CURRENT_XP.value = 0
+    for team in ALL_TEAMS:
+        with IfAnd(
+            team.LEVEL <= 0,
+        ):
+            team.LEVEL.value = 1
+        with IfAnd(
+            PLAYER_GANG == team.ID,
+        ):
+            PLAYER_CURRENT_LEVEL.value = team.LEVEL
+            PLAYER_CURRENT_XP.value = team.EXPERIENCE
+        PLAYER_GLOBAL_LEVEL.value += team.LEVEL
+
+    PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * 100
+    with IfAnd(
+        PLAYER_CURRENT_XP >= PLAYER_CURRENT_REQUIRED_XP,
+    ):
+        trigger_function(level_up)
+
+
+@create_function('Level Up')
+def level_up() -> None:
+    for team in ALL_TEAMS:
+        with IfAnd(
+            PLAYER_GANG == team.ID,
+        ):
+            team.LEVEL.value += 1
+            team.EXPERIENCE.value -= PLAYER_CURRENT_REQUIRED_XP
+            PLAYER_CURRENT_LEVEL.value = team.LEVEL
+            PLAYER_CURRENT_XP.value = team.EXPERIENCE
+    
+    PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * 100
+
+
+
 @create_function('Set Most Stats')
 def set_most_stats() -> None:
     for buff_type in BuffType:
@@ -276,16 +336,12 @@ def set_most_stats() -> None:
 def check_player_gang() -> None:
     with IfOr(*(
         RequiredTeam(team.TEAM)
-        for team in (
-            Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
-        )
+        for team in ALL_TEAMS
     )):
         PLAYER_GANG.value = TEAM_ID
     with IfOr(*(
         PLAYER_GANG == team.ID
-        for team in (
-            Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
-        )
+        for team in ALL_TEAMS
     )):
         pass
     with Else:
@@ -299,9 +355,7 @@ def check_player_gang() -> None:
 
 
 def set_team_ids() -> None:
-    for team in (
-        Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
-    ):
+    for team in ALL_TEAMS:
         team.TEAM.stat('id').value = team.ID
 
 
@@ -329,8 +383,11 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
         quiet_reset_turf(turf)
         exit_function()
 
-    add_hp = turf.MAX_HP // 20
-    turf.HP += add_hp
+    with IfAnd(
+        turf.HEAL_COOLDOWN <= 0,
+    ):
+        add_hp = turf.MAX_HP // 20
+        turf.HP += add_hp
     with IfAnd(
         turf.HP > turf.MAX_HP,
     ):
@@ -414,6 +471,7 @@ def personal_every_4ticks() -> None:
     trigger_function(check_player_gang)
     trigger_function(set_location_id)
     trigger_function(check_out_of_spawn)
+    trigger_function(check_levels)
     trigger_function(set_most_stats)
     trigger_function(update_display_stats)
     trigger_function(display_action_bar_and_title)
@@ -662,9 +720,7 @@ def DESTROY_TURF(turf: type[BaseTurf]) -> None:
 def CLAIM_TURF(turf: type[BaseTurf]) -> None:
     with IfOr(*(
         PLAYER_GANG == team.ID
-        for team in (
-            Bloods, Crips, Kings, Grapes,
-        )
+        for team in ALL_GANG_TEAMS
     )):
         pass
     with Else:

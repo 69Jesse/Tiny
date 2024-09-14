@@ -8,6 +8,8 @@ from pyhtsl import (
     trigger_function,
     Else,
     play_sound,
+    TeamColor,
+    TeamName,
 )
 from pyhtsl.types import Condition
 
@@ -28,6 +30,10 @@ from constants import (
     Turf1,
     Turf2,
     Turf3,
+    PLAYER_KILL_STREAK,
+    PLAYER_CURRENT_LEVEL,
+    PLAYER_CURRENT_XP,
+    PLAYER_CURRENT_REQUIRED_XP,
 )
 
 from abc import ABC, abstractmethod
@@ -90,7 +96,7 @@ class RemovePowerTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = power
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
 
     @staticmethod
     def display() -> None:
@@ -210,7 +216,7 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
     @staticmethod
     def display() -> None:
         display_action_bar(
-            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
+            f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&e{DISPLAY_ARG_2}⛁',
         )
 
 
@@ -265,10 +271,10 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         # display_action_bar(
         #     f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         # )
-        for number, name in (
-            (Turf1.ID, 'Alpha'),
-            (Turf2.ID, 'Beta'),
-            (Turf3.ID, 'Gamma'),
+        for number, name, stars in (
+            (Turf1.ID, 'Alpha', '✯✯✯'),
+            (Turf2.ID, 'Beta', '✯✯'),
+            (Turf3.ID, 'Gamma', '✯'),
         ):
             with IfAnd(
                 cls.get_condition(),
@@ -277,7 +283,7 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED',
-                    subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}&a, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l✯✯✯&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
+                    subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}&a, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
@@ -289,7 +295,7 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED',
-                    subtitle=f'&aPROMOTION, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l✯✯✯&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
+                    subtitle=f'&aPROMOTION, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
@@ -369,6 +375,107 @@ class TurfCapturedTitleActionBar(TitleActionBar):
             trigger_function(
                 TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
             )
+
+
+class OnKillTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 9
+
+    @classmethod
+    def apply(
+        cls,
+        added_funds: int | GlobalStat,
+        added_cred: int | GlobalStat,
+        added_experience: int | PlayerStat,
+    ) -> None:
+        cls.set_id()
+        DISPLAY_ARG_1.value = added_funds
+        DISPLAY_ARG_2.value = added_cred
+        DISPLAY_ARG_3.value = added_experience
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        play_sound('Successful Hit')
+
+    @staticmethod
+    def display() -> None:
+        display_action_bar(
+            f'&4&lNICE KILL&6&l {PLAYER_KILL_STREAK}&6-Streak&a +&e{DISPLAY_ARG_1}⛁&a +&2{DISPLAY_ARG_2}©&a +&3{DISPLAY_ARG_3}xp',
+        )
+
+
+class OnBadKillTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 10
+
+    @classmethod
+    def apply(
+        cls,
+        removed_cred: int | GlobalStat,
+    ) -> None:
+        cls.set_id()
+        DISPLAY_ARG_1.value = removed_cred
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        play_sound('Anvil Land')
+
+    @staticmethod
+    def display() -> None:
+        display_action_bar(
+            f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
+        )
+
+
+class OnDeathTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 11
+
+    @classmethod
+    def apply(
+        cls,
+        removed_cred: int | GlobalStat,
+        previous_streak: int | GlobalStat,
+    ) -> None:
+        cls.set_id()
+        DISPLAY_ARG_1.value = removed_cred
+        DISPLAY_ARG_2.value = previous_streak
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        play_sound('Fall Big')
+
+    @staticmethod
+    def display() -> None:
+        display_action_bar(
+            f'&4&lYOU DIED&7 with&6&l {DISPLAY_ARG_2}&6-Streak&c -&2{DISPLAY_ARG_1}©',
+        )
+
+
+class LevelUpTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 12
+
+    @classmethod
+    def apply(
+        cls,
+        old_level: int | PlayerStat,
+    ) -> None:
+        cls.set_id()
+        DISPLAY_ARG_1.value = old_level
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
+        play_sound('Level Up')
+
+    @staticmethod
+    def display() -> None:
+        display_title(
+            title=f'{TeamColor}&l{TeamName} LEVEL UP',
+            subtitle=f'&3Level{TeamColor} {DISPLAY_ARG_1}&3 ->{DISPLAY_ARG_1}&l {PLAYER_CURRENT_LEVEL}&7 (&3{PLAYER_CURRENT_XP}/{PLAYER_CURRENT_REQUIRED_XP}&7)',
+            fadein=0,
+            stay=1,
+            fadeout=0,
+        )
+        trigger_function(
+            TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
+        )
 
 
 # TODO add more action bars? prestige with title instead of action bar and shit
