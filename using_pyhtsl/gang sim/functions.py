@@ -119,6 +119,16 @@ from title_action_bar import (
 )
 
 
+"""
+TODO
+[ ] potion effects
+[ ] all armor
+[ ] gang leader system
+[ ] add all locations
+[ ] on turf location enter display some message if turf is owned
+"""
+
+
 def play_unable_sound() -> None:
     play_sound('Note Bass Guitar')
 
