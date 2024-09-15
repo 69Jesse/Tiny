@@ -611,7 +611,7 @@ def add_onto_turf_max_hp() -> None:
     ):
         exit_function()
     max_hp_addition = PlayerStat('temp1')
-    max_hp_addition.value = PLAYER_PRESTIGE * 10
+    max_hp_addition.value = PLAYER_PRESTIGE * TURF_HP_PER_PRESTIGE
     for turf in (Turf1, Turf2, Turf3):
         with IfAnd(
             turf.GANG == PLAYER_GANG
