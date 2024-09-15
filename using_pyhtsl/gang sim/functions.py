@@ -879,17 +879,30 @@ def payout_turf_funds() -> None:
         pass
     with Else:
         exit_function()
-    temp = PlayerStat('temp')
-    temp.value = PAYOUT_WHOLE
+    payout = PlayerStat('temp')
+    payout.value = PAYOUT_WHOLE
     with IfAnd(
         PAYOUT_REST > 0,
     ):
         PAYOUT_REST.value -= 1
-        temp += 1
+        payout += 1
+
+    is_leader = TEAM_LEADER_ID == PLAYER_ID
     with IfAnd(
-        temp > 0,
+        is_leader,
     ):
-        add_funds(temp)
+        payout.value += PAYOUT_WHOLE
+    with IfAnd(
+        PAYOUT_REST > 0,
+        is_leader,
+    ):
+        PAYOUT_REST.value -= 1
+        payout += 1
+
+    with IfAnd(
+        payout > 0,
+    ):
+        add_funds(payout)
 
 
 def DESTROY_TURF(turf: type[BaseTurf]) -> None:
@@ -990,8 +1003,10 @@ def ON_CLICK_TURF(
     ):
         # clicked own gang turf, claim funds
         PAYOUT_GANG.value = turf.GANG
-        PAYOUT_WHOLE.value = turf.FUNDS // TeamPlayers(None)
-        PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
+        members_plus_1 = PlayerStat('temp')
+        members_plus_1.value = turf.MEMBERS + 1
+        PAYOUT_WHOLE.value = turf.FUNDS // members_plus_1
+        PAYOUT_REST.value = turf.FUNDS - (PAYOUT_WHOLE * members_plus_1)
         turf.FUNDS.value = 0
         turf.HELD_FOR.value = 0
         trigger_function(payout_turf_funds, trigger_for_all_players=True)
