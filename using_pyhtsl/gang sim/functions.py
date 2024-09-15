@@ -578,6 +578,7 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
     ):
         add_hp = turf.MAX_HP // 20
         turf.HP.value += add_hp
+        turf.HEAL_COOLDOWN.value = 4
     with IfAnd(
         turf.HP > turf.MAX_HP,
     ):
@@ -610,7 +611,7 @@ def add_onto_turf_max_hp() -> None:
         PLAYER_GANG == EMPTY_TURF_GANG
     ):
         exit_function()
-    max_hp_addition = PlayerStat('temp1')
+    max_hp_addition = PlayerStat('temp')
     max_hp_addition.value = PLAYER_PRESTIGE * TURF_HP_PER_PRESTIGE
     for turf in (Turf1, Turf2, Turf3):
         with IfAnd(
@@ -1055,7 +1056,7 @@ def ON_CLICK_TURF(
     ):
         trigger_function(set_most_stats)
         turf.HP.value -= PLAYER_DAMAGE
-        turf.HEAL_COOLDOWN.value = 4
+        turf.HEAL_COOLDOWN.value = 8
         play_sound('Zombie Metal', pitch=2.0)
     with IfAnd(
         turf.HP < 0
