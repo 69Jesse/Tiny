@@ -23,6 +23,7 @@ from pyhtsl import (
     pause_execution,
     display_title,
     rename,
+    change_player_group,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -101,6 +102,9 @@ from constants import (
     ALL_GANG_TEAMS,
     PLAYER_KILL_STREAK,
     ADD_EXPERIENCE,
+    PLAYER_KILLS,
+    PLAYER_DEATHS,
+    PLAYER_HIGHEST_KILL_STREAK,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
@@ -139,6 +143,8 @@ def on_player_join_first_time() -> None:
     set_player_team(SpawnTeam.TEAM)
     reset_inventory()
     give_item(Items.tier_1_weapon.item)
+    PLAYER_CRED.value = 10
+    PLAYER_FUNDS.value = 100
 
 
 # DEATH / KILLS ======================================================================
@@ -159,6 +165,8 @@ def on_player_death() -> None:
         LATEST_DEATH_WAS_LEADER.value = 0
     LATEST_DEATH_CRED.value = PLAYER_CRED
     LATEST_DEATH_FUNDS.value = PLAYER_FUNDS
+
+    PLAYER_DEATHS.value += 1
 
     removing_cred = PlayerStat('temp')
     removing_cred.value = 1
@@ -187,6 +195,13 @@ def on_player_death() -> None:
 # NOTE have this get called by the actual event
 @create_function('On Player Kill')
 def on_player_kill() -> None:
+    PLAYER_KILLS.value += 1
+    PLAYER_KILL_STREAK.value += 1
+    with IfAnd(
+        PLAYER_KILL_STREAK > PLAYER_HIGHEST_KILL_STREAK,
+    ):
+        PLAYER_HIGHEST_KILL_STREAK.value = PLAYER_KILL_STREAK
+
     with IfAnd(
         PLAYER_GANG == SpawnTeam.ID,
     ):
@@ -260,6 +275,56 @@ def on_bad_player_kill() -> None:
 # MISC?? =================================
 
 
+@create_function('Apply Potion Effects')
+def apply_potion_effects() -> None:
+    pass  # TOOD night vision forever, strength etc
+
+
+@create_function('Set Group')
+def set_group() -> None:
+    with IfAnd(
+        GroupPriority >= 18,
+    ):
+        exit_function()
+    with IfAnd(
+        TEAM_LEADER_ID == PLAYER_ID,
+    ):
+        change_player_group(
+            'Leader',
+            False,
+        )
+        exit_function()
+    for name, cred_req in (
+        ('1000 Cred', 1000),
+        ('500 Cred', 500),
+        ('250 Cred', 250),
+        ('150 Cred', 150),
+        ('100 Cred', 100),
+        ('75 Cred', 75),
+        ('50 Cred', 50),
+        ('40 Cred', 40),
+        ('30 Cred', 30),
+        ('25 Cred', 25),
+        ('20 Cred', 20),
+        ('15 Cred', 15),
+        ('10 Cred', 10),
+        ('5 Cred', 5),
+        ('1 Cred', 1),
+    ):
+        with IfAnd(
+            PLAYER_CRED >= cred_req,
+        ):
+            change_player_group(
+                name,
+                False,
+            )
+            exit_function()
+    change_player_group(
+        '0 Cred',
+        False,
+    )
+
+
 TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
 
 
@@ -269,6 +334,7 @@ def ON_TEAM_JOIN(
     set_player_team(team.TEAM)
     trigger_function(check_player_gang)
     teleport_player(TEMPORARY_SPAWN)
+    play_sound('Enderman Teleport')
     # TODO
 
 
@@ -486,11 +552,22 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
         quiet_reset_turf(turf)
         exit_function()
 
+    for team in ALL_GANG_TEAMS:
+        with IfAnd(
+            turf.GANG == team.ID
+        ):
+            turf.MEMBERS.value = team.TEAM.players()
+
+    with IfAnd(
+        turf.MEMBERS <= 0,
+    ):
+        exit_function()
+
     with IfAnd(
         turf.HEAL_COOLDOWN <= 0,
     ):
         add_hp = turf.MAX_HP // 20
-        turf.HP += add_hp
+        turf.HP.value += add_hp
     with IfAnd(
         turf.HP > turf.MAX_HP,
     ):
@@ -498,7 +575,7 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
 
     turf.HELD_FOR += 1
     turf.FUNDS_PER_SECOND.value = turf.DEFAULT_FUNDS_PER_SECOND
-    for amount in (100, 200, 400, 600):
+    for amount in (200, 400, 800, 1200):
         with IfAnd(
             turf.HELD_FOR >= amount
         ):
@@ -523,12 +600,13 @@ def add_onto_turf_max_hp() -> None:
         PLAYER_GANG == EMPTY_TURF_GANG
     ):
         exit_function()
-    addition = PLAYER_PRESTIGE * 10
+    max_hp_addition = PlayerStat('temp1')
+    max_hp_addition.value = PLAYER_PRESTIGE * 10
     for turf in (Turf1, Turf2, Turf3):
         with IfAnd(
             turf.GANG == PLAYER_GANG
         ):
-            turf.MAX_HP += addition
+            turf.MAX_HP += max_hp_addition
 
 
 @create_function('Update Turfs')
@@ -669,8 +747,8 @@ def cookie_receive_message() -> None:
 @create_function('Cookie Reward')
 def cookie_reward() -> None:
     chat(IMPORTANT_MESSAGE_PREFIX + '&aWe hit the&6 Cookie Goal&a!&e Thank you&a so much!!')
-    chat('&aYou received&e +100⛁ Funds&7 (will change soon)')
-    add_funds(100)
+    chat('&aYou received&e +1,000⛁ Funds&7 (will change soon)')
+    add_funds(1000)
 
 
 # INGAME TIME ======================
@@ -726,6 +804,18 @@ def update_display_stats() -> None:
 
 @create_function('Regular Action Bar Display')
 def regular_action_bar_display() -> None:
+    modulo_by = 5
+    did_modulo_on = PlayerStat('temp')
+    did_modulo_on.value = DateUnix
+    did_modulo_on.value -= did_modulo_on // modulo_by * modulo_by
+    with IfAnd(
+        did_modulo_on == 0,
+    ):
+        display_action_bar(
+            f'&6&l{PLAYER_KILL_STREAK}&6-Streak&7 (&a{PLAYER_KILLS}K&7/&c{PLAYER_DEATHS}D&7)&3 {PLAYER_CURRENT_XP}/{PLAYER_CURRENT_REQUIRED_XP}xp'
+        )
+        exit_function()
+
     for display_arg, turf_gang_args in (
         (DISPLAY_ARG_1, (Turf1.GANG, Turf2.GANG, Turf3.GANG)),
         (DISPLAY_ARG_2, (Turf1.GANG, Turf2.GANG)),
@@ -796,7 +886,10 @@ def payout_turf_funds() -> None:
     ):
         PAYOUT_REST.value -= 1
         temp += 1
-    add_funds(temp)
+    with IfAnd(
+        temp > 0,
+    ):
+        add_funds(temp)
 
 
 def DESTROY_TURF(turf: type[BaseTurf]) -> None:
@@ -817,7 +910,8 @@ def DESTROY_TURF(turf: type[BaseTurf]) -> None:
     turf.MAX_HP.value = TURF_DEFAULT_MAX_HP
     turf.FUNDS.value = 0
     turf.FUNDS_PER_SECOND.value = 0
-    turf.HIT_COOLDOWN.value = 4
+    turf.HELD_FOR.value = 0
+    turf.HIT_COOLDOWN.value = 6
 
 
 def CLAIM_TURF(turf: type[BaseTurf]) -> None:
@@ -858,33 +952,15 @@ def CLAIM_TURF(turf: type[BaseTurf]) -> None:
         with IfAnd(
             Turf3.GANG == PLAYER_GANG
         ):
-            PAYOUT_GANG.value = Turf3.GANG
-            PAYOUT_WHOLE.value = Turf3.FUNDS // TeamPlayers(None)
-            PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
-            trigger_function(payout_turf_funds, trigger_for_all_players=True)
-            trigger_function(destroy_turf_3)
-            TurfDestroyedTitleActionBar.set_promotion_player_id()
             did_promote.value = 1
     elif turf.ID == Turf1.ID:
         with IfAnd(
             Turf2.GANG == PLAYER_GANG
         ):
-            PAYOUT_GANG.value = Turf2.GANG
-            PAYOUT_WHOLE.value = Turf2.FUNDS // TeamPlayers(None)
-            PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
-            trigger_function(payout_turf_funds, trigger_for_all_players=True)
-            trigger_function(destroy_turf_2)
-            TurfDestroyedTitleActionBar.set_promotion_player_id()
             did_promote.value = 1
         with IfAnd(
             Turf3.GANG == PLAYER_GANG
         ):
-            PAYOUT_GANG.value = Turf3.GANG
-            PAYOUT_WHOLE.value = Turf3.FUNDS // TeamPlayers(None)
-            PAYOUT_REST.value = PAYOUT_WHOLE - (PAYOUT_WHOLE * TeamPlayers(None))
-            trigger_function(payout_turf_funds, trigger_for_all_players=True)
-            trigger_function(destroy_turf_3)
-            TurfDestroyedTitleActionBar.set_promotion_player_id()
             did_promote.value = 1
 
     turf.GANG.value = PLAYER_GANG
@@ -898,14 +974,9 @@ def CLAIM_TURF(turf: type[BaseTurf]) -> None:
         turf.GANG,
         PLAYER_ID,
         turf.FUNDS_PER_SECOND,
+        did_promote,
     )
-    turf.HIT_COOLDOWN.value = 4
-
-    with IfAnd(
-        did_promote.value == 1
-    ):
-        pause_execution(60)
-
+    turf.HIT_COOLDOWN.value = 6
     trigger_function(apply_turf_captured_title, trigger_for_all_players=True)
 
 

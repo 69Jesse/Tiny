@@ -26,6 +26,7 @@ class BaseTurf:
     FUNDS_PER_SECOND: GlobalStat
     HIT_COOLDOWN: GlobalStat
     HEAL_COOLDOWN: GlobalStat
+    MEMBERS: GlobalStat
 
 
 class Turf1(BaseTurf):
@@ -39,6 +40,7 @@ class Turf1(BaseTurf):
     FUNDS_PER_SECOND = GlobalStat('turf1/af')
     HIT_COOLDOWN = GlobalStat('turf1/hicd')
     HEAL_COOLDOWN = GlobalStat('turf1/hecd')
+    MEMBERS = GlobalStat('turf1/members')
 
 class Turf2(BaseTurf):
     ID = 2
@@ -51,6 +53,7 @@ class Turf2(BaseTurf):
     FUNDS_PER_SECOND = GlobalStat('turf2/af')
     HIT_COOLDOWN = GlobalStat('turf2/hicd')
     HEAL_COOLDOWN = GlobalStat('turf2/hecd')
+    MEMBERS = GlobalStat('turf2/members')
 
 class Turf3(BaseTurf):
     ID = 3
@@ -63,6 +66,7 @@ class Turf3(BaseTurf):
     FUNDS_PER_SECOND = GlobalStat('turf3/af')
     HIT_COOLDOWN = GlobalStat('turf3/hicd')
     HEAL_COOLDOWN = GlobalStat('turf3/hecd')
+    MEMBERS = GlobalStat('turf3/members')
 
 
 EMPTY_TURF_GANG = 7
@@ -102,12 +106,13 @@ PLAYER_MAX_POWER = PlayerStat('maxpower')
 PLAYER_KILLS = PlayerStat('kills')
 PLAYER_DEATHS = PlayerStat('deaths')
 PLAYER_KILL_STREAK = PlayerStat('killstreak')
+PLAYER_HIGHEST_KILL_STREAK = PlayerStat('higheststreak')
 
 PLAYER_CURRENT_LEVEL = PlayerStat('currlvl')
 PLAYER_CURRENT_XP = PlayerStat('currxp')
 PLAYER_CURRENT_REQUIRED_XP = PlayerStat('creqxp')
 
-PLAYER_GLOBAL_LEVEL = PlayerStat('global level')
+PLAYER_GLOBAL_LEVEL = PlayerStat('globallevel')
 
 PLAYER_MINING_SPEED = PlayerStat('minespeed')
 PLAYER_FORAGING_SPEED = PlayerStat('foraspeed')
@@ -148,42 +153,42 @@ class GangSimTeam:
 
 class Bloods(GangSimTeam):
     TEAM = Team('BLOOD')
-    LEVEL = PlayerStat('blood level')
+    LEVEL = PlayerStat('bloodlevel')
     EXPERIENCE = PlayerStat('b/xp')
     ID = 4
 
 
 class Crips(GangSimTeam):
     TEAM = Team('CRIP')
-    LEVEL = PlayerStat('crip level')
+    LEVEL = PlayerStat('criplevel')
     EXPERIENCE = PlayerStat('c/xp')
     ID = 9
 
 
 class Kings(GangSimTeam):
     TEAM = Team('KING')
-    LEVEL = PlayerStat('king level')
+    LEVEL = PlayerStat('kinglevel')
     EXPERIENCE = PlayerStat('k/xp')
     ID = 6
 
 
 class Grapes(GangSimTeam):
     TEAM = Team('GRAPE')
-    LEVEL = PlayerStat('grape level')
+    LEVEL = PlayerStat('grapelevel')
     EXPERIENCE = PlayerStat('g/xp')
     ID = 5
 
 
 class Guards(GangSimTeam):
     TEAM = Team('GUARD')
-    LEVEL = PlayerStat('guard level')
+    LEVEL = PlayerStat('guardlevel')
     EXPERIENCE = PlayerStat('u/xp')
     ID = 3
 
 
 class SpawnTeam(GangSimTeam):
     TEAM = Team('SPAWN')
-    LEVEL = PlayerStat('spawn level')
+    LEVEL = PlayerStat('spawnlevel')
     EXPERIENCE = PlayerStat('s/xp')
     ID = EMPTY_TURF_GANG
 

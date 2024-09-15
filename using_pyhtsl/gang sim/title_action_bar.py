@@ -222,8 +222,6 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
 
 @final
 class TurfDestroyedTitleActionBar(TitleActionBar):
-    PROMOTION_PLAYER_ID = -999999999
-
     @staticmethod
     def get_id() -> int:
         return 7
@@ -255,10 +253,6 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         GLOBAL_DISPLAY_ARG_6.value = seconds_held
 
     @staticmethod
-    def set_promotion_player_id() -> None:
-        GLOBAL_DISPLAY_ARG_3.value = TurfDestroyedTitleActionBar.PROMOTION_PLAYER_ID
-
-    @staticmethod
     def is_regular() -> bool:
         return False
 
@@ -279,23 +273,10 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
             with IfAnd(
                 cls.get_condition(),
                 GLOBAL_DISPLAY_ARG_1.value == number,
-                GLOBAL_DISPLAY_ARG_3 > cls.PROMOTION_PLAYER_ID,
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED',
                     subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}&a, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
-                    fadein=0,
-                    stay=1,
-                    fadeout=0,
-                )
-            with IfAnd(
-                cls.get_condition(),
-                GLOBAL_DISPLAY_ARG_1.value == number,
-                GLOBAL_DISPLAY_ARG_3 == cls.PROMOTION_PLAYER_ID,
-            ):
-                display_title(
-                    title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED',
-                    subtitle=f'&aPROMOTION, it held&e {GLOBAL_DISPLAY_ARG_5}⛁&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2} {GLOBAL_DISPLAY_ARG_6}s&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
@@ -334,11 +315,13 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         captured_gang: int | GlobalStat,
         capturer_id: int | PlayerStat,
         turf_earnings: int | GlobalStat,
+        is_promotion: PlayerStat,
     ) -> None:
         GLOBAL_DISPLAY_ARG_1.value = captured_turf
         GLOBAL_DISPLAY_ARG_2.value = captured_gang
         GLOBAL_DISPLAY_ARG_3.value = capturer_id
         GLOBAL_DISPLAY_ARG_4.value = turf_earnings
+        GLOBAL_DISPLAY_ARG_5.value = is_promotion
 
     @staticmethod
     def is_regular() -> bool:
@@ -353,18 +336,31 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         # display_action_bar(
         #     f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         # )
-        for number, name in (
-            (Turf1.ID, 'Alpha'),
-            (Turf2.ID, 'Beta'),
-            (Turf3.ID, 'Gamma'),
+        for number, name, stars in (
+            (Turf1.ID, 'Alpha', '✯✯✯'),
+            (Turf2.ID, 'Beta', '✯✯'),
+            (Turf3.ID, 'Gamma', '✯'),
         ):
             with IfAnd(
                 cls.get_condition(),
                 GLOBAL_DISPLAY_ARG_1.value == number,
+                GLOBAL_DISPLAY_ARG_5 == 0,
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED',
-                    subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{GLOBAL_DISPLAY_ARG_4}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l✯✯✯&{GLOBAL_DISPLAY_ARG_2}&7)',
+                    subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{GLOBAL_DISPLAY_ARG_4}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2}&7)',
+                    fadein=0,
+                    stay=1,
+                    fadeout=0,
+                )
+            with IfAnd(
+                cls.get_condition(),
+                GLOBAL_DISPLAY_ARG_1.value == number,
+                GLOBAL_DISPLAY_ARG_5 == 1,
+            ):
+                display_title(
+                    title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED',
+                    subtitle=f'&aPROMOTION by&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{GLOBAL_DISPLAY_ARG_4}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2}&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
