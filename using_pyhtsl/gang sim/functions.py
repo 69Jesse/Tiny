@@ -24,6 +24,7 @@ from pyhtsl import (
     display_title,
     rename,
     change_player_group,
+    apply_potion_effect,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -105,6 +106,7 @@ from constants import (
     PLAYER_KILLS,
     PLAYER_DEATHS,
     PLAYER_HIGHEST_KILL_STREAK,
+    SEND_TO_SPAWN_COUNTER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
@@ -124,8 +126,9 @@ TODO
 [ ] potion effects
 [ ] all armor
 [ ] gang leader system
+[ ] move to spawn counter because sometimes on tp itll tp you back
 [ ] add all locations
-[ ] on turf location enter display some message if turf is owned
+[x] on turf location enter display some message if turf is owned
 """
 
 
@@ -193,6 +196,7 @@ def on_player_death() -> None:
         ):
             removing_cred.value += 1
     PLAYER_CRED.value -= removing_cred
+    trigger_function(clamp_cred)
 
     trigger_function(move_to_spawn)
     OnDeathTitleActionBar.apply(
@@ -271,14 +275,26 @@ def on_player_kill() -> None:
 
 @create_function('On Bad Player Kill')
 def on_bad_player_kill() -> None:
-    removed_cred = PlayerStat('temp2')
+    removed_cred = DISPLAY_ARG_1
     with IfAnd(
         LATEST_DEATH_WAS_LEADER == 1,
     ):
         removed_cred.value = 3
-    with Else:
+
+    cutoff = 20
+    with IfAnd(
+        LATEST_DEATH_WAS_LEADER	== 0,
+        PLAYER_CRED > cutoff,
+    ):
         removed_cred.value = 5
+    with IfAnd(
+        LATEST_DEATH_WAS_LEADER == 0,
+        PLAYER_CRED <= cutoff,
+    ):
+        removed_cred.value = 3
+
     PLAYER_CRED.value -= removed_cred
+    trigger_function(clamp_cred)
     OnBadKillTitleActionBar.apply(removed_cred)
 
 
@@ -287,6 +303,12 @@ def on_bad_player_kill() -> None:
 
 @create_function('Apply Potion Effects')
 def apply_potion_effects() -> None:
+    apply_potion_effect(
+        'night_vision',
+        duration=2592000,
+        level=1,
+        override_existing_effects=True,
+    )
     pass  # TOOD night vision forever, strength etc
 
 
@@ -362,6 +384,8 @@ def on_grapes_join() -> None:
     ON_TEAM_JOIN(Grapes)
 @create_function('On Guards Join')
 def on_guards_join() -> None:
+    chat(IMPORTANT_MESSAGE_PREFIX + '&cNot implemented yet.')
+    return
     ON_TEAM_JOIN(Guards)
 
 
@@ -395,6 +419,7 @@ def check_out_of_spawn() -> None:
     with IfAnd(
         GroupPriority >= 19
     ):
+        SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
     with IfOr(
@@ -405,12 +430,14 @@ def check_out_of_spawn() -> None:
     with Else:
         # is at spawn without spawn team
         set_player_team(SpawnTeam.TEAM)
+        SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
     # is not at spawn or has spawn team
     with IfAnd(
         GroupPriority >= 18
     ):
+        SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
     with IfAnd(
@@ -418,6 +445,7 @@ def check_out_of_spawn() -> None:
     ):
         pass
     with Else:
+        SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
     # has spawn team
@@ -426,7 +454,15 @@ def check_out_of_spawn() -> None:
         BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
     ):
         # has spawn team outside of spawn
+        SEND_TO_SPAWN_COUNTER.value += 1
+
+    with IfAnd(
+        SEND_TO_SPAWN_COUNTER >= 5,
+    ):
         trigger_function(move_to_spawn)
+
+
+XP_PER_LEVEL = 100
 
 
 @create_function('Check Levels')
@@ -439,14 +475,15 @@ def check_levels() -> None:
             team.LEVEL <= 0,
         ):
             team.LEVEL.value = 1
+        team.REQUIRED_EXPERIENCE.value = team.LEVEL * XP_PER_LEVEL
         with IfAnd(
             PLAYER_GANG == team.ID,
         ):
             PLAYER_CURRENT_LEVEL.value = team.LEVEL
             PLAYER_CURRENT_XP.value = team.EXPERIENCE
+            PLAYER_CURRENT_REQUIRED_XP.value = team.REQUIRED_EXPERIENCE
         PLAYER_GLOBAL_LEVEL.value += team.LEVEL
 
-    PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * 100
     with IfAnd(
         PLAYER_CURRENT_XP >= PLAYER_CURRENT_REQUIRED_XP,
     ):
@@ -474,8 +511,17 @@ def level_up() -> None:
             team.EXPERIENCE.value -= PLAYER_CURRENT_REQUIRED_XP
             PLAYER_CURRENT_LEVEL.value = team.LEVEL
             PLAYER_CURRENT_XP.value = team.EXPERIENCE
-    
+
     PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * 100
+
+
+@create_function('Clamp Cred')
+def clamp_cred() -> None:
+    n = -10
+    with IfAnd(
+        PLAYER_CRED < n,
+    ):
+        PLAYER_CRED.value = n
 
 
 @create_function('Set Most Stats')
@@ -503,6 +549,7 @@ def set_most_stats() -> None:
             buff_type.stat > buff_type.max,
         ):
             buff_type.stat.value = buff_type.max
+    trigger_function(clamp_cred)
 
 
 @create_function('Remove Illegal Items')
@@ -571,6 +618,7 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
     with IfAnd(
         turf.MEMBERS <= 0,
     ):
+        # No members, dont destroy but also dont add funds/heal
         exit_function()
 
     with IfAnd(
@@ -1009,6 +1057,12 @@ def ON_CLICK_TURF(
     claim_turf: Function,
     destroy_turf: Function,
 ) -> None:
+    with IfAnd(
+        PLAYER_GANG == Guards.ID
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou cannot interact with a turf as a guard.')
+        exit_function()
+
     with IfAnd(
         turf.GANG == PLAYER_GANG
     ):

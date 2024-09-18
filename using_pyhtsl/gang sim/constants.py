@@ -139,6 +139,8 @@ PREVIOUS_LOCATION_ID = PlayerStat('plocationid')
 
 PLAYTIME_SECONDS = PlayerStat('playtime')
 
+SEND_TO_SPAWN_COUNTER = PlayerStat('stspawnc')
+
 
 TEAM_ID = TeamStat('id')
 TEAM_LEADER_ID = TeamStat('leaderid')
@@ -148,6 +150,7 @@ class GangSimTeam:
     TEAM: Team
     LEVEL: PlayerStat
     EXPERIENCE: PlayerStat
+    REQUIRED_EXPERIENCE: PlayerStat
     ID: int
 
 
@@ -155,6 +158,7 @@ class Bloods(GangSimTeam):
     TEAM = Team('BLOOD')
     LEVEL = PlayerStat('bloodlevel')
     EXPERIENCE = PlayerStat('b/xp')
+    REQUIRED_EXPERIENCE = PlayerStat('b/xpr')
     ID = 4
 
 
@@ -162,6 +166,7 @@ class Crips(GangSimTeam):
     TEAM = Team('CRIP')
     LEVEL = PlayerStat('criplevel')
     EXPERIENCE = PlayerStat('c/xp')
+    REQUIRED_EXPERIENCE = PlayerStat('c/xpr')
     ID = 9
 
 
@@ -169,6 +174,7 @@ class Kings(GangSimTeam):
     TEAM = Team('KING')
     LEVEL = PlayerStat('kinglevel')
     EXPERIENCE = PlayerStat('k/xp')
+    REQUIRED_EXPERIENCE = PlayerStat('k/xpr')
     ID = 6
 
 
@@ -176,6 +182,7 @@ class Grapes(GangSimTeam):
     TEAM = Team('GRAPE')
     LEVEL = PlayerStat('grapelevel')
     EXPERIENCE = PlayerStat('g/xp')
+    REQUIRED_EXPERIENCE = PlayerStat('g/xpr')
     ID = 5
 
 
@@ -183,6 +190,7 @@ class Guards(GangSimTeam):
     TEAM = Team('GUARD')
     LEVEL = PlayerStat('guardlevel')
     EXPERIENCE = PlayerStat('u/xp')
+    REQUIRED_EXPERIENCE = PlayerStat('u/xpr')
     ID = 3
 
 
@@ -190,6 +198,7 @@ class SpawnTeam(GangSimTeam):
     TEAM = Team('SPAWN')
     LEVEL = PlayerStat('spawnlevel')
     EXPERIENCE = PlayerStat('s/xp')
+    REQUIRED_EXPERIENCE = PlayerStat('s/xpr')
     ID = EMPTY_TURF_GANG
 
 

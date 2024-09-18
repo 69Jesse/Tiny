@@ -39,23 +39,23 @@ GANG SIMULATOR
     Gangs
         Bloods (Bloods)
             red
-            light: D00000
-            dark:  7A0000
+            light: 85221C
+            dark:  611814
 
         Crips (Crips)
             blue
-            light: 061F95
-            dark:  041874
+            light: 2B88A5
+            dark:  1F6378
 
         Latin Kings (Kings)
             yellow
-            light: F6CC46
-            dark:  C8A639
+            light: BD6115
+            dark:  89460F
 
         Grapes (Grapes)
             purple
-            light: FF55FF
-            dark:  4A1F5A
+            light: 973A8F
+            dark:  6E2A68
 
     Guards
         iron chestplate???

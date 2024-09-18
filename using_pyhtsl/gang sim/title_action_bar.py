@@ -416,6 +416,13 @@ class OnBadKillTitleActionBar(TitleActionBar):
 
     @staticmethod
     def display() -> None:
+        display_title(
+            title=f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
+            subtitle='&8Do not kill members of your own gang!',
+            fadein=0,
+            stay=1,
+            fadeout=0,
+        )
         display_action_bar(
             f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
         )
