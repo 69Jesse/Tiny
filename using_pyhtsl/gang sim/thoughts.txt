@@ -49,8 +49,8 @@ GANG SIMULATOR
 
         Latin Kings (Kings)
             yellow
-            light: BD6115
-            dark:  89460F
+            light: DFC33E
+            dark:  A28E2D
 
         Grapes (Grapes)
             purple

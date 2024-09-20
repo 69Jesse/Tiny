@@ -25,6 +25,8 @@ from pyhtsl import (
     rename,
     change_player_group,
     apply_potion_effect,
+    full_heal,
+    TeamColor,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -412,6 +414,7 @@ def move_to_spawn() -> None:
     PLAYER_GANG.value = EMPTY_TURF_GANG
     teleport_player(SPAWN)
     play_sound('Enderman Teleport')
+    full_heal()
 
 
 @create_function('Check Out Of Spawn')
@@ -462,7 +465,7 @@ def check_out_of_spawn() -> None:
         trigger_function(move_to_spawn)
 
 
-XP_PER_LEVEL = 100
+XP_PER_LEVEL = 10
 
 
 @create_function('Check Levels')
@@ -512,7 +515,7 @@ def level_up() -> None:
             PLAYER_CURRENT_LEVEL.value = team.LEVEL
             PLAYER_CURRENT_XP.value = team.EXPERIENCE
 
-    PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * 100
+    PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * XP_PER_LEVEL
 
 
 @create_function('Clamp Cred')
@@ -962,6 +965,23 @@ def payout_turf_funds() -> None:
         payout > 0,
     ):
         add_funds(payout)
+
+    for (turf_gang, stars) in (
+        (Turf1.GANG, '✯✯✯'),
+        (Turf2.GANG, '✯✯'),
+        (Turf3.GANG, '✯'),
+    ):
+        with IfAnd(
+            payout > 0,
+            turf_gang == PAYOUT_GANG,
+        ):
+            display_title(
+                title=f'&{TEAM_ID}Funds Distributed',
+                subtitle=f'&aYou received&e +{payout}⛁&7 (&{TEAM_ID}&l{stars}&7)',
+                fadein=0,
+                stay=1,
+                fadeout=0,
+            )
 
 
 def DESTROY_TURF(turf: type[BaseTurf]) -> None:

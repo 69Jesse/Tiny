@@ -7,7 +7,7 @@ from pyhtsl import (
     IfAnd,
     HasItem,
 )
-from pyhtsl.types import ALL_ITEM_KEYS, IfStatement
+from pyhtsl.types import ALL_ITEM_KEYS, IfStatement, LEATHER_ARMOR_KEYS
 
 from enum import Enum, auto
 import re
@@ -23,6 +23,11 @@ from constants import (
     PLAYER_FARMING_FORTUNE,
     PLAYER_FORAGING_FORTUNE,
     PLAYER_DAMAGE,
+    Bloods,
+    Crips,
+    Kings,
+    Grapes,
+    Guards,
 )
 
 
@@ -86,6 +91,15 @@ class ItemType(Enum):
                 return 'Hoe'
             if item_key == 'fishing_rod':
                 return 'Fishing Rod'
+        if self is ItemType.Armor:
+            if item_key.endswith('_helmet') or item_key.endswith('_cap'):
+                return 'Helmet'
+            if item_key.endswith('_chestplate') or item_key.endswith('_tunic'):
+                return 'Chestplate'
+            if item_key.endswith('_leggings') or item_key.endswith('_pants'):
+                return 'Leggings'
+            if item_key.endswith('_boots'):
+                return 'Boots'
         return self.name
 
 
@@ -113,7 +127,7 @@ ROMAN_NUMERALS: dict[int, str] = {
 
 class BuffType(Enum):
     damage =           (PLAYER_DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',         '&7Damage:&c +{value}',        '')
-    protection =       (None,               0,      -1,     lambda x: ROMAN_NUMERALS[x],  '&7Protection&a {value}',          '')
+    protection =       (None,               0,      -1,     lambda x: ROMAN_NUMERALS[x],  '&7Protection:&a {value}',          '')
     power =            (PLAYER_MAX_POWER,          100,      -1,     lambda x: x,                  '&7Power:&4 +{value}',              '')
     mining_speed =     (PLAYER_MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
     foraging_speed =   (PLAYER_FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
@@ -217,6 +231,8 @@ class CustomItem:
     check: ItemCheck
     enchantments: Optional[list[Enchantment]]
     buffs: Optional[list[Buff]]
+    color: Optional[str]
+    quote: Optional[str]
     def __init__(
         self,
         name: str,
@@ -226,6 +242,8 @@ class CustomItem:
         check: Optional[ItemCheck] = None,
         enchantments: Optional[list[Enchantment]] = None,
         buffs: Optional[list[Buff]] = None,
+        color: Optional[str] = None,
+        quote: Optional[str] = None,
     ) -> None:
         self.name = name
         self.key = key
@@ -241,6 +259,8 @@ class CustomItem:
         self.check = check
         self.enchantments = enchantments
         self.buffs = self.updated_buffs(buffs)
+        self.color = color
+        self.quote = quote
 
     def find_buff(self, buffs: list[Buff], buff_type: BuffType) -> Buff:
         for buff in buffs:
@@ -266,6 +286,8 @@ class CustomItem:
                 self.find_buff(buffs, buff_type).value += MINING_SPEED_PER_EFF_LEVEL * enchantment.level
             elif enchantment.name == 'sharpness':
                 self.find_buff(buffs, BuffType.damage).value += DAMAGE_PER_SHARPNESS_LEVEL * enchantment.level
+            elif enchantment.name == 'protection':
+                self.find_buff(buffs, BuffType.protection).value += enchantment.level
         for i in range(len(buffs) - 1, -1, -1):
             buff = buffs[i]
             if buff.value == 0:
@@ -275,19 +297,20 @@ class CustomItem:
 
     @property
     def item(self) -> Item:
-        type_name = self.type.better_name(self.key)
-        lore: list[str] = [f'&8{type_name}']
+        lore: list[str] = []
 
         if self.buffs:
-            lore.append('')
             for buff in self.buffs:
                 lore.append(buff.type.formatted_addition(buff.value))
             lore.append('')
 
-        lore.append(f'&{self.rarity.value}&l{self.rarity.name}')
-        if len(lore) == 2:
-            lore.pop(0)
-        lore[-1] = f'{lore[-1]} {type_name.upper()}'
+        if self.quote is not None:
+            lore.append(self.quote)
+            lore.append('')
+
+        type_name = self.type.better_name(self.key)
+        lore.append(f'&{self.rarity.value}&l{self.rarity.name} {type_name.upper()}')
+
         return Item(
             self.key,
             name=f'&{self.rarity.value}{self.name}',
@@ -295,6 +318,7 @@ class CustomItem:
             enchantments=self.enchantments,
             hide_all_flags=True,
             unbreakable=True,
+            color=self.color,
         )
 
     def if_has_condition(self) -> IfStatement:
@@ -469,6 +493,118 @@ class Items:
             Items.tier_16_weapon,
             Items.tier_17_weapon,
             Items.tier_18_weapon,
+        ]
+
+    LEADER_HELMET_QUOTE: str = (
+        '&eTo transfer leadership, take this'
+        '\n&eoff and give it to your successor.'
+        '\n\n&eHowever, do not wait too long or a'
+        '\n&enew leader will randomly be chosen.'
+    )
+
+    bloods_chestplate = CustomItem(
+        f'&{Bloods.ID}Bloods Identity',
+        'leather_tunic',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        color='85221C',
+        quote=(
+            '&8Red runs through the veins,'
+            '\n&8and loyalty through the soul.'
+            '\n&8 - Bloods for life'
+        ),
+    )
+    bloods_leader_helmet = CustomItem(
+        f'&{Bloods.ID}Bloods Gang Leader',
+        'golden_helmet',  # 'leather_cap',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 25)],
+        enchantments=[Enchantment('protection', 3)],
+        # color='611814',
+        quote=LEADER_HELMET_QUOTE,
+    )
+
+    crips_chestplate = CustomItem(
+        f'&{Crips.ID}Crips Identity',
+        'leather_tunic',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        color='2B88A5',
+        quote=(
+            '&8Blue waves crash hard,'
+            '\n&8we\'re loyal to the soil.'
+            '\n&8 - Crip \'til I rest'
+        ),
+    )
+    crips_leader_helmet = CustomItem(
+        f'&{Crips.ID}Crips Gang Leader',
+        'golden_helmet',  # 'leather_cap',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 25)],
+        enchantments=[Enchantment('protection', 3)],
+        # color='1F6378',
+        quote=LEADER_HELMET_QUOTE,
+    )
+
+    kings_chestplate = CustomItem(
+        f'&{Kings.ID}Kings Identity',
+        'leather_tunic',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        color='DFC33E',
+        quote=(
+            '&8Crown on the head,'
+            '\n&8and fire in the chest.'
+            '\n&8 - Kings don\'t break'
+        ),
+    )
+    kings_leader_helmet = CustomItem(
+        f'&{Kings.ID}Kings Gang Leader',
+        'golden_helmet',  # 'leather_cap',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 25)],
+        enchantments=[Enchantment('protection', 3)],
+        # color='A28E2D',
+        quote=LEADER_HELMET_QUOTE,
+    )
+
+    grapes_chestplate = CustomItem(
+        f'&{Grapes.ID}Grapes Identity',
+        'leather_tunic',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        color='973A8F',
+        quote=(
+            '&8We don\'t just rep'
+            '\n&8purple, we bleed it.'
+            '\n&8 - Grapes take it all'
+        ),
+    )
+    grapes_leader_helmet = CustomItem(
+        f'&{Grapes.ID}Grapes Gang Leader',
+        'golden_helmet',  # 'leather_cap',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 25)],
+        enchantments=[Enchantment('protection', 3)],
+        # color='6E2A68',
+        quote=LEADER_HELMET_QUOTE,
+    )
+
+    @staticmethod
+    def gang_armor() -> list[CustomItem]:
+        return [
+            Items.bloods_chestplate,
+            Items.bloods_leader_helmet,
+            Items.crips_chestplate,
+            Items.crips_leader_helmet,
+            Items.kings_chestplate,
+            Items.kings_leader_helmet,
+            Items.grapes_chestplate,
+            Items.grapes_leader_helmet,
         ]
 
     @classmethod
