@@ -10,6 +10,7 @@ from pyhtsl import (
     play_sound,
     TeamColor,
     TeamName,
+    chat,
 )
 from pyhtsl.types import Condition
 
@@ -34,6 +35,7 @@ from constants import (
     PLAYER_CURRENT_LEVEL,
     PLAYER_CURRENT_XP,
     PLAYER_CURRENT_REQUIRED_XP,
+    IMPORTANT_MESSAGE_PREFIX,
 )
 
 from abc import ABC, abstractmethod
@@ -251,6 +253,14 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         GLOBAL_DISPLAY_ARG_4.value = destroyer_gang
         GLOBAL_DISPLAY_ARG_5.value = funds_stolen
         GLOBAL_DISPLAY_ARG_6.value = seconds_held
+        for number, name in (
+            (Turf1.ID, 'Alpha'),
+            (Turf2.ID, 'Beta'),
+            (Turf3.ID, 'Gamma'),
+        ):
+            if destroyed_turf != number:
+                continue
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED&e by&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}')
 
     @staticmethod
     def is_regular() -> bool:
@@ -322,6 +332,19 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         GLOBAL_DISPLAY_ARG_3.value = capturer_id
         GLOBAL_DISPLAY_ARG_4.value = turf_earnings
         GLOBAL_DISPLAY_ARG_5.value = is_promotion
+        for number, name in (
+            (Turf1.ID, 'Alpha'),
+            (Turf2.ID, 'Beta'),
+            (Turf3.ID, 'Gamma'),
+        ):
+            if captured_turf != number:
+                continue
+            with IfAnd(
+                GLOBAL_DISPLAY_ARG_5 == 0,
+            ):
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}')
+            with Else:
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}&7 (&aPROMOTION&7)')
 
     @staticmethod
     def is_regular() -> bool:

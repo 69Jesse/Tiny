@@ -27,6 +27,9 @@ from pyhtsl import (
     apply_potion_effect,
     full_heal,
     TeamColor,
+    PlayerLocationX,
+    PlayerLocationY,
+    PlayerLocationZ,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -109,6 +112,9 @@ from constants import (
     PLAYER_DEATHS,
     PLAYER_HIGHEST_KILL_STREAK,
     SEND_TO_SPAWN_COUNTER,
+    LAST_LOCATION_X,
+    LAST_LOCATION_Y,
+    LAST_LOCATION_Z,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType
@@ -866,17 +872,22 @@ def update_display_stats() -> None:
 
 @create_function('Regular Action Bar Display')
 def regular_action_bar_display() -> None:
-    modulo_by = 5
+    seconds_per = 4
+    messages = [
+        f'&6&l{PLAYER_KILL_STREAK}&6-Streak&7 (&a{PLAYER_KILLS}K&7/&c{PLAYER_DEATHS}D&7)&3 {PLAYER_CURRENT_XP}/{PLAYER_CURRENT_REQUIRED_XP}xp',
+        f'&7(&{Turf1.GANG}&l✯✯✯&e {Turf1.FUNDS}⛁&7) (&{Turf2.GANG}&l✯✯&e {Turf2.FUNDS}⛁&7) (&{Turf3.GANG}&l✯&e {Turf3.FUNDS}⛁&7)',
+    ]
+
+    modulo_by = seconds_per * len(messages)
     did_modulo_on = PlayerStat('temp')
     did_modulo_on.value = DateUnix
     did_modulo_on.value -= did_modulo_on // modulo_by * modulo_by
-    with IfAnd(
-        did_modulo_on == 0,
-    ):
-        display_action_bar(
-            f'&6&l{PLAYER_KILL_STREAK}&6-Streak&7 (&a{PLAYER_KILLS}K&7/&c{PLAYER_DEATHS}D&7)&3 {PLAYER_CURRENT_XP}/{PLAYER_CURRENT_REQUIRED_XP}xp'
-        )
-        exit_function()
+    for i, message in enumerate(messages):
+        with IfAnd(
+            did_modulo_on == i * seconds_per,
+        ):
+            display_action_bar(message)
+            exit_function()
 
     for display_arg, turf_gang_args in (
         (DISPLAY_ARG_1, (Turf1.GANG, Turf2.GANG, Turf3.GANG)),

@@ -142,6 +142,11 @@ PLAYTIME_SECONDS = PlayerStat('playtime')
 SEND_TO_SPAWN_COUNTER = PlayerStat('stspawnc')
 
 
+LAST_LOCATION_X = PlayerStat('llocx')
+LAST_LOCATION_Y = PlayerStat('llocy')
+LAST_LOCATION_Z = PlayerStat('llocz')
+
+
 TEAM_ID = TeamStat('id')
 TEAM_LEADER_ID = TeamStat('leaderid')
 

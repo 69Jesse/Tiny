@@ -129,11 +129,11 @@ class BuffType(Enum):
     damage =           (PLAYER_DAMAGE,             1,      -1,     lambda x: f'{x:.2f}',         '&7Damage:&c +{value}',        '')
     protection =       (None,               0,      -1,     lambda x: ROMAN_NUMERALS[x],  '&7Protection:&a {value}',          '')
     power =            (PLAYER_MAX_POWER,          100,      -1,     lambda x: x,                  '&7Power:&4 +{value}',              '')
-    mining_speed =     (PLAYER_MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
-    foraging_speed =   (PLAYER_FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
-    mining_fortune =   (PLAYER_MINING_FORTUNE,     100,    500,    lambda x: x,                  '&7Mining Fortune:&a +{value}',     '')
-    farming_fortune =  (PLAYER_FARMING_FORTUNE,    100,    500,    lambda x: x,                  '&7Farming Fortune:&a +{value}',    '')
-    foraging_fortune = (PLAYER_FORAGING_FORTUNE,   100,    500,    lambda x: x,                  '&7Foraging Fortune:&a +{value}',   '')
+    # mining_speed =     (PLAYER_MINING_SPEED,       0,      -1,     lambda x: x,                  '&7Mining Speed:&a +{value}',       '')
+    # foraging_speed =   (PLAYER_FORAGING_SPEED,     0,      -1,     lambda x: x,                  '&7Foraging Speed:&a +{value}',     '')
+    # mining_fortune =   (PLAYER_MINING_FORTUNE,     100,    500,    lambda x: x,                  '&7Mining Fortune:&a +{value}',     '')
+    # farming_fortune =  (PLAYER_FARMING_FORTUNE,    100,    500,    lambda x: x,                  '&7Farming Fortune:&a +{value}',    '')
+    # foraging_fortune = (PLAYER_FORAGING_FORTUNE,   100,    500,    lambda x: x,                  '&7Foraging Fortune:&a +{value}',   '')
 
     @property
     def stat(self) -> PlayerStat | None:
@@ -180,20 +180,20 @@ class Buff:
         self.value = value
 
 
-MINING_SPEED_PER_EFF_LEVEL: int = 60
-DEFAULT_MINING_SPEED: dict[ALL_ITEM_KEYS, int] = {
-    'wooden_pickaxe': 70,
-    'stone_pickaxe': 110,
-    'iron_pickaxe': 160,
-    'golden_pickaxe': 250,
-    'diamond_pickaxe': 220,
+# MINING_SPEED_PER_EFF_LEVEL: int = 60
+# DEFAULT_MINING_SPEED: dict[ALL_ITEM_KEYS, int] = {
+#     'wooden_pickaxe': 70,
+#     'stone_pickaxe': 110,
+#     'iron_pickaxe': 160,
+#     'golden_pickaxe': 250,
+#     'diamond_pickaxe': 220,
 
-    'wooden_axe': 70,
-    'stone_axe': 110,
-    'iron_axe': 160,
-    'golden_axe': 250,
-    'diamond_axe': 220,
-}
+#     'wooden_axe': 70,
+#     'stone_axe': 110,
+#     'iron_axe': 160,
+#     'golden_axe': 250,
+#     'diamond_axe': 220,
+# }
 
 DAMAGE_PER_SHARPNESS_LEVEL: float = 1.25
 DEFAULT_DAMAGE: dict[ALL_ITEM_KEYS, float] = {
@@ -272,21 +272,21 @@ class CustomItem:
 
     def updated_buffs(self, buffs: Optional[list[Buff]]) -> list[Buff]:
         buffs = buffs or []
-        value = DEFAULT_MINING_SPEED.get(self.key, 0)
-        if value > 0:
-            buff_type = BuffType.foraging_speed if self.key.endswith('_axe') else BuffType.mining_speed
-            self.find_buff(buffs, buff_type).value += value
+        # value = DEFAULT_MINING_SPEED.get(self.key, 0)
+        # if value > 0:
+        #     buff_type = BuffType.foraging_speed if self.key.endswith('_axe') else BuffType.mining_speed
+        #     self.find_buff(buffs, buff_type).value += value
         value = DEFAULT_DAMAGE.get(self.key, 0)
         if value > 0:
             self.find_buff(buffs, BuffType.damage).value += value
         for enchantment in self.enchantments or []:
             assert enchantment.level is not None
-            if enchantment.name == 'efficiency':
-                buff_type = BuffType.foraging_speed if self.key.endswith('_axe') else BuffType.mining_speed
-                self.find_buff(buffs, buff_type).value += MINING_SPEED_PER_EFF_LEVEL * enchantment.level
-            elif enchantment.name == 'sharpness':
+            # if enchantment.name == 'efficiency':
+            #     buff_type = BuffType.foraging_speed if self.key.endswith('_axe') else BuffType.mining_speed
+            #     self.find_buff(buffs, buff_type).value += MINING_SPEED_PER_EFF_LEVEL * enchantment.level
+            if enchantment.name == 'sharpness':
                 self.find_buff(buffs, BuffType.damage).value += DAMAGE_PER_SHARPNESS_LEVEL * enchantment.level
-            elif enchantment.name == 'protection':
+            if enchantment.name == 'protection':
                 self.find_buff(buffs, BuffType.protection).value += enchantment.level
         for i in range(len(buffs) - 1, -1, -1):
             buff = buffs[i]
