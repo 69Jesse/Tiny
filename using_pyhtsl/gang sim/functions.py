@@ -90,8 +90,6 @@ from constants import (
     Grapes,
     Guards,
     SpawnTeam,
-    SPAWN,
-    SPAWN_WITH_ROTATION,
     IMPORTANT_MESSAGE_PREFIX,
     TURF_DEFAULT_MAX_HP,
     PAYOUT_GANG,
@@ -112,12 +110,14 @@ from constants import (
     PLAYER_DEATHS,
     PLAYER_HIGHEST_KILL_STREAK,
     SEND_TO_SPAWN_COUNTER,
-    LAST_LOCATION_X,
-    LAST_LOCATION_Y,
-    LAST_LOCATION_Z,
+    PREVIOUS_COORDINATE_X,
+    PREVIOUS_COORDINATE_Y,
+    PREVIOUS_COORDINATE_Z,
+    TELEPORTING_ID,
+    TELEPORTING_TIMER,
 )
 from locations import LOCATIONS, LocationInstances
-from everything import Items, BuffType
+from everything import Items, BuffType, Teleports
 from currency import add_funds
 from title_action_bar import (
     get_title_action_bars,
@@ -126,6 +126,7 @@ from title_action_bar import (
     OnDeathTitleActionBar,
     OnKillTitleActionBar,
     OnBadKillTitleActionBar,
+    WaitingOnTeleportTitleActionBar,
 )
 
 
@@ -134,9 +135,10 @@ TODO
 [ ] potion effects
 [ ] all armor
 [ ] gang leader system
-[ ] move to spawn counter because sometimes on tp itll tp you back
+[x] move to spawn counter because sometimes on tp itll tp you back
 [ ] add all locations
 [x] on turf location enter display some message if turf is owned
+[x] spawn command
 """
 
 
@@ -400,7 +402,7 @@ def on_guards_join() -> None:
 # NOTE have this get called by the actual event
 @create_function('On Portal Enter')
 def on_portal_enter() -> None:
-    trigger_function(set_location_id)
+    trigger_function(check_locations)
     for location, function in (
         (LocationInstances.spawn_bloods_area, on_bloods_join),
         (LocationInstances.spawn_crips_area, on_crips_join),
@@ -418,8 +420,7 @@ def on_portal_enter() -> None:
 def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
     PLAYER_GANG.value = EMPTY_TURF_GANG
-    teleport_player(SPAWN)
-    play_sound('Enderman Teleport')
+    Teleports.SPAWN.execute()
     full_heal()
 
 
@@ -712,13 +713,15 @@ def update_turfs() -> None:
 @create_function('Personal 1s')
 def personal_every_second() -> None:
     PLAYTIME_SECONDS.value += 1
+    trigger_function(check_locations)
+    trigger_function(update_teleports)
 
 
 # NOTE have this run every 4 ticks
 @create_function('Personal 0.2s')
 def personal_every_4ticks() -> None:
     trigger_function(check_player_gang)
-    trigger_function(set_location_id)
+    trigger_function(check_locations)
     trigger_function(check_out_of_spawn)
     trigger_function(check_levels)
     trigger_function(set_most_stats)
@@ -741,8 +744,18 @@ def global_every_second() -> None:
 # LOCATIONS ========================================
 
 
-@create_function('Set Location ID')
-def set_location_id() -> None:
+@create_function('Check Locations')
+def check_locations() -> None:
+    with IfOr(
+        PREVIOUS_COORDINATE_X != PlayerLocationX,
+        PREVIOUS_COORDINATE_Y != PlayerLocationY,
+        PREVIOUS_COORDINATE_Z != PlayerLocationZ,
+    ):
+        trigger_function(on_move_coordinates)
+        PREVIOUS_COORDINATE_X.value = PlayerLocationX
+        PREVIOUS_COORDINATE_Y.value = PlayerLocationY
+        PREVIOUS_COORDINATE_Z.value = PlayerLocationZ
+
     LOCATION_ID.value = 0
     for location in LOCATIONS.walk():
         with location.if_inside_condition():
@@ -762,6 +775,80 @@ def set_location_id() -> None:
 @create_function('On New Location Enter')
 def on_new_location_enter() -> None:
     pass
+
+
+def cancel_teleport(
+    send_message: bool,
+) -> None:
+    if send_message:
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cTeleport canceled.')
+    TELEPORTING_ID.value = 0
+    TELEPORTING_TIMER.value = 0
+    DISPLAY_ID.value = 0
+
+
+@create_function('On Move Coordinates')
+def on_move_coordinates() -> None:
+    with IfAnd(
+        TELEPORTING_ID > 0,
+    ):
+        cancel_teleport(send_message=True)
+
+
+@create_function('Update Teleports')
+def update_teleports() -> None:
+    with IfAnd(
+        TELEPORTING_ID > 0,
+        BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
+    ):
+        cancel_teleport(send_message=False)
+        exit_function()
+
+    with IfAnd(
+        TELEPORTING_ID == 0,
+        DISPLAY_ID == WaitingOnTeleportTitleActionBar.get_id(),
+    ):
+        DISPLAY_ID.value = 0
+    with IfAnd(
+        TELEPORTING_ID == 0,
+    ):
+        exit_function()
+
+    with IfAnd(
+        TELEPORTING_TIMER > 0,
+    ):
+        TELEPORTING_TIMER.value -= 1
+        play_sound('Note Sticks')
+    with IfAnd(
+        TELEPORTING_TIMER > 0,
+    ):
+        exit_function()
+
+    for teleport in Teleports.all():
+        with IfAnd(
+            TELEPORTING_ID == teleport.id,
+        ):
+            teleport.execute()
+    TELEPORTING_ID.value = 0
+
+
+# NOTE have this get called by the actual command
+@create_function('Run Spawn Command')
+def run_spawn_command() -> None:
+    with IfAnd(
+        BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
+    ):
+        trigger_function(move_to_spawn)
+        cancel_teleport(send_message=False)
+        exit_function()
+
+    with IfAnd(
+        TELEPORTING_ID == Teleports.SPAWN.id,
+    ):
+        cancel_teleport(send_message=True)
+        exit_function()
+
+    Teleports.SPAWN.apply()
 
 
 # COOKIE GOAL ===================================

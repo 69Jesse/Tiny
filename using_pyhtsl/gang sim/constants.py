@@ -142,9 +142,12 @@ PLAYTIME_SECONDS = PlayerStat('playtime')
 SEND_TO_SPAWN_COUNTER = PlayerStat('stspawnc')
 
 
-LAST_LOCATION_X = PlayerStat('llocx')
-LAST_LOCATION_Y = PlayerStat('llocy')
-LAST_LOCATION_Z = PlayerStat('llocz')
+PREVIOUS_COORDINATE_X = PlayerStat('pcoordx')
+PREVIOUS_COORDINATE_Y = PlayerStat('pcoordy')
+PREVIOUS_COORDINATE_Z = PlayerStat('pcoordz')
+
+TELEPORTING_ID = PlayerStat('tpid')
+TELEPORTING_TIMER = PlayerStat('tptimer')
 
 
 TEAM_ID = TeamStat('id')
@@ -217,7 +220,4 @@ ALL_GANG_TEAMS = (
 )
 
 
-
-SPAWN = (-0.5, 46, -40.5)
-SPAWN_WITH_ROTATION = (-0.5, 46, -40.5, -180, 0)
 IMPORTANT_MESSAGE_PREFIX = '&f[&a!&f] '

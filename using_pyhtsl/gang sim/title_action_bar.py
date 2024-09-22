@@ -36,6 +36,7 @@ from constants import (
     PLAYER_CURRENT_XP,
     PLAYER_CURRENT_REQUIRED_XP,
     IMPORTANT_MESSAGE_PREFIX,
+    TELEPORTING_TIMER,
 )
 
 from abc import ABC, abstractmethod
@@ -501,6 +502,23 @@ class LevelUpTitleActionBar(TitleActionBar):
         )
         trigger_function(
             TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
+        )
+
+
+class WaitingOnTeleportTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 13
+
+    @classmethod
+    def apply(cls) -> None:
+        cls.set_id()
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(30)
+
+    @staticmethod
+    def display() -> None:
+        display_action_bar(
+            f'&eTeleporting in&c {TELEPORTING_TIMER}s',
         )
 
 

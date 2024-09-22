@@ -6,13 +6,17 @@ from pyhtsl import (
     delete_all_items_from_imports_folder,
     IfAnd,
     HasItem,
+    teleport_player,
+    trigger_function,
+    chat,
+    play_sound,
 )
 from pyhtsl.types import ALL_ITEM_KEYS, IfStatement, LEATHER_ARMOR_KEYS
 
 from enum import Enum, auto
 import re
 
-from typing import Optional, Generator
+from typing import Optional, Generator, Callable
 
 from constants import (
     PLAYER_POWER,
@@ -28,7 +32,11 @@ from constants import (
     Kings,
     Grapes,
     Guards,
+    IMPORTANT_MESSAGE_PREFIX,
+    TELEPORTING_ID,
+    TELEPORTING_TIMER,
 )
+from title_action_bar import WaitingOnTeleportTitleActionBar
 
 
 delete_all_items_from_imports_folder()
@@ -612,3 +620,51 @@ class Items:
         for item in cls.__dict__.values():
             if isinstance(item, CustomItem):
                 yield item
+
+
+class Teleport:
+    id: int
+    name: str
+    delay: int
+    coordinates: tuple[float, float, float] | tuple[float, float, float, float, float]
+    _execute: Callable[[], None]
+    def __init__(
+        self,
+        id: int,
+        name: str,
+        delay: int,
+        coordinates: tuple[float, float, float] | tuple[float, float, float, float, float],
+        execute: Optional[Callable[[], None]] = None,
+    ) -> None:
+        self.id = id
+        self.name = name
+        self.delay = delay
+        self.coordinates = coordinates
+        self._execute = execute or (lambda: teleport_player(self.coordinates))
+
+    def apply(self) -> None:
+        TELEPORTING_ID.value = self.id
+        TELEPORTING_TIMER.value = self.delay
+        WaitingOnTeleportTitleActionBar.apply()
+        chat(IMPORTANT_MESSAGE_PREFIX + f'&eStand still! Teleporting to&a {self.name}&e in&c {self.delay} seconds&e.')
+
+    def execute(self) -> None:
+        self._execute()
+        chat(IMPORTANT_MESSAGE_PREFIX + f'&eTeleported to&a {self.name}&e.')
+        play_sound('Enderman Teleport')
+
+
+class Teleports:
+    SPAWN = Teleport(
+        id=1,
+        name='Spawn',
+        delay=5,
+        coordinates=(-0.5, 46, -40.5, -180, 0),
+        execute=lambda: trigger_function('Move to Spawn'),
+    )
+
+    @classmethod
+    def all(cls) -> Generator[Teleport, None, None]:
+        for teleport in cls.__dict__.values():
+            if isinstance(teleport, Teleport):
+                yield teleport
