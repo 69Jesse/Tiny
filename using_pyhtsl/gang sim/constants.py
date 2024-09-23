@@ -154,7 +154,10 @@ TELEPORTING_TIMER = PlayerStat('tptimer')
 
 
 TEAM_ID = TeamStat('id')
-TEAM_LEADER_ID = TeamStat('leaderid')
+leader_id_key = 'leaderid'
+leader_is_wearing_crown_key = 'leaderisc'
+leader_not_worn_timer_key = 'leadernwt'
+TEAM_LEADER_ID = TeamStat(leader_id_key)
 
 
 class GangSimTeam:
@@ -164,37 +167,64 @@ class GangSimTeam:
     REQUIRED_EXPERIENCE: PlayerStat
     ID: int
 
+    @classmethod
+    def name(cls) -> str:
+        return cls.__name__.removesuffix('Team')
 
-class Bloods(GangSimTeam):
+
+class GangSimGang(GangSimTeam):
+    LEADER_ID: TeamStat
+    LEADER_IS_WEARING_CROWN: TeamStat
+    LEADER_NOT_WORN_TIMER: TeamStat
+
+
+TEAM_LEADER_ID = TeamStat(leader_id_key)
+TEAM_LEADER_IS_WEARING_CROWN = TeamStat(leader_is_wearing_crown_key)
+TEAM_LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key)
+
+
+class Bloods(GangSimGang):
     TEAM = Team('BLOOD')
     LEVEL = PlayerStat('bloodlevel')
     EXPERIENCE = PlayerStat('b/xp')
     REQUIRED_EXPERIENCE = PlayerStat('b/xpr')
     ID = 4
+    LEADER_ID = TeamStat(leader_id_key, TEAM)
+    LEADER_IS_WEARING_CROWN = TeamStat(leader_is_wearing_crown_key, TEAM)
+    LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key, TEAM)
 
 
-class Crips(GangSimTeam):
+class Crips(GangSimGang):
     TEAM = Team('CRIP')
     LEVEL = PlayerStat('criplevel')
     EXPERIENCE = PlayerStat('c/xp')
     REQUIRED_EXPERIENCE = PlayerStat('c/xpr')
     ID = 9
+    LEADER_ID = TeamStat(leader_id_key, TEAM)
+    LEADER_IS_WEARING_CROWN = TeamStat(leader_is_wearing_crown_key, TEAM)
+    LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key, TEAM)
 
 
-class Kings(GangSimTeam):
+class Kings(GangSimGang):
     TEAM = Team('KING')
     LEVEL = PlayerStat('kinglevel')
     EXPERIENCE = PlayerStat('k/xp')
     REQUIRED_EXPERIENCE = PlayerStat('k/xpr')
     ID = 6
+    LEADER_ID = TeamStat(leader_id_key, TEAM)
+    LEADER_IS_WEARING_CROWN = TeamStat(leader_is_wearing_crown_key, TEAM)
+    LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key, TEAM)
 
 
-class Grapes(GangSimTeam):
+class Grapes(GangSimGang):
     TEAM = Team('GRAPE')
     LEVEL = PlayerStat('grapelevel')
     EXPERIENCE = PlayerStat('g/xp')
     REQUIRED_EXPERIENCE = PlayerStat('g/xpr')
     ID = 5
+    LEADER_ID = TeamStat(leader_id_key, TEAM)
+    LEADER_IS_WEARING_CROWN = TeamStat(leader_is_wearing_crown_key, TEAM)
+    LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key, TEAM)
 
 
 class Guards(GangSimTeam):
@@ -218,9 +248,13 @@ ALL_TEAMS = (
 )
 
 
-ALL_GANG_TEAMS = (
+ALL_GANG_TEAMS: tuple[type[GangSimGang], ...] = (
     Bloods, Crips, Kings, Grapes,
 )
 
 
 IMPORTANT_MESSAGE_PREFIX = '&f[&a!&f] '
+
+
+def seconds_to_every_4_ticks(seconds: int) -> int:
+    return seconds * 5

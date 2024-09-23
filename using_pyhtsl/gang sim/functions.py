@@ -30,6 +30,8 @@ from pyhtsl import (
     PlayerLocationX,
     PlayerLocationY,
     PlayerLocationZ,
+    remove_item,
+    HasItem,
 )
 from constants import (
     TOTAL_PLAYERS_JOINED,
@@ -84,6 +86,7 @@ from constants import (
     TEAM_ID,
     TEAM_LEADER_ID,
     GangSimTeam,
+    GangSimGang,
     Bloods,
     Crips,
     Kings,
@@ -117,6 +120,10 @@ from constants import (
     TELEPORTING_TIMER,
     TIP_COUNTER,
     TIP_INDEX,
+    seconds_to_every_4_ticks,
+    TEAM_LEADER_ID,
+    TEAM_LEADER_IS_WEARING_CROWN,
+    TEAM_LEADER_NOT_WORN_TIMER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -129,7 +136,11 @@ from title_action_bar import (
     OnKillTitleActionBar,
     OnBadKillTitleActionBar,
     WaitingOnTeleportTitleActionBar,
+    NewGangLeaderTitleActionBar,
+    GangLeaderFallenTitleActionBar,
 )
+
+from typing import Literal
 
 
 """
@@ -143,6 +154,7 @@ TODO
 [x] spawn command
 [ ] combat logging
 [ ] strength with little members
+[ ] bounties maybe
 """
 
 
@@ -175,6 +187,11 @@ def on_player_join_first_time() -> None:
 
 
 # DEATH / KILLS ======================================================================
+
+
+@create_function('Send Gang Leader Fallen Chat')
+def send_gang_leader_fallen_chat() -> None:
+    GangLeaderFallenTitleActionBar.apply()
 
 
 # NOTE have this get called by the actual event
@@ -212,7 +229,16 @@ def on_player_death() -> None:
     PLAYER_CRED.value -= removing_cred
     trigger_function(clamp_cred)
 
+    for gang in ALL_GANG_TEAMS:
+        with IfAnd(
+            gang.LEADER_ID == PLAYER_ID,
+        ):
+            GangLeaderFallenTitleActionBar.apply_globals(gang)
+            trigger_function(send_gang_leader_fallen_chat, trigger_for_all_players=True)
+            gang.LEADER_ID.value = NO_GANG_LEADER_ID
+
     trigger_function(move_to_spawn)
+    trigger_function(check_gang_leaders_and_armor)
     OnDeathTitleActionBar.apply(
         removing_cred,
         PLAYER_KILL_STREAK,
@@ -315,10 +341,28 @@ def on_bad_player_kill() -> None:
 
     PLAYER_CRED.value -= removed_cred
     trigger_function(clamp_cred)
+
     OnBadKillTitleActionBar.apply(removed_cred)
+    with IfOr(
+        *(TEAM_ID == gang.ID for gang in ALL_GANG_TEAMS),
+    ):
+        pass
+    with Else:
+        exit_function()
+
+    with IfAnd(
+        LATEST_DEATH_WAS_LEADER == 1,
+    ):
+        transfer_gang_leadership('BETRAYAL')
 
 
 # MISC?? =================================
+
+
+FREE_SWITCHES_PER_DAY = 3
+SWITCH_COST = 5
+MIN_CRED = -10
+FUNDS_XP_HALVED_AT_CRED = 0
 
 
 TIPS = [
@@ -337,10 +381,10 @@ TIPS = [
     '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',  # TODO
     '&eHaving all 5 effects at the same time will give you&c +1 Strength&e.',  # TODO
     '&eTurfs will not generate&6 Funds&e if all its members are at spawn.',
-    '&eYou can switch gangs for free 3 times a day, after that it will cost&2 5 Cred&e.',  # TODO
+    f'&eYou can switch gangs for free {FREE_SWITCHES_PER_DAY} times a day, after that it will cost&2 {SWITCH_COST} Cred&e.',  # TODO
     '&eYou can only switch gangs if you have a positive amount of&2 Cred&e.',  # TODO
-    '&eYou cannot have less than&2 -10 Cred&e.',  # TODO
-    '&eIf you have less than 0&2 Cred&e, your gain of&6 Funds&e and&3 XP&e is halved.',  # TODO
+    f'&eYou cannot have less than&2 {MIN_CRED} Cred&e.',  # TODO
+    f'&eIf you have less than&2 {FUNDS_XP_HALVED_AT_CRED} Cred&e, your gain of&6 Funds&e and&3 XP&e is halved.',  # TODO
 ]
 
 
@@ -586,11 +630,10 @@ def level_up() -> None:
 
 @create_function('Clamp Cred')
 def clamp_cred() -> None:
-    n = -10
     with IfAnd(
-        PLAYER_CRED < n,
+        PLAYER_CRED < MIN_CRED,
     ):
-        PLAYER_CRED.value = n
+        PLAYER_CRED.value = MIN_CRED
 
 
 @create_function('Set Most Stats')
@@ -621,11 +664,6 @@ def set_most_stats() -> None:
     trigger_function(clamp_cred)
 
 
-@create_function('Remove Illegal Items')
-def remove_illegal_items() -> None:
-    pass  # TODO remove leader helmet if youre not leader + other gang armor
-
-
 @create_function('Check Player Gang')
 def check_player_gang() -> None:
     with IfOr(*(
@@ -646,7 +684,6 @@ def check_player_gang() -> None:
         pass
     with Else:
         PLAYER_LAST_GANG.value = PLAYER_GANG
-    trigger_function(remove_illegal_items)
 
 
 def set_team_ids() -> None:
@@ -711,13 +748,13 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
     turf.FUNDS.value += turf.FUNDS_PER_SECOND
 
 
-@create_function('Update Turf 1')
+@create_function('Update (Turf 1)')
 def update_turf_1() -> None:
     UPDATE_TURF(Turf1)
-@create_function('Update Turf 2')
+@create_function('Update (Turf 2)')
 def update_turf_2() -> None:
     UPDATE_TURF(Turf2)
-@create_function('Update Turf 3')
+@create_function('Update (Turf 3)')
 def update_turf_3() -> None:
     UPDATE_TURF(Turf3)
 
@@ -795,11 +832,166 @@ def global_every_second() -> None:
         exit_function()
     LAST_UNIX.value = DateUnix
     trigger_function(update_turfs)
+    trigger_function(check_gang_leaders_and_armor)
     trigger_function(update_timer)
     trigger_function(check_cookie_goal)
     set_team_ids()
     check_tips()  # has to be end of function
 
+
+# GANG LEADERS =====================================
+
+
+@create_function('Check Is Leader Wearing Crown')
+def check_is_leader_wearing_crown() -> None:
+    for gang, crown in (
+        (Bloods, Items.bloods_leader_helmet),
+        (Crips, Items.crips_leader_helmet),
+        (Kings, Items.kings_leader_helmet),
+        (Grapes, Items.grapes_leader_helmet),
+    ):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+            PLAYER_ID == gang.LEADER_ID,
+            HasItem(crown.item, where_to_check='armor'),
+        ):
+            gang.LEADER_IS_WEARING_CROWN.value = 1
+            gang.LEADER_NOT_WORN_TIMER.value = 0
+
+
+SECONDS_TO_TRANSFER_LEADERSHIP = 10
+NO_GANG_LEADER_ID = -1
+
+
+def transfer_gang_leadership(reason: Literal['RANDOM', 'BETRAYAL', 'TRANSFER']) -> None:
+    TEAM_LEADER_ID.value = PLAYER_ID
+    NewGangLeaderTitleActionBar.apply_globals(
+        PLAYER_ID,
+        TEAM_ID,
+        reason,
+    )
+    trigger_function(apply_new_gang_leader_title, trigger_for_all_players=True)
+
+
+@create_function('Apply New Gang Leader Title')
+def apply_new_gang_leader_title() -> None:
+    NewGangLeaderTitleActionBar.apply()
+
+
+@create_function('Maybe Transfer Gang Leadership (Random)')
+def maybe_transfer_gang_leadership_random() -> None:
+    with IfAnd(
+        TEAM_LEADER_ID == PLAYER_ID,
+    ):
+        exit_function()
+
+    for gang in (
+        Bloods, Crips, Kings, Grapes,
+    ):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+            gang.LEADER_IS_WEARING_CROWN == 0,
+            gang.LEADER_NOT_WORN_TIMER >= SECONDS_TO_TRANSFER_LEADERSHIP,
+        ):
+            transfer_gang_leadership('RANDOM')
+
+
+@create_function('Maybe Transfer Gang Leadership (Transfer)')
+def maybe_transfer_gang_leadership_transfer() -> None:
+    with IfAnd(
+        TEAM_LEADER_ID == PLAYER_ID,
+    ):
+        exit_function()
+
+    for gang, crown in (
+        (Bloods, Items.bloods_leader_helmet),
+        (Crips, Items.crips_leader_helmet),
+        (Kings, Items.kings_leader_helmet),
+        (Grapes, Items.grapes_leader_helmet),
+    ):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+            gang.LEADER_IS_WEARING_CROWN == 0,
+            HasItem(crown.item, where_to_check='armor'),
+        ):
+            transfer_gang_leadership('TRANSFER')
+
+
+@create_function('Remove Illegal Gang Armor')
+def remove_illegal_gang_armor() -> None:
+    bloods_armor = (Items.bloods_chestplate, Items.bloods_leader_helmet)
+    crips_armor = (Items.crips_chestplate, Items.crips_leader_helmet)
+    kings_armor = (Items.kings_chestplate, Items.kings_leader_helmet)
+    grapes_armor = (Items.grapes_chestplate, Items.grapes_leader_helmet)
+    for gang, illegals, crown in (
+        (Bloods, (*crips_armor, *kings_armor, *grapes_armor), Items.bloods_leader_helmet),
+        (Crips, (*bloods_armor, *kings_armor, *grapes_armor), Items.crips_leader_helmet),
+        (Kings, (*bloods_armor, *crips_armor, *grapes_armor), Items.kings_leader_helmet),
+        (Grapes, (*bloods_armor, *crips_armor, *kings_armor), Items.grapes_leader_helmet),
+    ):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+        ):
+            for illegal in illegals:
+                remove_item(illegal.item)
+
+        # if (PLAYER_GANG == gang.ID and gang.LEADER_IS_WEARING_CROWN == 1 and PLAYER_ID != gang.LEADER_ID):
+        # means if not (PLAYER_GANG != gang.ID or gang.LEADER_IS_WEARING_CROWN == 0 or PLAYER_ID == gang.LEADER_ID)
+        with IfOr(
+            PLAYER_GANG != gang.ID,
+            gang.LEADER_IS_WEARING_CROWN == 0,
+            PLAYER_ID == gang.LEADER_ID,
+        ):
+            pass
+        with Else:
+            remove_item(crown.item)
+
+    with IfOr(
+        *(PLAYER_GANG == gang.ID for gang in ALL_GANG_TEAMS),
+    ):
+        pass
+    with Else:
+        for crown in (
+            Items.bloods_leader_helmet,
+            Items.crips_leader_helmet,
+            Items.kings_leader_helmet,
+            Items.grapes_leader_helmet,
+        ):
+            remove_item(crown.item)
+
+
+@create_function('Check Gang Leaders & Armor')
+def check_gang_leaders_and_armor() -> None:
+    for gang in (
+        Bloods, Crips, Kings, Grapes,
+    ):
+        gang.LEADER_IS_WEARING_CROWN.value = 0
+
+    trigger_function(check_is_leader_wearing_crown, trigger_for_all_players=True)
+
+    trigger_function(maybe_transfer_gang_leadership_transfer, trigger_for_all_players=True)
+    for gang in (
+        Bloods, Crips, Kings, Grapes,
+    ):
+        with IfAnd(
+            gang.LEADER_IS_WEARING_CROWN == 1,
+        ):
+            gang.LEADER_NOT_WORN_TIMER.value = 0
+        with Else:
+            gang.LEADER_NOT_WORN_TIMER.value += 1
+
+    trigger_function(maybe_transfer_gang_leadership_random, trigger_for_all_players=True)
+    for gang in (
+        Bloods, Crips, Kings, Grapes,
+    ):
+        with IfAnd(
+            gang.LEADER_NOT_WORN_TIMER >= SECONDS_TO_TRANSFER_LEADERSHIP,
+        ):
+            # no players in gang and timer is up
+            gang.LEADER_ID.value = NO_GANG_LEADER_ID
+
+    trigger_function(remove_illegal_gang_armor, trigger_for_all_players=True)
+    # todo check if is wearing crown and id != gang leader id then transfer leadership
 
 
 # LOCATIONS ========================================
@@ -1323,30 +1515,30 @@ def ON_CLICK_TURF(
         trigger_function(destroy_turf)
 
 
-@create_function('Destroy Turf 1')
+@create_function('Destroy (Turf 1)')
 def destroy_turf_1() -> None:
     DESTROY_TURF(Turf1)
-@create_function('Try Claim Turf 1')
+@create_function('Try Claim (Turf 1)')
 def claim_turf_1() -> None:
     CLAIM_TURF(Turf1)
-@create_function('On Click Turf 1')
+@create_function('On Click (Turf 1)')
 def on_click_turf_1() -> None:
     ON_CLICK_TURF(Turf1, claim_turf_1, destroy_turf_1)
-@create_function('Destroy Turf 2')
+@create_function('Destroy (Turf 2)')
 def destroy_turf_2() -> None:
     DESTROY_TURF(Turf2)
-@create_function('Try Claim Turf 2')
+@create_function('Try Claim (Turf 2)')
 def claim_turf_2() -> None:
     CLAIM_TURF(Turf2)
-@create_function('On Click Turf 2')
+@create_function('On Click (Turf 2)')
 def on_click_turf_2() -> None:
     ON_CLICK_TURF(Turf2, claim_turf_2, destroy_turf_2)
-@create_function('Destroy Turf 3')
+@create_function('Destroy (Turf 3)')
 def destroy_turf_3() -> None:
     DESTROY_TURF(Turf3)
-@create_function('Try Claim Turf 3')
+@create_function('Try Claim (Turf 3)')
 def claim_turf_3() -> None:
     CLAIM_TURF(Turf3)
-@create_function('On Click Turf 3')
+@create_function('On Click (Turf 3)')
 def on_click_turf_3() -> None:
     ON_CLICK_TURF(Turf3, claim_turf_3, destroy_turf_3)

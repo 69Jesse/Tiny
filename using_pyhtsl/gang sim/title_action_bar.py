@@ -11,6 +11,7 @@ from pyhtsl import (
     TeamColor,
     TeamName,
     chat,
+    TeamStat,
 )
 from pyhtsl.types import Condition
 
@@ -37,14 +38,16 @@ from constants import (
     PLAYER_CURRENT_REQUIRED_XP,
     IMPORTANT_MESSAGE_PREFIX,
     TELEPORTING_TIMER,
+    seconds_to_every_4_ticks,
+    GangSimGang,
+    Bloods,
+    Crips,
+    Kings,
+    Grapes,
 )
 
 from abc import ABC, abstractmethod
-from typing import final
-
-
-def seconds_to_every_4_ticks(seconds: int) -> int:
-    return seconds * 5
+from typing import final, Literal
 
 
 class TitleActionBar(ABC):
@@ -237,6 +240,15 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = added_funds
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
+        for number, name in (
+            (Turf1.ID, 'Alpha'),
+            (Turf2.ID, 'Beta'),
+            (Turf3.ID, 'Gamma'),
+        ):
+            with IfAnd(
+                GLOBAL_DISPLAY_ARG_1 == number,
+            ):
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED&e by&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}')
         play_sound('Wither Death')
 
     @staticmethod
@@ -254,14 +266,6 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
         GLOBAL_DISPLAY_ARG_4.value = destroyer_gang
         GLOBAL_DISPLAY_ARG_5.value = funds_stolen
         GLOBAL_DISPLAY_ARG_6.value = seconds_held
-        for number, name in (
-            (Turf1.ID, 'Alpha'),
-            (Turf2.ID, 'Beta'),
-            (Turf3.ID, 'Gamma'),
-        ):
-            if destroyed_turf != number:
-                continue
-            chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l DESTROYED&e by&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}')
 
     @staticmethod
     def is_regular() -> bool:
@@ -318,6 +322,21 @@ class TurfCapturedTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
+        for number, name in (
+            (Turf1.ID, 'Alpha'),
+            (Turf2.ID, 'Beta'),
+            (Turf3.ID, 'Gamma'),
+        ):
+            with IfAnd(
+                GLOBAL_DISPLAY_ARG_1 == number,
+                GLOBAL_DISPLAY_ARG_5 == 0,
+            ):
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}')
+            with IfAnd(
+                GLOBAL_DISPLAY_ARG_1 == number,
+                GLOBAL_DISPLAY_ARG_5 == 1,
+            ):
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}&7 (&aPROMOTION&7)')
         play_sound('Wither Death')
 
     @staticmethod
@@ -333,19 +352,6 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         GLOBAL_DISPLAY_ARG_3.value = capturer_id
         GLOBAL_DISPLAY_ARG_4.value = turf_earnings
         GLOBAL_DISPLAY_ARG_5.value = is_promotion
-        for number, name in (
-            (Turf1.ID, 'Alpha'),
-            (Turf2.ID, 'Beta'),
-            (Turf3.ID, 'Gamma'),
-        ):
-            if captured_turf != number:
-                continue
-            with IfAnd(
-                GLOBAL_DISPLAY_ARG_5 == 0,
-            ):
-                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}')
-            with Else:
-                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}&7 (&aPROMOTION&7)')
 
     @staticmethod
     def is_regular() -> bool:
@@ -436,6 +442,7 @@ class OnBadKillTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
         DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        chat(IMPORTANT_MESSAGE_PREFIX + f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©')
         play_sound('Anvil Land')
 
     @staticmethod
@@ -520,6 +527,117 @@ class WaitingOnTeleportTitleActionBar(TitleActionBar):
         display_action_bar(
             f'&eTeleporting in&c {TELEPORTING_TIMER}s',
         )
+
+
+REASON_TO_NUMBER = {
+    'RANDOM': 0,
+    'BETRAYAL': 1,
+    'TRANSFER': 2,
+    # 'BOUGHT': 3,  # TODO I want people to be able to buy leadership if current leader is dead for like 100*members funds
+}
+NUMBER_TO_REASON = {
+    0: 'RANDOM',
+    1: 'BETRAYAL',
+    2: 'TRANSFER',
+    # 3: 'BOUGHT',
+}
+
+
+class NewGangLeaderTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 14
+
+    @classmethod
+    def apply(
+        cls,
+    ) -> None:
+        cls.set_id()
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        for gang in (
+            Bloods, Crips, Kings, Grapes,
+        ):
+            for reason_number, reason in NUMBER_TO_REASON.items():
+                with IfAnd(
+                    GLOBAL_DISPLAY_ARG_2 == gang.ID,
+                    GLOBAL_DISPLAY_ARG_3 == reason_number,
+                ):
+                    chat(IMPORTANT_MESSAGE_PREFIX + f'&{gang.ID}&lNEW {gang.name().upper()} LEADER&e P#{GLOBAL_DISPLAY_ARG_1}&7 (&a{reason}&7)')
+        play_sound('Ambience Thunder')
+
+    @classmethod
+    def apply_globals(
+        cls,
+        new_leader_id: PlayerStat,
+        new_leader_gang_id: int | PlayerStat | TeamStat,
+        reason: Literal['RANDOM', 'BETRAYAL', 'TRANSFER'], # 'BOUGHT'],
+    ) -> None:
+        GLOBAL_DISPLAY_ARG_1.value = new_leader_id
+        GLOBAL_DISPLAY_ARG_2.value = new_leader_gang_id
+        GLOBAL_DISPLAY_ARG_3.value = REASON_TO_NUMBER[reason]
+
+    @staticmethod
+    def is_regular() -> bool:
+        return False
+
+    @staticmethod
+    def display_irregular() -> None:
+        for gang in (
+            Bloods, Crips, Kings, Grapes,
+        ):
+            for reason_number, reason in NUMBER_TO_REASON.items():
+                with IfAnd(
+                    NewGangLeaderTitleActionBar.get_condition(),
+                    GLOBAL_DISPLAY_ARG_2 == gang.ID,
+                    GLOBAL_DISPLAY_ARG_3 == reason_number,
+                ):
+                    display_title(
+                        title=f'&{gang.ID}&lNEW {gang.name().upper()} LEADER',
+                        subtitle=f'&eThey are&{gang.ID} P#{GLOBAL_DISPLAY_ARG_1}&7 (&a{reason}&7)',
+                        fadein=0,
+                        stay=1,
+                        fadeout=0,
+                    )
+        with IfAnd(
+            NewGangLeaderTitleActionBar.get_condition(),
+        ):
+            trigger_function(
+                TitleActionBar.REGULAR_ACTION_BAR_DISPLAY_FUNCTION
+            )
+
+
+class GangLeaderFallenTitleActionBar(TitleActionBar):
+    @staticmethod
+    def get_id() -> int:
+        return 100000000  # not actually applying
+
+    @classmethod
+    def apply(
+        cls,
+    ) -> None:
+        for gang in (
+            Bloods, Crips, Kings, Grapes,
+        ):
+            with IfAnd(
+                GLOBAL_DISPLAY_ARG_1 == gang.ID,
+            ):
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&{gang.ID}&l{gang.name().upper()} LEADER FALLEN')
+        play_sound('Ambience Thunder')
+
+    @classmethod
+    def apply_globals(
+        cls,
+        gang: type[GangSimGang],
+    ) -> None:
+        GLOBAL_DISPLAY_ARG_1.value = gang.ID
+
+    @staticmethod
+    def is_regular() -> bool:
+        return False
+
+    @staticmethod
+    def display_irregular() -> None:
+        pass
 
 
 # TODO add more action bars? prestige with title instead of action bar and shit
