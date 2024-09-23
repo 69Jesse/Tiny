@@ -153,6 +153,13 @@ TELEPORTING_ID = PlayerStat('tpid')
 TELEPORTING_TIMER = PlayerStat('tptimer')
 
 
+SPEED_EFFECT_TIMER = PlayerStat('et/spe')
+RESISTANCE_EFFECT_TIMER = PlayerStat('et/res')
+REGENERATION_EFFECT_TIMER = PlayerStat('et/reg')
+JUMPBOOST_EFFECT_TIMER = PlayerStat('et/jum')
+INVISIBILITY_EFFECT_TIMER = PlayerStat('et/inv')
+
+
 TEAM_ID = TeamStat('id')
 leader_id_key = 'leaderid'
 leader_is_wearing_crown_key = 'leaderisc'

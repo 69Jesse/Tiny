@@ -33,6 +33,7 @@ from pyhtsl import (
     remove_item,
     HasItem,
 )
+from pyhtsl.types import ALL_POTION_EFFECTS
 from constants import (
     TOTAL_PLAYERS_JOINED,
     LAST_UNIX,
@@ -124,6 +125,11 @@ from constants import (
     TEAM_LEADER_ID,
     TEAM_LEADER_IS_WEARING_CROWN,
     TEAM_LEADER_NOT_WORN_TIMER,
+    SPEED_EFFECT_TIMER,
+    RESISTANCE_EFFECT_TIMER,
+    REGENERATION_EFFECT_TIMER,
+    JUMPBOOST_EFFECT_TIMER,
+    INVISIBILITY_EFFECT_TIMER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -147,7 +153,7 @@ from typing import Literal
 TODO
 [ ] potion effects
 [ ] all armor
-[ ] gang leader system
+[x] gang leader system
 [x] move to spawn counter because sometimes on tp itll tp you back
 [ ] add all locations
 [x] on turf location enter display some message if turf is owned
@@ -229,13 +235,19 @@ def on_player_death() -> None:
     PLAYER_CRED.value -= removing_cred
     trigger_function(clamp_cred)
 
-    for gang in ALL_GANG_TEAMS:
+    for gang, crown in (
+        (Bloods, Items.bloods_leader_crown),
+        (Crips, Items.crips_leader_crown),
+        (Kings, Items.kings_leader_crown),
+        (Grapes, Items.grapes_leader_crown),
+    ):
         with IfAnd(
             gang.LEADER_ID == PLAYER_ID,
         ):
             GangLeaderFallenTitleActionBar.apply_globals(gang)
             trigger_function(send_gang_leader_fallen_chat, trigger_for_all_players=True)
             gang.LEADER_ID.value = NO_GANG_LEADER_ID
+            remove_item(crown.item)
 
     trigger_function(move_to_spawn)
     trigger_function(check_gang_leaders_and_armor)
@@ -414,15 +426,88 @@ def show_tip() -> None:
             chat('&f[&bTIP&f] ' + tip)
 
 
+def apply_effects_to_max(effect: ALL_POTION_EFFECTS, max_level: int, count: PlayerStat) -> None:
+    for level in range(1, max_level + 1):
+        with IfAnd(
+            (count == level) if level < max_level else (count >= level),
+        ):
+            apply_potion_effect(
+                effect,
+                duration=1,
+                level=level,
+                override_existing_effects=True,
+            )
+
+
 @create_function('Apply Potion Effects')
-def apply_potion_effects() -> None:
+def apply_all_potion_effects() -> None:
+    count = PlayerStat('temp')
+
+    count.value = 0
+    with IfAnd(
+        SPEED_EFFECT_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('speed', 3, count)
+
+    count.value = 0
+    with IfAnd(
+        RESISTANCE_EFFECT_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('resistance', 1, count)
+
+    count.value = 0
+    with IfAnd(
+        REGENERATION_EFFECT_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('regeneration', 1, count)
+
+    count.value = 0
+    with IfAnd(
+        JUMPBOOST_EFFECT_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('jump_boost', 1, count)
+
+    count.value = 0
+    with IfAnd(
+        INVISIBILITY_EFFECT_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('invisibility', 1, count)
+
+    count.value = 0
+    with IfAnd(
+        SPEED_EFFECT_TIMER > 0,
+        RESISTANCE_EFFECT_TIMER > 0,
+        REGENERATION_EFFECT_TIMER > 0,
+        JUMPBOOST_EFFECT_TIMER > 0,
+        INVISIBILITY_EFFECT_TIMER > 0,
+    ):
+        count.value += 1
+    one_eightth = PlayerStat('temp1')
+    one_eightth.value = (Bloods.TEAM.players() + Crips.TEAM.players() + Kings.TEAM.players() + Grapes.TEAM.players()) // 8
+    for gang in (
+        Bloods,
+        Crips,
+        Kings,
+        Grapes,
+    ):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+            gang.TEAM.players() <= one_eightth,
+        ):
+            count.value += 1
+    apply_effects_to_max('strength', 2, count)
+
     apply_potion_effect(
         'night_vision',
         duration=2592000,
         level=1,
         override_existing_effects=True,
     )
-    pass  # TOOD night vision forever, strength etc
 
 
 @create_function('Set Group')
@@ -823,6 +908,7 @@ def personal_every_4ticks() -> None:
     trigger_function(set_most_stats)
     trigger_function(update_display_stats)
     trigger_function(display_action_bar_and_title)
+    trigger_function(apply_all_potion_effects)
 
 
 # NOTE have this run every 4 ticks
@@ -845,10 +931,10 @@ def global_every_second() -> None:
 @create_function('Check Is Leader Wearing Crown')
 def check_is_leader_wearing_crown() -> None:
     for gang, crown in (
-        (Bloods, Items.bloods_leader_helmet),
-        (Crips, Items.crips_leader_helmet),
-        (Kings, Items.kings_leader_helmet),
-        (Grapes, Items.grapes_leader_helmet),
+        (Bloods, Items.bloods_leader_crown),
+        (Crips, Items.crips_leader_crown),
+        (Kings, Items.kings_leader_crown),
+        (Grapes, Items.grapes_leader_crown),
     ):
         with IfAnd(
             PLAYER_GANG == gang.ID,
@@ -904,10 +990,10 @@ def maybe_transfer_gang_leadership_transfer() -> None:
         exit_function()
 
     for gang, crown in (
-        (Bloods, Items.bloods_leader_helmet),
-        (Crips, Items.crips_leader_helmet),
-        (Kings, Items.kings_leader_helmet),
-        (Grapes, Items.grapes_leader_helmet),
+        (Bloods, Items.bloods_leader_crown),
+        (Crips, Items.crips_leader_crown),
+        (Kings, Items.kings_leader_crown),
+        (Grapes, Items.grapes_leader_crown),
     ):
         with IfAnd(
             PLAYER_GANG == gang.ID,
@@ -919,15 +1005,15 @@ def maybe_transfer_gang_leadership_transfer() -> None:
 
 @create_function('Remove Illegal Gang Armor')
 def remove_illegal_gang_armor() -> None:
-    bloods_armor = (Items.bloods_chestplate, Items.bloods_leader_helmet)
-    crips_armor = (Items.crips_chestplate, Items.crips_leader_helmet)
-    kings_armor = (Items.kings_chestplate, Items.kings_leader_helmet)
-    grapes_armor = (Items.grapes_chestplate, Items.grapes_leader_helmet)
+    bloods_armor = (Items.bloods_chestplate, Items.bloods_leader_crown)
+    crips_armor = (Items.crips_chestplate, Items.crips_leader_crown)
+    kings_armor = (Items.kings_chestplate, Items.kings_leader_crown)
+    grapes_armor = (Items.grapes_chestplate, Items.grapes_leader_crown)
     for gang, illegals, crown in (
-        (Bloods, (*crips_armor, *kings_armor, *grapes_armor), Items.bloods_leader_helmet),
-        (Crips, (*bloods_armor, *kings_armor, *grapes_armor), Items.crips_leader_helmet),
-        (Kings, (*bloods_armor, *crips_armor, *grapes_armor), Items.kings_leader_helmet),
-        (Grapes, (*bloods_armor, *crips_armor, *kings_armor), Items.grapes_leader_helmet),
+        (Bloods, (*crips_armor, *kings_armor, *grapes_armor), Items.bloods_leader_crown),
+        (Crips, (*bloods_armor, *kings_armor, *grapes_armor), Items.crips_leader_crown),
+        (Kings, (*bloods_armor, *crips_armor, *grapes_armor), Items.kings_leader_crown),
+        (Grapes, (*bloods_armor, *crips_armor, *kings_armor), Items.grapes_leader_crown),
     ):
         with IfAnd(
             PLAYER_GANG == gang.ID,
@@ -952,10 +1038,10 @@ def remove_illegal_gang_armor() -> None:
         pass
     with Else:
         for crown in (
-            Items.bloods_leader_helmet,
-            Items.crips_leader_helmet,
-            Items.kings_leader_helmet,
-            Items.grapes_leader_helmet,
+            Items.bloods_leader_crown,
+            Items.crips_leader_crown,
+            Items.kings_leader_crown,
+            Items.grapes_leader_crown,
         ):
             remove_item(crown.item)
 

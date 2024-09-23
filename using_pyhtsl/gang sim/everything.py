@@ -522,7 +522,7 @@ class Items:
             '\n&8 - Bloods for life'
         ),
     )
-    bloods_leader_helmet = CustomItem(
+    bloods_leader_crown = CustomItem(
         f'&{Bloods.ID}Bloods Gang Leader',
         'golden_helmet',  # 'leather_cap',
         ItemRarity.LEGENDARY,
@@ -545,7 +545,7 @@ class Items:
             '\n&8 - Crip \'til I rest'
         ),
     )
-    crips_leader_helmet = CustomItem(
+    crips_leader_crown = CustomItem(
         f'&{Crips.ID}Crips Gang Leader',
         'golden_helmet',  # 'leather_cap',
         ItemRarity.LEGENDARY,
@@ -568,7 +568,7 @@ class Items:
             '\n&8 - Kings don\'t break'
         ),
     )
-    kings_leader_helmet = CustomItem(
+    kings_leader_crown = CustomItem(
         f'&{Kings.ID}Kings Gang Leader',
         'golden_helmet',  # 'leather_cap',
         ItemRarity.LEGENDARY,
@@ -591,7 +591,7 @@ class Items:
             '\n&8 - Grapes take it all'
         ),
     )
-    grapes_leader_helmet = CustomItem(
+    grapes_leader_crown = CustomItem(
         f'&{Grapes.ID}Grapes Gang Leader',
         'golden_helmet',  # 'leather_cap',
         ItemRarity.LEGENDARY,
@@ -606,13 +606,13 @@ class Items:
     def gang_armor() -> list[CustomItem]:
         return [
             Items.bloods_chestplate,
-            Items.bloods_leader_helmet,
+            Items.bloods_leader_crown,
             Items.crips_chestplate,
-            Items.crips_leader_helmet,
+            Items.crips_leader_crown,
             Items.kings_chestplate,
-            Items.kings_leader_helmet,
+            Items.kings_leader_crown,
             Items.grapes_chestplate,
-            Items.grapes_leader_helmet,
+            Items.grapes_leader_crown,
         ]
 
     @classmethod
