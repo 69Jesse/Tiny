@@ -91,6 +91,9 @@ PAYOUT_GANG = GlobalStat('po/gang')
 PAYOUT_WHOLE = GlobalStat('po/whole')
 PAYOUT_REST = GlobalStat('po/rest')
 
+TIP_COUNTER = GlobalStat('tipc')
+TIP_INDEX = GlobalStat('tipm')
+
 
 PLAYER_ID = PlayerStat('id')
 PLAYER_GANG = PlayerStat('gang')

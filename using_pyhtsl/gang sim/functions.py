@@ -115,6 +115,8 @@ from constants import (
     PREVIOUS_COORDINATE_Z,
     TELEPORTING_ID,
     TELEPORTING_TIMER,
+    TIP_COUNTER,
+    TIP_INDEX,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -139,6 +141,8 @@ TODO
 [ ] add all locations
 [x] on turf location enter display some message if turf is owned
 [x] spawn command
+[ ] combat logging
+[ ] strength with little members
 """
 
 
@@ -273,6 +277,12 @@ def on_player_kill() -> None:
         added_funds.value *= 2
         added_cred.value = 5
 
+    with IfAnd(
+        PLAYER_CRED < 0,
+    ):
+        added_funds.value /= 2
+        ADD_EXPERIENCE.value /= 2
+
     trigger_function(add_experience)
     PLAYER_FUNDS.value += added_funds
     PLAYER_CRED.value += added_cred
@@ -309,6 +319,55 @@ def on_bad_player_kill() -> None:
 
 
 # MISC?? =================================
+
+
+TIPS = [
+    '&eGained&3 XP&e on kill =&a min&7(&b3&a +&6 killstreak&a /&b 5&7,&b 10&7)',  # min(3 + killstreak/5, 10) + prestige
+    '&eKilling an enemy gang leader gives double&3 XP&e and&6 Funds&e, and more&2 Cred&e!',
+    '&eYour turf will slowly heal back to&c full health&e over time.',
+    '&eKilling a friendly gang member will cause you to lose&2 Cred&e.',
+    '&eYour global level is calculated by combining all your individual levels.',
+    '&eThe more stars your turf has, the more&6 Funds&e it will generate.',
+    '&eYour&c Power&e is used for abilities and will regenerate over time.',  # TODO
+    '&eLogging out during combat will count as a death with extra loss of&2 Cred&e.',  # TODO
+    '&eKilling your own gang leader is discouraged, but it will promote you to leader.',  # TODO
+    '&eYour turf will gain more&6 Funds&e the longer you hold it without distributing.',
+    '&eA new gang leader will be randomly chosen if the crown is not worn for too long.',  # TODO
+    '&eGiving a&6 /cookie&e is greatly appreciated and can earn everyone rewards!',
+    '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',  # TODO
+    '&eHaving all 5 effects at the same time will give you&c +1 Strength&e.',  # TODO
+    '&eTurfs will not generate&6 Funds&e if all its members are at spawn.',
+    '&eYou can switch gangs for free 3 times a day, after that it will cost&2 5 Cred&e.',  # TODO
+    '&eYou can only switch gangs if you have a positive amount of&2 Cred&e.',  # TODO
+    '&eYou cannot have less than&2 -10 Cred&e.',  # TODO
+    '&eIf you have less than 0&2 Cred&e, your gain of&6 Funds&e and&3 XP&e is halved.',  # TODO
+]
+
+
+def check_tips() -> None:
+    TIP_COUNTER.value += 1
+    with IfAnd(
+        TIP_COUNTER >= 120,
+    ):
+        TIP_COUNTER.value = 0
+    with Else:
+        exit_function()
+
+    TIP_INDEX.value += 1
+    with IfAnd(
+        TIP_INDEX >= len(TIPS),
+    ):
+        TIP_INDEX.value = 0
+    trigger_function(show_tip, trigger_for_all_players=True)
+
+
+@create_function('Show Tip')
+def show_tip() -> None:
+    for i, tip in enumerate(TIPS):
+        with IfAnd(
+            TIP_INDEX == i,
+        ):
+            chat('&f[&bTIP&f] ' + tip)
 
 
 @create_function('Apply Potion Effects')
@@ -739,6 +798,8 @@ def global_every_second() -> None:
     trigger_function(update_timer)
     trigger_function(check_cookie_goal)
     set_team_ids()
+    check_tips()  # has to be end of function
+
 
 
 # LOCATIONS ========================================
@@ -1094,7 +1155,14 @@ def DESTROY_TURF(turf: type[BaseTurf]) -> None:
     trigger_function(apply_turf_destroyed_title, trigger_for_all_players=True)
     TurfDestroyedTitleActionBar.apply(turf.FUNDS)
     turf.GANG.value = EMPTY_TURF_GANG
-    PLAYER_FUNDS.value += turf.FUNDS
+
+    funds = PlayerStat('temp')
+    funds.value = turf.FUNDS
+    with IfAnd(
+        PLAYER_CRED < 0,
+    ):
+        funds.value /= 2
+    PLAYER_FUNDS.value += funds
     turf.FUNDS.value = 0
     turf.HP.value = TURF_DEFAULT_MAX_HP
     turf.MAX_HP.value = TURF_DEFAULT_MAX_HP
