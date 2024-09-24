@@ -32,6 +32,7 @@ from pyhtsl import (
     PlayerLocationZ,
     remove_item,
     HasItem,
+    Item,
 )
 from pyhtsl.types import ALL_POTION_EFFECTS
 from constants import (
@@ -151,7 +152,7 @@ from typing import Literal
 
 """
 TODO
-[ ] potion effects
+[x] potion effects
 [ ] all armor
 [x] gang leader system
 [x] move to spawn counter because sometimes on tp itll tp you back
@@ -159,8 +160,9 @@ TODO
 [x] on turf location enter display some message if turf is owned
 [x] spawn command
 [ ] combat logging
-[ ] strength with little members
+[x] strength with little members
 [ ] bounties maybe
+[ ] give armor on team join
 """
 
 
@@ -560,9 +562,11 @@ TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
 
 def ON_TEAM_JOIN(
     team: type[GangSimTeam],
+    chestplate: Item,
 ) -> None:
     set_player_team(team.TEAM)
     trigger_function(check_player_gang)
+    give_item(chestplate, inventory_slot='chestplate', replace_existing_item=True)
     teleport_player(TEMPORARY_SPAWN)
     play_sound('Enderman Teleport')
     # TODO
@@ -570,21 +574,21 @@ def ON_TEAM_JOIN(
 
 @create_function('On Bloods Join')
 def on_bloods_join() -> None:
-    ON_TEAM_JOIN(Bloods)
+    ON_TEAM_JOIN(Bloods, Items.bloods_chestplate.item)
 @create_function('On Crips Join')
 def on_crips_join() -> None:
-    ON_TEAM_JOIN(Crips)
+    ON_TEAM_JOIN(Crips, Items.crips_chestplate.item)
 @create_function('On Kings Join')
 def on_kings_join() -> None:
-    ON_TEAM_JOIN(Kings)
+    ON_TEAM_JOIN(Kings, Items.kings_chestplate.item)
 @create_function('On Grapes Join')
 def on_grapes_join() -> None:
-    ON_TEAM_JOIN(Grapes)
+    ON_TEAM_JOIN(Grapes, Items.grapes_chestplate.item)
 @create_function('On Guards Join')
 def on_guards_join() -> None:
     chat(IMPORTANT_MESSAGE_PREFIX + '&cNot implemented yet.')
     return
-    ON_TEAM_JOIN(Guards)
+    ON_TEAM_JOIN(Guards, Items.guards_chestplate.item)
 
 
 # NOTE have this get called by the actual event
@@ -949,8 +953,24 @@ SECONDS_TO_TRANSFER_LEADERSHIP = 10
 NO_GANG_LEADER_ID = -1
 
 
+@create_function('Put Crown On Head')
+def put_crown_on_head() -> None:
+    for gang, crown in (
+        (Bloods, Items.bloods_leader_crown),
+        (Crips, Items.crips_leader_crown),
+        (Kings, Items.kings_leader_crown),
+        (Grapes, Items.grapes_leader_crown),
+    ):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+            PLAYER_ID == gang.LEADER_ID,
+        ):
+            give_item(crown.item, inventory_slot='helmet', replace_existing_item=True)
+
+
 def transfer_gang_leadership(reason: Literal['RANDOM', 'BETRAYAL', 'TRANSFER']) -> None:
     TEAM_LEADER_ID.value = PLAYER_ID
+    trigger_function(put_crown_on_head)
     NewGangLeaderTitleActionBar.apply_globals(
         PLAYER_ID,
         TEAM_ID,
