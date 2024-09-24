@@ -31,7 +31,6 @@ from constants import (
     Crips,
     Kings,
     Grapes,
-    Guards,
     IMPORTANT_MESSAGE_PREFIX,
     TELEPORTING_ID,
     TELEPORTING_TIMER,
@@ -40,15 +39,6 @@ from title_action_bar import WaitingOnTeleportTitleActionBar
 
 
 delete_all_items_from_imports_folder()
-
-
-class Teams:
-    __slots__ = ()
-    bloods = Team('BLOOD')
-    crips = Team('CRIP')
-    blacks = Team('BLACK')
-    kings = Team('KING')
-    guards = Team('GUARD')
 
 
 LINE_REGEX = re.compile(r'^(x+)(\.*)$')

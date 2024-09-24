@@ -93,7 +93,6 @@ from constants import (
     Crips,
     Kings,
     Grapes,
-    Guards,
     SpawnTeam,
     IMPORTANT_MESSAGE_PREFIX,
     TURF_DEFAULT_MAX_HP,
@@ -523,7 +522,7 @@ def set_group() -> None:
     ):
         change_player_group(
             'Leader',
-            False,
+            demotion_protection=False,
         )
         exit_function()
     for name, cred_req in (
@@ -548,7 +547,7 @@ def set_group() -> None:
         ):
             change_player_group(
                 name,
-                False,
+                demotion_protection=False,
             )
             exit_function()
     change_player_group(
@@ -584,11 +583,6 @@ def on_kings_join() -> None:
 @create_function('On Grapes Join')
 def on_grapes_join() -> None:
     ON_TEAM_JOIN(Grapes, Items.grapes_chestplate.item)
-@create_function('On Guards Join')
-def on_guards_join() -> None:
-    chat(IMPORTANT_MESSAGE_PREFIX + '&cNot implemented yet.')
-    return
-    ON_TEAM_JOIN(Guards, Items.guards_chestplate.item)
 
 
 # NOTE have this get called by the actual event
@@ -600,7 +594,6 @@ def on_portal_enter() -> None:
         (LocationInstances.spawn_crips_area, on_crips_join),
         (LocationInstances.spawn_kings_area, on_kings_join),
         (LocationInstances.spawn_grapes_area, on_grapes_join),
-        (LocationInstances.spawn_guards_area, on_guards_join),
     ):
         with IfAnd(
             LOCATION_ID == location.id
@@ -1057,13 +1050,27 @@ def remove_illegal_gang_armor() -> None:
     ):
         pass
     with Else:
-        for crown in (
-            Items.bloods_leader_crown,
-            Items.crips_leader_crown,
-            Items.kings_leader_crown,
-            Items.grapes_leader_crown,
+        for illegal in (*bloods_armor, *crips_armor, *kings_armor, *grapes_armor):
+            remove_item(illegal.item)
+
+    for chestplate in (
+        Items.bloods_chestplate,
+        Items.crips_chestplate,
+        Items.kings_chestplate,
+        Items.grapes_chestplate,
+    ):
+        is_wearing = PlayerStat('temp')
+        with IfAnd(
+            HasItem(chestplate.item, where_to_check='armor'),
         ):
-            remove_item(crown.item)
+            is_wearing.value = 1
+        with Else:
+            is_wearing.value = 0
+        with IfAnd(
+            is_wearing == 0,
+            HasItem(chestplate.item),
+        ):
+            remove_item(chestplate.item)
 
 
 @create_function('Check Gang Leaders & Armor')
@@ -1541,12 +1548,6 @@ def ON_CLICK_TURF(
     claim_turf: Function,
     destroy_turf: Function,
 ) -> None:
-    with IfAnd(
-        PLAYER_GANG == Guards.ID
-    ):
-        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou cannot interact with a turf as a guard.')
-        exit_function()
-
     with IfAnd(
         turf.GANG == PLAYER_GANG
     ):

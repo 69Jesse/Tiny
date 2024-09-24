@@ -122,12 +122,6 @@ class LocationInstances:
         'Grapes Spawn Area',
         10400,
     )
-    spawn_guards_area = Location(
-        (4, 42, -27),
-        (-6, 50, -18),
-        'Guards Spawn Area',
-        10500,
-    )
 
     # cell_block = Location(
     #     (-22, 115, -28),

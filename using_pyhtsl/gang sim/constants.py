@@ -234,14 +234,6 @@ class Grapes(GangSimGang):
     LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key, TEAM)
 
 
-class Guards(GangSimTeam):
-    TEAM = Team('GUARD')
-    LEVEL = PlayerStat('guardlevel')
-    EXPERIENCE = PlayerStat('u/xp')
-    REQUIRED_EXPERIENCE = PlayerStat('u/xpr')
-    ID = 3
-
-
 class SpawnTeam(GangSimTeam):
     TEAM = Team('SPAWN')
     LEVEL = PlayerStat('spawnlevel')
@@ -251,7 +243,7 @@ class SpawnTeam(GangSimTeam):
 
 
 ALL_TEAMS = (
-    Bloods, Crips, Kings, Grapes, Guards, SpawnTeam,
+    Bloods, Crips, Kings, Grapes, SpawnTeam,
 )
 
 
