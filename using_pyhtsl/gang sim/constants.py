@@ -163,6 +163,9 @@ INVISIBILITY_EFFECT_TIMER = PlayerStat('et/inv')
 NEW_DESIRED_GANG_ID = PlayerStat('ndgid')
 
 
+COMBAT_TIMER = PlayerStat('ctimer')
+
+
 DAILY_RESET_LAST_DAY = PlayerStat('drlastday')
 
 DAILY_FREE_SWITCHES = PlayerStat('dfswitches')

@@ -134,6 +134,7 @@ from constants import (
     DAILY_RESET_LAST_DAY,
     DAILY_FREE_SWITCHES,
     NEW_DESIRED_GANG_ID,
+    COMBAT_TIMER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -332,6 +333,12 @@ def on_player_kill() -> None:
     )
 
 
+# NOTE have this get called by the actual event
+@create_function('On Player Damage')
+def on_player_damage() -> None:
+    COMBAT_TIMER.value = seconds_to_every_4_ticks(8)
+
+
 @create_function('On Bad Player Kill')
 def on_bad_player_kill() -> None:
     removed_cred = DISPLAY_ARG_1
@@ -398,7 +405,7 @@ TIPS = [
     '&eYour global level is calculated by combining all your individual levels.',
     '&eThe more stars your turf has, the more&6 Funds&e it will generate.',
     '&eYour&c Power&e is used for abilities and will regenerate over time.',
-    '&eLogging out during combat will count as a death with extra loss of&2 Cred&e.',  # TODO
+    '&eLogging out during combat will count as a death with double&2 Cred&e loss.',  # TODO
     '&eKilling your own gang leader is discouraged, but it will promote you to leader.',
     '&eYour turf will gain more&6 Funds&e the longer you hold it without distributing.',
     '&eA new gang leader will be randomly chosen if the crown is not worn for too long.',
@@ -438,6 +445,18 @@ def show_tip() -> None:
             TIP_INDEX == i,
         ):
             chat('&f[&bTIP&f] ' + tip)
+
+
+@create_function('Misc 0.2s')
+def misc_every_4_ticks() -> None:
+    with IfAnd(
+        COMBAT_TIMER == 1,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&aYou are no longer in combat.')
+    with IfAnd(
+        COMBAT_TIMER > 0,
+    ):
+        COMBAT_TIMER.value -= 1
 
 
 def apply_effects_to_max(effect: ALL_POTION_EFFECTS, max_level: int, count: PlayerStat) -> None:
@@ -1017,6 +1036,7 @@ def personal_every_4ticks() -> None:
     trigger_function(check_player_gang)
     trigger_function(check_locations)
     trigger_function(check_out_of_spawn)
+    trigger_function(misc_every_4ticks)
     trigger_function(check_levels)
     trigger_function(set_most_stats)
     trigger_function(update_display_stats)
@@ -1282,6 +1302,14 @@ def cancel_teleport(
     DISPLAY_ID.value = 0
 
 
+def check_in_combat_and_exit() -> None:
+    with IfAnd(
+        COMBAT_TIMER > 0,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou cannot teleport while in combat.')
+        exit_function()
+
+
 @create_function('On Move Coordinates')
 def on_move_coordinates() -> None:
     with IfAnd(
@@ -1336,6 +1364,8 @@ def run_spawn_command() -> None:
         trigger_function(move_to_spawn)
         cancel_teleport(send_message=False)
         exit_function()
+
+    check_in_combat_and_exit()
 
     with IfAnd(
         TELEPORTING_ID == Teleports.SPAWN.id,
