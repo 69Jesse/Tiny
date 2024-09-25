@@ -33,6 +33,7 @@ from pyhtsl import (
     remove_item,
     HasItem,
     Item,
+    display_menu,
 )
 from pyhtsl.types import ALL_POTION_EFFECTS
 from constants import (
@@ -130,6 +131,9 @@ from constants import (
     REGENERATION_EFFECT_TIMER,
     JUMPBOOST_EFFECT_TIMER,
     INVISIBILITY_EFFECT_TIMER,
+    DAILY_RESET_LAST_DAY,
+    DAILY_FREE_SWITCHES,
+    NEW_DESIRED_GANG_ID,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -144,6 +148,7 @@ from title_action_bar import (
     WaitingOnTeleportTitleActionBar,
     NewGangLeaderTitleActionBar,
     GangLeaderFallenTitleActionBar,
+    RemoveCredTitleActionBar,
 )
 
 from typing import Literal
@@ -151,17 +156,13 @@ from typing import Literal
 
 """
 TODO
-[x] potion effects
 [ ] all armor
-[x] gang leader system
-[x] move to spawn counter because sometimes on tp itll tp you back
 [ ] add all locations
-[x] on turf location enter display some message if turf is owned
-[x] spawn command
 [ ] combat logging
-[x] strength with little members
-[ ] bounties maybe
 [ ] give armor on team join
+
+[1.0] abilities
+[1.0] bounties maybe
 """
 
 
@@ -191,6 +192,7 @@ def on_player_join_first_time() -> None:
     give_item(Items.tier_1_weapon.item)
     PLAYER_CRED.value = 10
     PLAYER_FUNDS.value = 100
+    DAILY_RESET_LAST_DAY.value = DateUnix // (60 * 60 * 24)
 
 
 # DEATH / KILLS ======================================================================
@@ -372,10 +374,22 @@ def on_bad_player_kill() -> None:
 # MISC?? =================================
 
 
-FREE_SWITCHES_PER_DAY = 3
-SWITCH_COST = 5
+FREE_SWITCHES_PER_DAY = 5
+SWITCH_COST = 3
 MIN_CRED = -10
-FUNDS_XP_HALVED_AT_CRED = 0
+
+
+pay_for_switch_item = Item(
+    'lime_stained_clay',
+    name='&a&lARE YOU SURE?',
+    lore=(
+        f'&cYou have ran out of free\n&cdaily gang switches.&7 (0/{FREE_SWITCHES_PER_DAY})'
+        f'\n\n&cIt will cost you&2 {SWITCH_COST} Cred&c to\n&cswitch to a different gang.'
+        '\n\n&eClick to proceed.'
+    ),
+    hide_all_flags=True,
+)
+pay_for_switch_item.save()
 
 
 TIPS = [
@@ -385,19 +399,20 @@ TIPS = [
     '&eKilling a friendly gang member will cause you to lose&2 Cred&e.',
     '&eYour global level is calculated by combining all your individual levels.',
     '&eThe more stars your turf has, the more&6 Funds&e it will generate.',
-    '&eYour&c Power&e is used for abilities and will regenerate over time.',  # TODO
+    '&eYour&c Power&e is used for abilities and will regenerate over time.',
     '&eLogging out during combat will count as a death with extra loss of&2 Cred&e.',  # TODO
-    '&eKilling your own gang leader is discouraged, but it will promote you to leader.',  # TODO
+    '&eKilling your own gang leader is discouraged, but it will promote you to leader.',
     '&eYour turf will gain more&6 Funds&e the longer you hold it without distributing.',
-    '&eA new gang leader will be randomly chosen if the crown is not worn for too long.',  # TODO
+    '&eA new gang leader will be randomly chosen if the crown is not worn for too long.',
     '&eGiving a&6 /cookie&e is greatly appreciated and can earn everyone rewards!',
-    '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',  # TODO
-    '&eHaving all 5 effects at the same time will give you&c +1 Strength&e.',  # TODO
+    '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',
+    '&eHaving all 5 effects at the same time will give you&c +1 Strength&e.',
     '&eTurfs will not generate&6 Funds&e if all its members are at spawn.',
-    f'&eYou can switch gangs for free {FREE_SWITCHES_PER_DAY} times a day, after that it will cost&2 {SWITCH_COST} Cred&e.',  # TODO
-    '&eYou can only switch gangs if you have a positive amount of&2 Cred&e.',  # TODO
-    f'&eYou cannot have less than&2 {MIN_CRED} Cred&e.',  # TODO
-    f'&eIf you have less than&2 {FUNDS_XP_HALVED_AT_CRED} Cred&e, your gain of&6 Funds&e and&3 XP&e is halved.',  # TODO
+    f'&eYou can switch gangs for free {FREE_SWITCHES_PER_DAY} times a day, after that it will cost&2 {SWITCH_COST} Cred&e.',
+    '&eIf you have negative&2 Cred&e, you gain&8 +1 Slowness&e.',
+    '&eIf you have negative&2 Cred&e, you cannot switch gangs.',
+    '&eIf you have negative&2 Cred&e, you will earn less&6 Funds&e and&3 XP&e.',
+    f'&eYou cannot have less than&2 {MIN_CRED} Cred&e.',
 ]
 
 
@@ -503,6 +518,16 @@ def apply_all_potion_effects() -> None:
             count.value += 1
     apply_effects_to_max('strength', 2, count)
 
+    count.value = 0
+    with IfOr(
+        BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
+        PLAYER_CRED >= 0,
+    ):
+        pass
+    with Else:
+        count.value += 1
+    apply_effects_to_max('slowness', 1, count)
+
     apply_potion_effect(
         'night_vision',
         duration=2592000,
@@ -559,30 +584,109 @@ def set_group() -> None:
 TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
 
 
-def ON_TEAM_JOIN(
-    team: type[GangSimTeam],
-    chestplate: Item,
-) -> None:
-    set_player_team(team.TEAM)
-    trigger_function(check_player_gang)
-    give_item(chestplate, inventory_slot='chestplate', replace_existing_item=True)
+@create_function('Teleport Into Map')
+def teleport_into_map() -> None:
     teleport_player(TEMPORARY_SPAWN)
     play_sound('Enderman Teleport')
-    # TODO
+
+
+@create_function('Force Join Team')
+def force_join_team() -> None:
+    for gang, chestplate in zip(ALL_GANG_TEAMS, (
+        Items.bloods_chestplate.item,
+        Items.crips_chestplate.item,
+        Items.kings_chestplate.item,
+        Items.grapes_chestplate.item,
+    )):
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+        ):
+            set_player_team(gang.TEAM)
+            give_item(chestplate, inventory_slot='chestplate', replace_existing_item=True)
+    trigger_function(check_player_gang)
+    trigger_function(teleport_into_map)
+
+
+def joined_gang_no_switch_message(gang: type[GangSimTeam]) -> None:
+    chat(IMPORTANT_MESSAGE_PREFIX + f'&eYou are now part of the&{gang.ID}&l {gang.name().upper()}&e!')
+
+
+def joined_gang_with_switch_message(gang: type[GangSimTeam]) -> None:
+    chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lSWITCH!&e You are now part of the&{gang.ID}&l {gang.name().upper()}&e!')
+
+
+@create_function('Display Last Gang Membership')
+def display_last_gang_membership() -> None:
+    for gang in ALL_GANG_TEAMS:
+        with IfAnd(
+            PLAYER_LAST_GANG == gang.ID,
+        ):
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&cYou were last part of the&{gang.ID}&l {gang.name().upper()}&c.')
+
+
+@create_function('Pay For Gang Switch')
+def pay_for_gang_switch() -> None:
+    PLAYER_CRED.value -= SWITCH_COST
+    RemoveCredTitleActionBar.apply(SWITCH_COST)
+    trigger_function(clamp_cred)
+    PLAYER_GANG.value = NEW_DESIRED_GANG_ID
+    trigger_function(force_join_team)
+    for gang in ALL_GANG_TEAMS:
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+        ):
+            joined_gang_with_switch_message(gang)
+    NEW_DESIRED_GANG_ID.value = 0
+
+
+def ON_TEAM_JOIN(
+    team: type[GangSimTeam],
+) -> None:
+    with IfOr(
+        PLAYER_LAST_GANG == 0,
+        PLAYER_LAST_GANG == team.ID,
+    ):
+        PLAYER_GANG.value = team.ID
+        trigger_function(force_join_team)
+        joined_gang_no_switch_message(team)
+        exit_function()
+
+    with IfAnd(
+        PLAYER_CRED < 0,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou cannot switch gangs with negative&2 Cred&c!')
+        trigger_function(display_last_gang_membership)
+        trigger_function(move_to_spawn)
+        exit_function()
+
+    with IfAnd(
+        DAILY_FREE_SWITCHES <= 0,
+    ):
+        NEW_DESIRED_GANG_ID.value = team.ID
+        display_menu('ARE YOU SURE?')
+        # NOTE set all green clay actions to:
+        # trigger_function(pay_for_gang_switch)
+        trigger_function(move_to_spawn)
+        exit_function()
+
+    DAILY_FREE_SWITCHES.value -= 1
+    PLAYER_GANG.value = team.ID
+    trigger_function(force_join_team)
+    joined_gang_with_switch_message(team)
 
 
 @create_function('On Bloods Join')
 def on_bloods_join() -> None:
-    ON_TEAM_JOIN(Bloods, Items.bloods_chestplate.item)
+    ON_TEAM_JOIN(Bloods)
 @create_function('On Crips Join')
 def on_crips_join() -> None:
-    ON_TEAM_JOIN(Crips, Items.crips_chestplate.item)
+    ON_TEAM_JOIN(Crips)
 @create_function('On Kings Join')
 def on_kings_join() -> None:
-    ON_TEAM_JOIN(Kings, Items.kings_chestplate.item)
+    ON_TEAM_JOIN(Kings)
 @create_function('On Grapes Join')
 def on_grapes_join() -> None:
-    ON_TEAM_JOIN(Grapes, Items.grapes_chestplate.item)
+    ON_TEAM_JOIN(Grapes)
 
 
 # NOTE have this get called by the actual event
@@ -887,12 +991,26 @@ def update_turfs() -> None:
 # LOOPS ==========================================================
 
 
+@create_function('Daily Reset')
+def daily_reset() -> None:
+    """Reset daily things, called every day at midnight UTC"""
+    DAILY_FREE_SWITCHES.value = FREE_SWITCHES_PER_DAY
+    chat(IMPORTANT_MESSAGE_PREFIX + '&eYour daily free gang switches have been reset to&b {FREE_SWITCHES_PER_DAY}&e.')
+
+
 # NOTE have this run every 20 ticks
 @create_function('Personal 1s')
 def personal_every_second() -> None:
     PLAYTIME_SECONDS.value += 1
     trigger_function(check_locations)
     trigger_function(update_teleports)
+    current_utc_days = PlayerStat('temp')
+    current_utc_days.value = DateUnix // (60 * 60 * 24)
+    with IfAnd(
+        DAILY_RESET_LAST_DAY < current_utc_days,
+    ):
+        DAILY_RESET_LAST_DAY.value = current_utc_days
+        trigger_function(daily_reset)
 
 
 # NOTE have this run every 4 ticks

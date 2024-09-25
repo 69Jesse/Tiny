@@ -160,6 +160,14 @@ JUMPBOOST_EFFECT_TIMER = PlayerStat('et/jum')
 INVISIBILITY_EFFECT_TIMER = PlayerStat('et/inv')
 
 
+NEW_DESIRED_GANG_ID = PlayerStat('ndgid')
+
+
+DAILY_RESET_LAST_DAY = PlayerStat('drlastday')
+
+DAILY_FREE_SWITCHES = PlayerStat('dfswitches')
+
+
 TEAM_ID = TeamStat('id')
 leader_id_key = 'leaderid'
 leader_is_wearing_crown_key = 'leaderisc'
