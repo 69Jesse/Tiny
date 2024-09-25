@@ -605,6 +605,152 @@ class Items:
             Items.grapes_leader_crown,
         ]
 
+    tier_1_boots = CustomItem(
+        'Tier 1 Boots',
+        'leather_boots',
+        ItemRarity.COMMON,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 0)],
+    )
+    tier_2_boots = CustomItem(
+        'Tier 2 Boots',
+        'leather_boots',
+        ItemRarity.COMMON,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 1)],
+        buffs=[Buff(BuffType.power, 0)],
+    )
+    tier_3_boots = CustomItem(
+        'Tier 3 Boots',
+        'leather_boots',
+        ItemRarity.COMMON,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 2)],
+        buffs=[Buff(BuffType.power, 0)],
+    )
+    tier_4_boots = CustomItem(
+        'Tier 4 Boots',
+        'leather_boots',
+        ItemRarity.UNCOMMON,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 3)],
+        buffs=[Buff(BuffType.power, 0)],
+    )
+    tier_5_boots = CustomItem(
+        'Tier 5 Boots',
+        'chain_boots',
+        ItemRarity.UNCOMMON,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 15)],
+    )
+    tier_6_boots = CustomItem(
+        'Tier 6 Boots',
+        'chain_boots',
+        ItemRarity.UNCOMMON,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 1)],
+        buffs=[Buff(BuffType.power, 20)],
+    )
+    tier_7_boots = CustomItem(
+        'Tier 7 Boots',
+        'chain_boots',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 2)],
+        buffs=[Buff(BuffType.power, 25)],
+    )
+    tier_8_boots = CustomItem(
+        'Tier 8 Boots',
+        'chain_boots',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 3)],
+        buffs=[Buff(BuffType.power, 30)],
+    )
+    tier_9_boots = CustomItem(
+        'Tier 9 Boots',
+        'iron_boots',
+        ItemRarity.RARE,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 50)],
+    )
+    tier_10_boots = CustomItem(
+        'Tier 10 Boots',
+        'iron_boots',
+        ItemRarity.EPIC,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 1)],
+        buffs=[Buff(BuffType.power, 55)],
+    )
+    tier_11_boots = CustomItem(
+        'Tier 11 Boots',
+        'iron_boots',
+        ItemRarity.EPIC,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 2)],
+        buffs=[Buff(BuffType.power, 60)],
+    )
+    tier_12_boots = CustomItem(
+        'Tier 12 Boots',
+        'iron_boots',
+        ItemRarity.EPIC,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 3)],
+        buffs=[Buff(BuffType.power, 65)],
+    )
+    tier_13_boots = CustomItem(
+        'Tier 13 Boots',
+        'diamond_boots',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        buffs=[Buff(BuffType.power, 85)],
+    )
+    tier_14_boots = CustomItem(
+        'Tier 14 Boots',
+        'diamond_boots',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 1)],
+        buffs=[Buff(BuffType.power, 90)],
+    )
+    tier_15_boots = CustomItem(
+        'Tier 15 Boots',
+        'diamond_boots',
+        ItemRarity.LEGENDARY,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 2)],
+        buffs=[Buff(BuffType.power, 95)],
+    )
+    tier_16_boots = CustomItem(
+        'Tier 16 Boots',
+        'diamond_boots',
+        ItemRarity.MYTHIC,
+        ItemType.Armor,
+        enchantments=[Enchantment('protection', 3)],
+        buffs=[Buff(BuffType.power, 100)],
+    )
+
+    @staticmethod
+    def boots() -> list[CustomItem]:
+        return [
+            Items.tier_1_boots,
+            Items.tier_2_boots,
+            Items.tier_3_boots,
+            Items.tier_4_boots,
+            Items.tier_5_boots,
+            Items.tier_6_boots,
+            Items.tier_7_boots,
+            Items.tier_8_boots,
+            Items.tier_9_boots,
+            Items.tier_10_boots,
+            Items.tier_11_boots,
+            Items.tier_12_boots,
+            Items.tier_13_boots,
+            Items.tier_14_boots,
+            Items.tier_15_boots,
+            Items.tier_16_boots,
+        ]
+
     @classmethod
     def all(cls) -> Generator[CustomItem, None, None]:
         for item in cls.__dict__.values():

@@ -156,10 +156,8 @@ from typing import Literal
 
 """
 TODO
-[ ] all armor
 [ ] add all locations
 [ ] combat logging
-[ ] give armor on team join
 
 [1.0] abilities
 [1.0] bounties maybe
@@ -188,11 +186,11 @@ def on_player_join_first_time() -> None:
     TOTAL_PLAYERS_JOINED.value += 1
     PLAYER_ID.value = TOTAL_PLAYERS_JOINED
     set_player_team(SpawnTeam.TEAM)
-    reset_inventory()
-    give_item(Items.tier_1_weapon.item)
     PLAYER_CRED.value = 10
     PLAYER_FUNDS.value = 100
-    DAILY_RESET_LAST_DAY.value = DateUnix // (60 * 60 * 24)
+    reset_inventory()
+    give_item(Items.tier_1_weapon.item)
+    give_item(Items.tier_1_boots.item)
 
 
 # DEATH / KILLS ======================================================================
@@ -1146,29 +1144,42 @@ def remove_illegal_gang_armor() -> None:
         (Kings, (*bloods_armor, *crips_armor, *grapes_armor), Items.kings_leader_crown),
         (Grapes, (*bloods_armor, *crips_armor, *kings_armor), Items.grapes_leader_crown),
     ):
-        with IfAnd(
-            PLAYER_GANG == gang.ID,
-        ):
-            for illegal in illegals:
+        for illegal in illegals:
+            with IfAnd(
+                PLAYER_GANG == gang.ID,
+                HasItem(illegal.item),
+            ):
                 remove_item(illegal.item)
 
         # if (PLAYER_GANG == gang.ID and gang.LEADER_IS_WEARING_CROWN == 1 and PLAYER_ID != gang.LEADER_ID):
         # means if not (PLAYER_GANG != gang.ID or gang.LEADER_IS_WEARING_CROWN == 0 or PLAYER_ID == gang.LEADER_ID)
+        should_remove = PlayerStat('temp')
         with IfOr(
             PLAYER_GANG != gang.ID,
             gang.LEADER_IS_WEARING_CROWN == 0,
             PLAYER_ID == gang.LEADER_ID,
         ):
-            pass
+            should_remove.value = 0
         with Else:
+            should_remove.value = 1
+        with IfAnd(
+            should_remove == 1,
+            HasItem(crown.item),
+        ):
             remove_item(crown.item)
 
+    should_remove = PlayerStat('temp')
     with IfOr(
         *(PLAYER_GANG == gang.ID for gang in ALL_GANG_TEAMS),
     ):
-        pass
+        should_remove.value = 0
     with Else:
-        for illegal in (*bloods_armor, *crips_armor, *kings_armor, *grapes_armor):
+        should_remove.value = 1
+    for illegal in (*bloods_armor, *crips_armor, *kings_armor, *grapes_armor):
+        with IfAnd(
+            should_remove == 1,
+            HasItem(illegal.item),
+        ):
             remove_item(illegal.item)
 
     for chestplate in (
