@@ -135,6 +135,8 @@ from constants import (
     DAILY_FREE_SWITCHES,
     NEW_DESIRED_GANG_ID,
     COMBAT_TIMER,
+    GLOBAL_TEMP_ARG_1,
+    GLOBAL_TEMP_ARG_2,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -157,9 +159,9 @@ from typing import Literal
 
 """
 TODO
-[ ] add all locations
-[ ] combat logging
-
+[1.0] add shops
+[1.0] add all locations
+[1.0] message when entering turf area
 [1.0] abilities
 [1.0] bounties maybe
 """
@@ -172,14 +174,45 @@ def play_unable_sound() -> None:
 # JOIN / LEAVE ========================================================
 
 
+display_player_join_leave_message_player_id = GLOBAL_TEMP_ARG_1
+display_player_join_leave_message_mode = GLOBAL_TEMP_ARG_2
+display_player_join_leave_message_mode_join = 0
+display_player_join_leave_message_mode_join_new = 1
+display_player_join_leave_message_mode_leave = 2
+display_player_join_leave_message_mode_leave_with_combat = 3
+@create_function('Display Player Join/Leave Message')
+def display_player_join_leave_message() -> None:
+    with IfAnd(
+        display_player_join_leave_message_mode == display_player_join_leave_message_mode_join,
+    ):
+        chat(f'&eWelcome back&a P#{display_player_join_leave_message_player_id}&e!')
+    with IfAnd(
+        display_player_join_leave_message_mode == display_player_join_leave_message_mode_join_new,
+    ):
+        chat(f'&b&lWELCOME!&e They will be known as&a P#{display_player_join_leave_message_player_id}&e!')
+
+    with IfAnd(
+        display_player_join_leave_message_mode == display_player_join_leave_message_mode_leave,
+    ):
+        chat(f'&eGoodbye&a P#{display_player_join_leave_message_player_id}&e!')
+    with IfAnd(
+        display_player_join_leave_message_mode == display_player_join_leave_message_mode_leave_with_combat,
+    ):
+        chat(f'&eGoodbye&a P#{display_player_join_leave_message_player_id}&e..&7 (&4&lCOMBAT LOG&7)')
+
+
 # NOTE have this get called by the actual event
 @create_function('On Player Join')
 def on_player_join() -> None:
+    display_player_join_leave_message_mode.value = display_player_join_leave_message_mode_join
     with IfAnd(
         GroupPriority < 20,
         PLAYER_ID == 0,
     ):
+        display_player_join_leave_message_mode.value = display_player_join_leave_message_mode_join_new
         trigger_function(on_player_join_first_time)
+    display_player_join_leave_message_player_id.value = PLAYER_ID
+    trigger_function(display_player_join_leave_message, trigger_for_all_players=True)
 
 
 @create_function('On Player Join First Time')
@@ -193,6 +226,24 @@ def on_player_join_first_time() -> None:
     give_item(Items.tier_1_weapon.item)
     give_item(Items.tier_1_boots.item)
 
+    with IfAnd(
+        COMBAT_TIMER > 0,
+    ):
+        COMBAT_TIMER.value += on_player_death_combat_logged_timer_addon
+        trigger_function(on_player_death)
+
+
+# NOTE have this get called by the actual event
+@create_function('On Player Leave')
+def on_player_leave() -> None:
+    display_player_join_leave_message_player_id.value = PLAYER_ID
+    display_player_join_leave_message_mode.value = display_player_join_leave_message_mode_leave
+    with IfAnd(
+        COMBAT_TIMER > 0,
+    ):
+        display_player_join_leave_message_mode.value = display_player_join_leave_message_mode_leave_with_combat
+    trigger_function(display_player_join_leave_message, trigger_for_all_players=True)
+
 
 # DEATH / KILLS ======================================================================
 
@@ -202,6 +253,13 @@ def send_gang_leader_fallen_chat() -> None:
     GangLeaderFallenTitleActionBar.apply()
 
 
+display_death_message_streak = GLOBAL_TEMP_ARG_1
+@create_function('Display Death Message')
+def display_death_message() -> None:
+    chat(f'&7They had a&6&l {display_death_message_streak}&6-Streak&7!')
+
+
+on_player_death_combat_logged_timer_addon = 1_000_000
 # NOTE have this get called by the actual event
 # Seems to consistently be ran BEFORE Player Kill event so thats really nice
 @create_function('On Player Death')
@@ -234,6 +292,13 @@ def on_player_death() -> None:
             PLAYER_CRED > cred_req,
         ):
             removing_cred.value += 1
+
+    with IfAnd(
+        COMBAT_TIMER >= on_player_death_combat_logged_timer_addon,
+    ):
+        removing_cred.value *= 2
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou logged out during combat! This counts as a death with double&2 Cred&c loss.')
+
     PLAYER_CRED.value -= removing_cred
     trigger_function(clamp_cred)
 
@@ -257,6 +322,13 @@ def on_player_death() -> None:
         removing_cred,
         PLAYER_KILL_STREAK,
     )
+
+    with IfAnd(
+        PLAYER_KILL_STREAK > 3,
+    ):
+        display_death_message_streak.value = PLAYER_KILL_STREAK
+        trigger_function(display_death_message, trigger_for_all_players=True)
+
     PLAYER_KILL_STREAK.value = 0
 
 
@@ -727,6 +799,7 @@ def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
     PLAYER_GANG.value = EMPTY_TURF_GANG
     Teleports.SPAWN.execute()
+    COMBAT_TIMER.value = 0
     full_heal()
 
 
@@ -1036,7 +1109,7 @@ def personal_every_4ticks() -> None:
     trigger_function(check_player_gang)
     trigger_function(check_locations)
     trigger_function(check_out_of_spawn)
-    trigger_function(misc_every_4ticks)
+    trigger_function(misc_every_4_ticks)
     trigger_function(check_levels)
     trigger_function(set_most_stats)
     trigger_function(update_display_stats)
@@ -1253,7 +1326,6 @@ def check_gang_leaders_and_armor() -> None:
             gang.LEADER_ID.value = NO_GANG_LEADER_ID
 
     trigger_function(remove_illegal_gang_armor, trigger_for_all_players=True)
-    # todo check if is wearing crown and id != gang leader id then transfer leadership
 
 
 # LOCATIONS ========================================
