@@ -34,6 +34,7 @@ from pyhtsl import (
     HasItem,
     Item,
     display_menu,
+    IsItem,
 )
 from pyhtsl.types import ALL_POTION_EFFECTS
 from constants import (
@@ -681,17 +682,27 @@ def teleport_into_map() -> None:
 
 @create_function('Force Join Team')
 def force_join_team() -> None:
-    for gang, chestplate in zip(ALL_GANG_TEAMS, (
+    for gang, chestplate, crown in zip(ALL_GANG_TEAMS, (
         Items.bloods_chestplate.item,
         Items.crips_chestplate.item,
         Items.kings_chestplate.item,
         Items.grapes_chestplate.item,
+    ), (
+        Items.bloods_leader_crown.item,
+        Items.crips_leader_crown.item,
+        Items.kings_leader_crown.item,
+        Items.grapes_leader_crown.item,
     )):
         with IfAnd(
             PLAYER_GANG == gang.ID,
         ):
             set_player_team(gang.TEAM)
             give_item(chestplate, inventory_slot='chestplate', replace_existing_item=True)
+        with IfAnd(
+            gang.TEAM.players() <= 1,
+        ):
+            gang.LEADER_ID.value = PLAYER_ID
+            give_item(crown, inventory_slot='helmet', replace_existing_item=True)
     trigger_function(check_player_gang)
     trigger_function(teleport_into_map)
 
@@ -779,8 +790,9 @@ def on_grapes_join() -> None:
 
 
 # NOTE have this get called by the actual event
-@create_function('On Portal Enter')
-def on_portal_enter() -> None:
+# but first have 4 ticks delay, feels nicer
+@create_function('On Player Enter Portal')
+def on_player_enter_portal() -> None:
     trigger_function(check_locations)
     for location, function in (
         (LocationInstances.spawn_bloods_area, on_bloods_join),
@@ -792,6 +804,21 @@ def on_portal_enter() -> None:
             LOCATION_ID == location.id
         ):
             trigger_function(function)
+
+
+# NOTE manually add this to "On Player Drop Item" event
+def MANUAL_on_player_drop_item() -> None:
+    with IfOr(
+        *(IsItem(crown) for crown in (
+            Items.bloods_leader_crown.item,
+            Items.crips_leader_crown.item,
+            Items.kings_leader_crown.item,
+            Items.grapes_leader_crown.item,
+        )),
+    ):
+        pass
+    with Else:
+        exit_function()
 
 
 @create_function('Move To Spawn')

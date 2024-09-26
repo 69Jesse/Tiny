@@ -199,7 +199,6 @@ class GangSimGang(GangSimTeam):
     LEADER_NOT_WORN_TIMER: TeamStat
 
 
-TEAM_LEADER_ID = TeamStat(leader_id_key)
 TEAM_LEADER_IS_WEARING_CROWN = TeamStat(leader_is_wearing_crown_key)
 TEAM_LEADER_NOT_WORN_TIMER = TeamStat(leader_not_worn_timer_key)
 
