@@ -215,6 +215,12 @@ def on_player_join() -> None:
     display_player_join_leave_message_player_id.value = PLAYER_ID
     trigger_function(display_player_join_leave_message, trigger_for_all_players=True)
 
+    with IfAnd(
+        COMBAT_TIMER > 0,
+    ):
+        COMBAT_TIMER.value += on_player_death_combat_logged_timer_addon
+        trigger_function(on_player_death)
+
 
 @create_function('On Player Join First Time')
 def on_player_join_first_time() -> None:
@@ -226,12 +232,6 @@ def on_player_join_first_time() -> None:
     reset_inventory()
     give_item(Items.tier_1_weapon.item)
     give_item(Items.tier_1_boots.item)
-
-    with IfAnd(
-        COMBAT_TIMER > 0,
-    ):
-        COMBAT_TIMER.value += on_player_death_combat_logged_timer_addon
-        trigger_function(on_player_death)
 
 
 # NOTE have this get called by the actual event
