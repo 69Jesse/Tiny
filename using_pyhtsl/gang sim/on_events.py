@@ -1,4 +1,4 @@
-from pyhtsl import goto, IfOr, IfAnd, chat, cancel_event, IsItem, Else, trigger_function, pause_execution, DamageCause
+from pyhtsl import goto, IfOr, IfAnd, chat, cancel_event, IsItem, Else, trigger_function, pause_execution, DamageCause, exit_function, GroupPriority
 from constants import IMPORTANT_MESSAGE_PREFIX, BIGGEST_LOCATION_ID, play_unable_sound, COMBAT_TIMER, seconds_to_every_4_ticks
 from everything import Items
 from locations import LocationInstances
@@ -40,6 +40,11 @@ def on_player_enter_portal() -> None:
 
 def on_player_drop_item() -> None:
     goto('event', 'Player Drop Item')
+
+    with IfAnd(
+        GroupPriority >= 19,
+    ):
+        exit_function()
 
     def cancel() -> None:
         cancel_event()
