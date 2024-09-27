@@ -124,7 +124,7 @@ class AddCredTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = cred
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
         play_sound('Successful Hit')
 
     @staticmethod
@@ -147,7 +147,7 @@ class AddFundsTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = funds
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
         play_sound('Item Pickup')
 
     @staticmethod
@@ -170,7 +170,7 @@ class RemoveCredTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
 
     @staticmethod
     def display() -> None:
@@ -192,7 +192,7 @@ class RemoveFundsTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = removed_funds
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
 
     @staticmethod
     def display() -> None:
@@ -216,7 +216,7 @@ class AddCredAndFundsTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = cred
         DISPLAY_ARG_2.value = funds
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
         play_sound('Successful Hit')
 
     @staticmethod
@@ -239,7 +239,7 @@ class TurfDestroyedTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = added_funds
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
         for number, name in (
             (Turf1.ID, 'Alpha'),
             (Turf2.ID, 'Beta'),
@@ -321,7 +321,7 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         cls,
     ) -> None:
         cls.set_id()
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
         for number, name in (
             (Turf1.ID, 'Alpha'),
             (Turf2.ID, 'Beta'),
@@ -420,7 +420,7 @@ class OnKillTitleActionBar(TitleActionBar):
         DISPLAY_ARG_1.value = added_funds
         DISPLAY_ARG_2.value = added_cred
         DISPLAY_ARG_3.value = added_experience
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
         play_sound('Successful Hit')
 
     @staticmethod
@@ -439,25 +439,53 @@ class OnBadKillTitleActionBar(TitleActionBar):
     def apply(
         cls,
         removed_cred: int | PlayerStat,
+        has_penalty: PlayerStat,
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
-        chat(IMPORTANT_MESSAGE_PREFIX + f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©')
+        DISPLAY_ARG_2.value = has_penalty
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
+        with IfAnd(
+            has_penalty == 1,
+        ):
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©')
+        with Else:
+            chat(IMPORTANT_MESSAGE_PREFIX + '&4&lBAD KILL&7 why??&c No penalty')
         play_sound('Anvil Land')
 
     @staticmethod
-    def display() -> None:
-        display_title(
-            title=f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
-            subtitle='&8Do not kill members of your own gang!',
-            fadein=0,
-            stay=1,
-            fadeout=0,
-        )
-        display_action_bar(
-            f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
-        )
+    def is_regular() -> bool:
+        return False
+
+    @staticmethod
+    def display_irregular() -> None:
+        with IfAnd(
+            OnBadKillTitleActionBar.get_condition(),
+            DISPLAY_ARG_2 == 1,
+        ):
+            display_title(
+                title=f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
+                subtitle='&8Do not kill members of your own gang!',
+                fadein=0,
+                stay=1,
+                fadeout=0,
+            )
+            display_action_bar(
+                f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©',
+            )
+        with IfAnd(
+            OnBadKillTitleActionBar.get_condition(),
+            DISPLAY_ARG_2 == 0,
+        ):
+            display_title(
+                title='&4&lBAD KILL&7 why??&c No penalty',
+                fadein=0,
+                stay=1,
+                fadeout=0,
+            )
+            display_action_bar(
+                '&4&lBAD KILL&7 why??&c No penalty',
+            )
 
 
 class OnDeathTitleActionBar(TitleActionBar):
@@ -474,7 +502,7 @@ class OnDeathTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
         DISPLAY_ARG_2.value = previous_streak
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
         play_sound('Fall Big')
 
     @staticmethod
@@ -496,7 +524,7 @@ class LevelUpTitleActionBar(TitleActionBar):
     ) -> None:
         cls.set_id()
         DISPLAY_ARG_1.value = old_level
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(4)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
         play_sound('Level Up')
 
     @staticmethod
@@ -549,7 +577,7 @@ class NewGangLeaderTitleActionBar(TitleActionBar):
         cls,
     ) -> None:
         cls.set_id()
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
         for gang in (
             Bloods, Crips, Kings, Grapes,
         ):

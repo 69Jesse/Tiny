@@ -414,23 +414,26 @@ def on_bad_player_kill() -> None:
         LATEST_DEATH_WAS_LEADER == 1,
     ):
         removed_cred.value = 3
-
-    cutoff = 20
-    with IfAnd(
-        LATEST_DEATH_WAS_LEADER	== 0,
-        PLAYER_CRED > cutoff,
-    ):
+    with Else:
         removed_cred.value = 5
+
     with IfAnd(
-        LATEST_DEATH_WAS_LEADER == 0,
-        PLAYER_CRED <= cutoff,
+        TEAM_LEADER_ID == PLAYER_ID,
     ):
-        removed_cred.value = 3
+        removed_cred.value = 0
 
     PLAYER_CRED.value -= removed_cred
     trigger_function(clamp_cred)
 
-    OnBadKillTitleActionBar.apply(removed_cred)
+    has_penalty = DISPLAY_ARG_2
+    with IfAnd(
+        removed_cred > 0,
+    ):
+        has_penalty.value = 1
+    with Else:
+        has_penalty.value = 0
+
+    OnBadKillTitleActionBar.apply(removed_cred, has_penalty)
     with IfOr(
         *(TEAM_ID == gang.ID for gang in ALL_GANG_TEAMS),
     ):
