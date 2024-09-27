@@ -146,6 +146,7 @@ PREVIOUS_LOCATION_ID = PlayerStat('plocationid')
 PLAYTIME_SECONDS = PlayerStat('playtime')
 
 SEND_TO_SPAWN_COUNTER = PlayerStat('stspawnc')
+IS_AT_SPAWN_COUNTER = PlayerStat('iaspawnc')
 
 
 PREVIOUS_COORDINATE_X = PlayerStat('pcoordx')

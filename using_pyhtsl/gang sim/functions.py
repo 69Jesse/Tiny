@@ -761,6 +761,8 @@ def ON_TEAM_JOIN(
         display_menu('ARE YOU SURE?')
         # NOTE set all green clay actions to:
         # trigger_function(pay_for_gang_switch)
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou have ran out of free daily gang switches.')
+        trigger_function(display_last_gang_membership)
         trigger_function(move_to_spawn)
         play_sound('Note Pling')
         exit_function()
@@ -806,7 +808,7 @@ def on_player_enter_portal() -> None:
 def move_to_spawn() -> None:
     SEND_TO_SPAWN_COUNTER.value = 0
     set_player_team(SpawnTeam.TEAM)
-    PLAYER_GANG.value = EMPTY_TURF_GANG
+    PLAYER_GANG.value = SpawnTeam.ID
     Teleports.SPAWN.teleport()
     COMBAT_TIMER.value = 0
     full_heal()

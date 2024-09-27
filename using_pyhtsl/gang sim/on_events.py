@@ -70,10 +70,10 @@ def on_player_drop_item() -> None:
 
 
 if __name__ == '__main__':
-    # on_player_join()
-    # on_player_leave()
-    # on_player_kill()
+    on_player_join()
+    on_player_leave()
+    on_player_kill()
     on_player_damage()
-    # on_player_death()
-    # on_player_enter_portal()
-    # on_player_drop_item()
+    on_player_death()
+    on_player_enter_portal()
+    on_player_drop_item()

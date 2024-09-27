@@ -367,10 +367,10 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         # display_action_bar(
         #     f'&4{PLAYER_POWER}/{PLAYER_MAX_POWER}⸎&a +&2{DISPLAY_ARG_1}©&a +&2{DISPLAY_ARG_2}⛁',
         # )
-        for number, name, stars in (
-            (Turf1.ID, 'Alpha', '✯✯✯'),
-            (Turf2.ID, 'Beta', '✯✯'),
-            (Turf3.ID, 'Gamma', '✯'),
+        for number, name, stars, earnings in (
+            (Turf1.ID, 'Alpha', '✯✯✯', Turf1.DEFAULT_FUNDS_PER_SECOND),
+            (Turf2.ID, 'Beta', '✯✯', Turf2.DEFAULT_FUNDS_PER_SECOND),
+            (Turf3.ID, 'Gamma', '✯', Turf3.DEFAULT_FUNDS_PER_SECOND),
         ):
             with IfAnd(
                 cls.get_condition(),
@@ -379,7 +379,7 @@ class TurfCapturedTitleActionBar(TitleActionBar):
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED',
-                    subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{GLOBAL_DISPLAY_ARG_4}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2}&7)',
+                    subtitle=f'&aBy&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{earnings}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2}&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
@@ -391,7 +391,7 @@ class TurfCapturedTitleActionBar(TitleActionBar):
             ):
                 display_title(
                     title=f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED',
-                    subtitle=f'&aPROMOTION by&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{GLOBAL_DISPLAY_ARG_4}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2}&7)',
+                    subtitle=f'&aPROMOTION by&{GLOBAL_DISPLAY_ARG_2} P#{GLOBAL_DISPLAY_ARG_3}&a, it earns&e +{earnings}/s&7 (&{GLOBAL_DISPLAY_ARG_2}&l{stars}&{GLOBAL_DISPLAY_ARG_2}&7)',
                     fadein=0,
                     stay=1,
                     fadeout=0,
