@@ -515,12 +515,7 @@ class LevelUpTitleActionBar(TitleActionBar):
 class WaitingOnTeleportTitleActionBar(TitleActionBar):
     @staticmethod
     def get_id() -> int:
-        return 13
-
-    @classmethod
-    def apply(cls) -> None:
-        cls.set_id()
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(30)
+        return 999999999  # not actually applying
 
     @staticmethod
     def display() -> None:

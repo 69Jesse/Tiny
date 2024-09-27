@@ -497,7 +497,7 @@ TIPS = [
 def check_tips() -> None:
     TIP_COUNTER.value += 1
     with IfAnd(
-        TIP_COUNTER >= 120,
+        TIP_COUNTER >= 300,
     ):
         TIP_COUNTER.value = 0
     with Else:
@@ -701,8 +701,7 @@ def force_join_team() -> None:
         with IfAnd(
             gang.TEAM.players() <= 1,
         ):
-            gang.LEADER_ID.value = PLAYER_ID
-            give_item(crown, inventory_slot='helmet', replace_existing_item=True)
+            transfer_gang_leadership(None)  # quiet transfer
     trigger_function(check_player_gang)
     trigger_function(teleport_into_map)
 
@@ -754,9 +753,9 @@ def ON_TEAM_JOIN(
     with IfAnd(
         PLAYER_CRED < 0,
     ):
+        trigger_function(move_to_spawn)
         chat(IMPORTANT_MESSAGE_PREFIX + '&cYou cannot switch gangs with negative&2 Cred&c!')
         trigger_function(display_last_gang_membership)
-        trigger_function(move_to_spawn)
         exit_function()
 
     with IfAnd(
@@ -806,26 +805,11 @@ def on_player_enter_portal() -> None:
             trigger_function(function)
 
 
-# NOTE manually add this to "On Player Drop Item" event
-def MANUAL_on_player_drop_item() -> None:
-    with IfOr(
-        *(IsItem(crown) for crown in (
-            Items.bloods_leader_crown.item,
-            Items.crips_leader_crown.item,
-            Items.kings_leader_crown.item,
-            Items.grapes_leader_crown.item,
-        )),
-    ):
-        pass
-    with Else:
-        exit_function()
-
-
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
     set_player_team(SpawnTeam.TEAM)
     PLAYER_GANG.value = EMPTY_TURF_GANG
-    Teleports.SPAWN.execute()
+    Teleports.SPAWN.teleport()
     COMBAT_TIMER.value = 0
     full_heal()
 
@@ -965,6 +949,7 @@ def set_most_stats() -> None:
         ):
             buff_type.stat.value = buff_type.max
     trigger_function(clamp_cred)
+    PLAYER_POWER.value = PLAYER_MAX_POWER  # TODO abilities
 
 
 @create_function('Check Player Gang')
@@ -1197,15 +1182,19 @@ def put_crown_on_head() -> None:
             give_item(crown.item, inventory_slot='helmet', replace_existing_item=True)
 
 
-def transfer_gang_leadership(reason: Literal['RANDOM', 'BETRAYAL', 'TRANSFER']) -> None:
+def transfer_gang_leadership(
+    reason: Literal['RANDOM', 'BETRAYAL', 'TRANSFER'] | None,
+) -> None:
     TEAM_LEADER_ID.value = PLAYER_ID
+    TEAM_LEADER_NOT_WORN_TIMER.value = 0
     trigger_function(put_crown_on_head)
-    NewGangLeaderTitleActionBar.apply_globals(
-        PLAYER_ID,
-        TEAM_ID,
-        reason,
-    )
-    trigger_function(apply_new_gang_leader_title, trigger_for_all_players=True)
+    if reason is not None:
+        NewGangLeaderTitleActionBar.apply_globals(
+            PLAYER_ID,
+            TEAM_ID,
+            reason,
+        )
+        trigger_function(apply_new_gang_leader_title, trigger_for_all_players=True)
 
 
 @create_function('Apply New Gang Leader Title')
@@ -1396,6 +1385,7 @@ def cancel_teleport(
 ) -> None:
     if send_message:
         chat(IMPORTANT_MESSAGE_PREFIX + '&cTeleport canceled.')
+        play_unable_sound()
     TELEPORTING_ID.value = 0
     TELEPORTING_TIMER.value = 0
     DISPLAY_ID.value = 0
@@ -1426,11 +1416,6 @@ def update_teleports() -> None:
         cancel_teleport(send_message=False)
         exit_function()
 
-    with IfAnd(
-        TELEPORTING_ID == 0,
-        DISPLAY_ID == WaitingOnTeleportTitleActionBar.get_id(),
-    ):
-        DISPLAY_ID.value = 0
     with IfAnd(
         TELEPORTING_ID == 0,
     ):
@@ -1583,19 +1568,27 @@ def update_display_stats() -> None:
 
 @create_function('Regular Action Bar Display')
 def regular_action_bar_display() -> None:
-    seconds_per = 4
+    with IfAnd(
+        TELEPORTING_ID > 0,
+    ):
+        WaitingOnTeleportTitleActionBar.display()
+        exit_function()
+
+    seconds_in_between = 8
+    seconds_per = 3
     messages = [
         f'&6&l{PLAYER_KILL_STREAK}&6-Streak&7 (&a{PLAYER_KILLS}K&7/&c{PLAYER_DEATHS}D&7)&3 {PLAYER_CURRENT_XP}/{PLAYER_CURRENT_REQUIRED_XP}xp',
         f'&7(&{Turf1.GANG}&l✯✯✯&e {Turf1.FUNDS}⛁&7) (&{Turf2.GANG}&l✯✯&e {Turf2.FUNDS}⛁&7) (&{Turf3.GANG}&l✯&e {Turf3.FUNDS}⛁&7)',
     ]
 
-    modulo_by = seconds_per * len(messages)
+    modulo_by = (seconds_in_between + seconds_per) * len(messages)
     did_modulo_on = PlayerStat('temp')
     did_modulo_on.value = DateUnix
     did_modulo_on.value -= did_modulo_on // modulo_by * modulo_by
     for i, message in enumerate(messages):
         with IfAnd(
-            did_modulo_on == i * seconds_per,
+            did_modulo_on >= i * (seconds_in_between),
+            did_modulo_on < i * (seconds_in_between) + seconds_per,
         ):
             display_action_bar(message)
             exit_function()
@@ -1634,6 +1627,8 @@ def display_action_bar_and_title() -> None:
         DISPLAY_ID == 0,
     ):
         trigger_function(regular_action_bar_display)
+        exit_function()
+
     for action_bar in get_title_action_bars():
         if action_bar.is_regular():
             with IfAnd(action_bar.get_condition()):

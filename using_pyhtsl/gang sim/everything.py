@@ -776,13 +776,17 @@ class Teleport:
         self.name = name
         self.delay = delay
         self.coordinates = coordinates
-        self._execute = execute or (lambda: teleport_player(self.coordinates))
+        self._execute = execute or self.teleport
+
+    def teleport(self) -> None:
+        teleport_player(self.coordinates)
 
     def apply(self) -> None:
         TELEPORTING_ID.value = self.id
         TELEPORTING_TIMER.value = self.delay
-        WaitingOnTeleportTitleActionBar.apply()
+        WaitingOnTeleportTitleActionBar.display()
         chat(IMPORTANT_MESSAGE_PREFIX + f'&eStand still! Teleporting to&a {self.name}&e in&c {self.delay} seconds&e.')
+        play_sound('Note Sticks')
 
     def execute(self) -> None:
         self._execute()
@@ -794,9 +798,9 @@ class Teleports:
     SPAWN = Teleport(
         id=1,
         name='Spawn',
-        delay=5,
+        delay=4,
         coordinates=(-0.5, 46, -40.5, -180, 0),
-        execute=lambda: trigger_function('Move to Spawn'),
+        execute=lambda: trigger_function('Move To Spawn'),
     )
 
     @classmethod
