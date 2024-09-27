@@ -783,10 +783,9 @@ class Teleport:
 
     def apply(self) -> None:
         TELEPORTING_ID.value = self.id
-        TELEPORTING_TIMER.value = self.delay
+        TELEPORTING_TIMER.value = self.delay + 1
         WaitingOnTeleportTitleActionBar.display()
         chat(IMPORTANT_MESSAGE_PREFIX + f'&eStand still! Teleporting to&a {self.name}&e in&c {self.delay} seconds&e.')
-        play_sound('Note Sticks')
 
     def execute(self) -> None:
         self._execute()

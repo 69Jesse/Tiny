@@ -1,4 +1,4 @@
-from pyhtsl import GlobalStat, PlayerStat, Team, TeamStat
+from pyhtsl import GlobalStat, PlayerStat, Team, TeamStat, play_sound
 
 
 TOTAL_PLAYERS_JOINED = GlobalStat('playersjoined')
@@ -270,3 +270,7 @@ IMPORTANT_MESSAGE_PREFIX = '&f[&a!&f] '
 
 def seconds_to_every_4_ticks(seconds: int) -> int:
     return seconds * 5
+
+
+def play_unable_sound() -> None:
+    play_sound('Note Bass Guitar')

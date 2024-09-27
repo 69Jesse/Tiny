@@ -331,12 +331,13 @@ class TurfCapturedTitleActionBar(TitleActionBar):
                 GLOBAL_DISPLAY_ARG_1 == number,
                 GLOBAL_DISPLAY_ARG_5 == 0,
             ):
-                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}')
+                # TODO by who tf
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}')
             with IfAnd(
                 GLOBAL_DISPLAY_ARG_1 == number,
                 GLOBAL_DISPLAY_ARG_5 == 1,
             ):
-                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_3}&7 (&aPROMOTION&7)')
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eTurf&b {name[0]}&a{name[1:]}&{GLOBAL_DISPLAY_ARG_2}&l CAPTURED&e by&{GLOBAL_DISPLAY_ARG_4} P#{GLOBAL_DISPLAY_ARG_3}&7 (&aPROMOTION&7)')
         play_sound('Wither Death')
 
     @staticmethod
@@ -344,13 +345,13 @@ class TurfCapturedTitleActionBar(TitleActionBar):
         captured_turf: int,
         captured_gang: int | GlobalStat,
         capturer_id: int | PlayerStat,
-        turf_earnings: int | GlobalStat,
+        capturer_gang: int | PlayerStat,
         is_promotion: PlayerStat,
     ) -> None:
         GLOBAL_DISPLAY_ARG_1.value = captured_turf
         GLOBAL_DISPLAY_ARG_2.value = captured_gang
         GLOBAL_DISPLAY_ARG_3.value = capturer_id
-        GLOBAL_DISPLAY_ARG_4.value = turf_earnings
+        GLOBAL_DISPLAY_ARG_4.value = capturer_gang
         GLOBAL_DISPLAY_ARG_5.value = is_promotion
 
     @staticmethod

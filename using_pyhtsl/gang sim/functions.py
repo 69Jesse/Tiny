@@ -35,6 +35,8 @@ from pyhtsl import (
     Item,
     display_menu,
     IsItem,
+    RandomInt,
+    IsFlying,
 )
 from pyhtsl.types import ALL_POTION_EFFECTS
 from constants import (
@@ -138,6 +140,7 @@ from constants import (
     COMBAT_TIMER,
     GLOBAL_TEMP_ARG_1,
     GLOBAL_TEMP_ARG_2,
+    play_unable_sound,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -166,10 +169,6 @@ TODO
 [1.0] abilities
 [1.0] bounties maybe
 """
-
-
-def play_unable_sound() -> None:
-    play_sound('Note Bass Guitar')
 
 
 # JOIN / LEAVE ========================================================
@@ -279,7 +278,7 @@ def on_player_death() -> None:
 
     PLAYER_DEATHS.value += 1
 
-    removing_cred = PlayerStat('temp')
+    removing_cred = PlayerStat('tempc')
     removing_cred.value = 1
     for cred_req in (
         # RULES:
@@ -323,6 +322,7 @@ def on_player_death() -> None:
         removing_cred,
         PLAYER_KILL_STREAK,
     )
+    removing_cred.value = 0
 
     with IfAnd(
         PLAYER_KILL_STREAK > 3,
@@ -406,12 +406,6 @@ def on_player_kill() -> None:
     )
 
 
-# NOTE have this get called by the actual event
-@create_function('On Player Damage')
-def on_player_damage() -> None:
-    COMBAT_TIMER.value = seconds_to_every_4_ticks(8)
-
-
 @create_function('On Bad Player Kill')
 def on_bad_player_kill() -> None:
     removed_cred = DISPLAY_ARG_1
@@ -452,8 +446,8 @@ def on_bad_player_kill() -> None:
 # MISC?? =================================
 
 
-FREE_SWITCHES_PER_DAY = 5
-SWITCH_COST = 3
+FREE_SWITCHES_PER_DAY = 3
+SWITCH_COST = 2
 MIN_CRED = -10
 
 
@@ -471,26 +465,25 @@ pay_for_switch_item.save()
 
 
 TIPS = [
-    '&eGained&3 XP&e on kill =&a min&7(&b3&a +&6 killstreak&a /&b 5&7,&b 10&7)',  # min(3 + killstreak/5, 10) + prestige
-    '&eKilling an enemy gang leader gives double&3 XP&e and&6 Funds&e, and more&2 Cred&e!',
-    '&eYour turf will slowly heal back to&c full health&e over time.',
-    '&eKilling a friendly gang member will cause you to lose&2 Cred&e.',
-    '&eYour global level is calculated by combining all your individual levels.',
-    '&eThe more stars your turf has, the more&6 Funds&e it will generate.',
-    '&eYour&c Power&e is used for abilities and will regenerate over time.',
-    '&eLogging out during combat will count as a death with double&2 Cred&e loss.',  # TODO
-    '&eKilling your own gang leader is discouraged, but it will promote you to leader.',
-    '&eYour turf will gain more&6 Funds&e the longer you hold it without distributing.',
-    '&eA new gang leader will be randomly chosen if the crown is not worn for too long.',
     '&eGiving a&6 /cookie&e is greatly appreciated and can earn everyone rewards!',
-    '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',
+    '&eYour&c Power&e is used for abilities and will regenerate over time.',
+    '&eKilling your own gang leader is discouraged, but it will promote you to leader.',
+    '&eGained&3 XP&e on kill =&a min&7(&b3&a +&6 killstreak&a /&b 5&7,&b 10&7)',  # min(3 + killstreak/5, 10) + prestige
     '&eHaving all 5 effects at the same time will give you&c +1 Strength&e.',
-    '&eTurfs will not generate&6 Funds&e if all its members are at spawn.',
-    f'&eYou can switch gangs for free {FREE_SWITCHES_PER_DAY} times a day, after that it will cost&2 {SWITCH_COST} Cred&e.',
-    '&eIf you have negative&2 Cred&e, you gain&8 +1 Slowness&e.',
-    '&eIf you have negative&2 Cred&e, you cannot switch gangs.',
+    '&eYour turf will slowly heal back to&c full health&e over time.',
+    '&eKilling an enemy gang leader gives double&3 XP&e and&6 Funds&e, and more&2 Cred&e!',
     '&eIf you have negative&2 Cred&e, you will earn less&6 Funds&e and&3 XP&e.',
     f'&eYou cannot have less than&2 {MIN_CRED} Cred&e.',
+    '&eIf you have negative&2 Cred&e, you cannot switch gangs.',
+    '&eThe more stars your turf has, the more&6 Funds&e it will generate.',
+    '&eTurfs will not generate&6 Funds&e if all its members are at spawn.',
+    '&eYour turf will gain double&6 Funds&e/s if you don\'t distribute it for more than 5 minutes.',
+    '&eLogging out during combat will count as a death with double&2 Cred&e loss.',  # TODO
+    f'&eYou can only switch gangs for free {FREE_SWITCHES_PER_DAY} times every in-game day.&7 (= 20 minutes)',
+    '&eYour global level is calculated by combining all your individual levels.',
+    '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',
+    '&eKilling a friendly gang member will cause you to lose&2 Cred&e.',
+    '&eA new gang leader will be randomly chosen if the crown is not worn for a long period of time.',
 ]
 
 
@@ -530,6 +523,10 @@ def misc_every_4_ticks() -> None:
         COMBAT_TIMER > 0,
     ):
         COMBAT_TIMER.value -= 1
+    with IfAnd(
+        PLAYER_ID == NO_GANG_LEADER_ID,
+    ):
+        PLAYER_ID.value = RandomInt(1_000_000, 10_000_000)
 
 
 def apply_effects_to_max(effect: ALL_POTION_EFFECTS, max_level: int, count: PlayerStat) -> None:
@@ -608,16 +605,6 @@ def apply_all_potion_effects() -> None:
             count.value += 1
     apply_effects_to_max('strength', 2, count)
 
-    count.value = 0
-    with IfOr(
-        BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
-        PLAYER_CRED >= 0,
-    ):
-        pass
-    with Else:
-        count.value += 1
-    apply_effects_to_max('slowness', 1, count)
-
     apply_potion_effect(
         'night_vision',
         duration=2592000,
@@ -626,8 +613,8 @@ def apply_all_potion_effects() -> None:
     )
 
 
-@create_function('Set Group')
-def set_group() -> None:
+@create_function('Set Player Group')
+def set_player_group_function() -> None:
     with IfAnd(
         GroupPriority >= 18,
     ):
@@ -667,8 +654,20 @@ def set_group() -> None:
             exit_function()
     change_player_group(
         '0',
-        False,
+        demotion_protection=False,
     )
+
+
+@create_function('Set Player Team')
+def set_player_team_function() -> None:
+    for gang in ALL_GANG_TEAMS:
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+        ):
+            set_player_team(gang.TEAM)
+            exit_function()
+    set_player_team(SpawnTeam.TEAM)
+    PLAYER_GANG.value = SpawnTeam.ID
 
 
 TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
@@ -682,26 +681,22 @@ def teleport_into_map() -> None:
 
 @create_function('Force Join Team')
 def force_join_team() -> None:
-    for gang, chestplate, crown in zip(ALL_GANG_TEAMS, (
+    SEND_TO_SPAWN_COUNTER.value = 0
+    for gang, chestplate in zip(ALL_GANG_TEAMS, (
         Items.bloods_chestplate.item,
         Items.crips_chestplate.item,
         Items.kings_chestplate.item,
         Items.grapes_chestplate.item,
-    ), (
-        Items.bloods_leader_crown.item,
-        Items.crips_leader_crown.item,
-        Items.kings_leader_crown.item,
-        Items.grapes_leader_crown.item,
     )):
         with IfAnd(
             PLAYER_GANG == gang.ID,
         ):
             set_player_team(gang.TEAM)
             give_item(chestplate, inventory_slot='chestplate', replace_existing_item=True)
-        with IfAnd(
-            gang.TEAM.players() <= 1,
-        ):
-            transfer_gang_leadership(None)  # quiet transfer
+    with IfAnd(
+        TeamPlayers(None) <= 1,
+    ):
+        transfer_gang_leadership(None)  # quiet transfer
     trigger_function(check_player_gang)
     trigger_function(teleport_into_map)
 
@@ -711,7 +706,7 @@ def joined_gang_no_switch_message(gang: type[GangSimTeam]) -> None:
 
 
 def joined_gang_with_switch_message(gang: type[GangSimTeam]) -> None:
-    chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lSWITCH!&e You are now part of the&{gang.ID}&l {gang.name().upper()}&e!')
+    chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lSWITCH!&e You are now part of the&{gang.ID}&l {gang.name().upper()}&e!&7 ({DAILY_FREE_SWITCHES}/{FREE_SWITCHES_PER_DAY} daily free switches left)')
 
 
 @create_function('Display Last Gang Membership')
@@ -756,6 +751,7 @@ def ON_TEAM_JOIN(
         trigger_function(move_to_spawn)
         chat(IMPORTANT_MESSAGE_PREFIX + '&cYou cannot switch gangs with negative&2 Cred&c!')
         trigger_function(display_last_gang_membership)
+        play_unable_sound()
         exit_function()
 
     with IfAnd(
@@ -766,6 +762,7 @@ def ON_TEAM_JOIN(
         # NOTE set all green clay actions to:
         # trigger_function(pay_for_gang_switch)
         trigger_function(move_to_spawn)
+        play_sound('Note Pling')
         exit_function()
 
     DAILY_FREE_SWITCHES.value -= 1
@@ -807,6 +804,7 @@ def on_player_enter_portal() -> None:
 
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
+    SEND_TO_SPAWN_COUNTER.value = 0
     set_player_team(SpawnTeam.TEAM)
     PLAYER_GANG.value = EMPTY_TURF_GANG
     Teleports.SPAWN.teleport()
@@ -829,6 +827,7 @@ def check_out_of_spawn() -> None:
         pass
     with Else:
         # is at spawn without spawn team
+        PLAYER_GANG.value = SpawnTeam.ID
         set_player_team(SpawnTeam.TEAM)
         SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
@@ -840,11 +839,9 @@ def check_out_of_spawn() -> None:
         SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
-    with IfAnd(
-        RequiredTeam(SpawnTeam.TEAM),
+    with IfOr(
+        PLAYER_GANG != SpawnTeam.ID,
     ):
-        pass
-    with Else:
         SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
@@ -855,9 +852,12 @@ def check_out_of_spawn() -> None:
     ):
         # has spawn team outside of spawn
         SEND_TO_SPAWN_COUNTER.value += 1
+    with Else:
+        SEND_TO_SPAWN_COUNTER.value = 0
+        exit_function()
 
     with IfAnd(
-        SEND_TO_SPAWN_COUNTER >= 5,
+        SEND_TO_SPAWN_COUNTER >= 10,
     ):
         trigger_function(move_to_spawn)
 
@@ -911,6 +911,8 @@ def level_up() -> None:
             team.EXPERIENCE.value -= PLAYER_CURRENT_REQUIRED_XP
             PLAYER_CURRENT_LEVEL.value = team.LEVEL
             PLAYER_CURRENT_XP.value = team.EXPERIENCE
+            chat(f'&b&lLEVEL UP!&e Your&{team.ID}&l {team.name().upper()} LEVEL&e is now&{team.ID} Lv{team.LEVEL}&e!')
+            play_sound('Level Up')
 
     PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * XP_PER_LEVEL
 
@@ -1028,7 +1030,7 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
 
     turf.HELD_FOR += 1
     turf.FUNDS_PER_SECOND.value = turf.DEFAULT_FUNDS_PER_SECOND
-    for amount in (200, 400, 800, 1200):
+    for amount in (300,):
         with IfAnd(
             turf.HELD_FOR >= amount
         ):
@@ -1096,8 +1098,29 @@ def update_turfs() -> None:
 @create_function('Daily Reset')
 def daily_reset() -> None:
     """Reset daily things, called every day at midnight UTC"""
-    DAILY_FREE_SWITCHES.value = FREE_SWITCHES_PER_DAY
-    chat(IMPORTANT_MESSAGE_PREFIX + '&eYour daily free gang switches have been reset to&b {FREE_SWITCHES_PER_DAY}&e.')
+    with IfAnd(
+        DAILY_FREE_SWITCHES < FREE_SWITCHES_PER_DAY,
+    ):
+        DAILY_FREE_SWITCHES.value = FREE_SWITCHES_PER_DAY
+        chat(IMPORTANT_MESSAGE_PREFIX + f'&eYour daily free gang switches have been reset to&b {FREE_SWITCHES_PER_DAY}&e.')
+
+
+@create_function('Decrement Buff Timers')
+def decrement_buff_timers() -> None:
+    for timer in (
+        SPEED_EFFECT_TIMER,
+        RESISTANCE_EFFECT_TIMER,
+        REGENERATION_EFFECT_TIMER,
+        JUMPBOOST_EFFECT_TIMER,
+        INVISIBILITY_EFFECT_TIMER,
+    ):
+        with IfOr(
+            timer <= 0,
+            BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
+        ):
+            pass
+        with Else:
+            timer.value -= 1
 
 
 # NOTE have this run every 20 ticks
@@ -1106,13 +1129,14 @@ def personal_every_second() -> None:
     PLAYTIME_SECONDS.value += 1
     trigger_function(check_locations)
     trigger_function(update_teleports)
-    current_utc_days = PlayerStat('temp')
-    current_utc_days.value = DateUnix // (60 * 60 * 24)
     with IfAnd(
-        DAILY_RESET_LAST_DAY < current_utc_days,
+        DAILY_RESET_LAST_DAY < TIME_DAY,
     ):
-        DAILY_RESET_LAST_DAY.value = current_utc_days
+        DAILY_RESET_LAST_DAY.value = TIME_DAY
         trigger_function(daily_reset)
+    trigger_function(set_player_team_function)
+    trigger_function(set_player_group_function)
+    trigger_function(decrement_buff_timers)
 
 
 # NOTE have this run every 4 ticks
@@ -1179,7 +1203,12 @@ def put_crown_on_head() -> None:
             PLAYER_GANG == gang.ID,
             PLAYER_ID == gang.LEADER_ID,
         ):
-            give_item(crown.item, inventory_slot='helmet', replace_existing_item=True)
+            give_item(
+                crown.item,
+                allow_multiple=True,
+                inventory_slot='helmet',
+                replace_existing_item=True,
+            )
 
 
 def transfer_gang_leadership(
@@ -1216,8 +1245,16 @@ def maybe_transfer_gang_leadership_random() -> None:
             PLAYER_GANG == gang.ID,
             gang.LEADER_IS_WEARING_CROWN == 0,
             gang.LEADER_NOT_WORN_TIMER >= SECONDS_TO_TRANSFER_LEADERSHIP,
+            gang.TEAM.players() > 1,
         ):
             transfer_gang_leadership('RANDOM')
+            exit_function()
+        with IfAnd(
+            PLAYER_GANG == gang.ID,
+            gang.LEADER_IS_WEARING_CROWN == 0,
+            gang.LEADER_NOT_WORN_TIMER >= SECONDS_TO_TRANSFER_LEADERSHIP,
+        ):
+            transfer_gang_leadership(None)
 
 
 @create_function('Maybe Transfer Gang Leadership (Transfer)')
@@ -1247,11 +1284,11 @@ def remove_illegal_gang_armor() -> None:
     crips_armor = (Items.crips_chestplate, Items.crips_leader_crown)
     kings_armor = (Items.kings_chestplate, Items.kings_leader_crown)
     grapes_armor = (Items.grapes_chestplate, Items.grapes_leader_crown)
-    for gang, illegals, crown in (
-        (Bloods, (*crips_armor, *kings_armor, *grapes_armor), Items.bloods_leader_crown),
-        (Crips, (*bloods_armor, *kings_armor, *grapes_armor), Items.crips_leader_crown),
-        (Kings, (*bloods_armor, *crips_armor, *grapes_armor), Items.kings_leader_crown),
-        (Grapes, (*bloods_armor, *crips_armor, *kings_armor), Items.grapes_leader_crown),
+    for gang, illegals, crown, chestplate in (
+        (Bloods, (*crips_armor, *kings_armor, *grapes_armor), Items.bloods_leader_crown, Items.bloods_chestplate),
+        (Crips, (*bloods_armor, *kings_armor, *grapes_armor), Items.crips_leader_crown, Items.crips_chestplate),
+        (Kings, (*bloods_armor, *crips_armor, *grapes_armor), Items.kings_leader_crown, Items.kings_chestplate),
+        (Grapes, (*bloods_armor, *crips_armor, *kings_armor), Items.grapes_leader_crown, Items.grapes_chestplate),
     ):
         for illegal in illegals:
             with IfAnd(
@@ -1276,6 +1313,20 @@ def remove_illegal_gang_armor() -> None:
             HasItem(crown.item),
         ):
             remove_item(crown.item)
+
+        with IfAnd(
+            HasItem(crown.item, where_to_check='armor'),
+            HasItem(crown.item, where_to_check='inventory'),
+        ):
+            remove_item(crown.item)
+
+        with IfOr(
+            PLAYER_GANG != gang.ID,
+            HasItem(chestplate.item, where_to_check='armor'),
+        ):
+            pass
+        with Else:
+            give_item(chestplate.item, inventory_slot='chestplate', replace_existing_item=True)
 
     should_remove = PlayerStat('temp')
     with IfOr(
@@ -1442,10 +1493,11 @@ def update_teleports() -> None:
 # NOTE have this get called by the actual command
 @create_function('Run Spawn Command')
 def run_spawn_command() -> None:
-    with IfAnd(
+    with IfOr(
         BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
+        IsFlying,
     ):
-        trigger_function(move_to_spawn)
+        Teleports.SPAWN.execute()
         cancel_teleport(send_message=False)
         exit_function()
 
@@ -1468,11 +1520,12 @@ def check_cookie_goal() -> None:
     with IfAnd(
         LATEST_COOKIES > HouseCookies,
     ):
-        trigger_function(destroy_cookie_goal)
+        trigger_function(reset_cookie_goal)
         exit_function()
 
     with IfAnd(
         LATEST_COOKIES == HouseCookies,
+        HouseCookies < COOKIE_GOAL,
     ):
         exit_function()
 
@@ -1486,8 +1539,8 @@ def check_cookie_goal() -> None:
         trigger_function(cookie_reward, trigger_for_all_players=True)
 
 
-@create_function('Destroy Cookie Goal')
-def destroy_cookie_goal() -> None:
+@create_function('Destroy Cookie Goal')  # lol why did I name it this
+def reset_cookie_goal() -> None:
     COOKIE_GOAL.value = 0
     LATEST_COOKIES.value = HouseCookies
     trigger_function(increment_cookie_goal)
@@ -1544,7 +1597,7 @@ def on_day_change() -> None:
 
 @create_function('Everyone -> On Day Change')
 def on_day_change_everyone() -> None:
-    chat(f'&eDay {TIME_DAY} has started!')
+    chat(IMPORTANT_MESSAGE_PREFIX + f'&eDay {TIME_DAY} has started!')
 
 
 # ACTION BAR / TITLE ====================
@@ -1789,7 +1842,7 @@ def CLAIM_TURF(turf: type[BaseTurf]) -> None:
         turf.ID,
         turf.GANG,
         PLAYER_ID,
-        turf.FUNDS_PER_SECOND,
+        PLAYER_GANG,
         did_promote,
     )
     turf.HIT_COOLDOWN.value = 6
