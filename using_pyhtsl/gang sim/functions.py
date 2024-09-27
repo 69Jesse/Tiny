@@ -141,6 +141,7 @@ from constants import (
     GLOBAL_TEMP_ARG_1,
     GLOBAL_TEMP_ARG_2,
     play_unable_sound,
+    IS_AT_SPAWN_COUNTER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -817,46 +818,39 @@ def move_to_spawn() -> None:
 @create_function('Check Out Of Spawn')
 def check_out_of_spawn() -> None:
     with IfAnd(
-        GroupPriority >= 19
-    ):
-        SEND_TO_SPAWN_COUNTER.value = 0
-        exit_function()
-
-    with IfOr(
-        BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
-        RequiredTeam(SpawnTeam.TEAM),
-    ):
-        pass
-    with Else:
-        # is at spawn without spawn team
-        PLAYER_GANG.value = SpawnTeam.ID
-        set_player_team(SpawnTeam.TEAM)
-        SEND_TO_SPAWN_COUNTER.value = 0
-        exit_function()
-
-    # is not at spawn or has spawn team
-    with IfAnd(
         GroupPriority >= 18
     ):
         SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
 
     with IfOr(
-        PLAYER_GANG != SpawnTeam.ID,
+        BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
     ):
         SEND_TO_SPAWN_COUNTER.value = 0
-        exit_function()
+        IS_AT_SPAWN_COUNTER.value += 1
+    with Else:
+        IS_AT_SPAWN_COUNTER.value = 0
 
-    # has spawn team
-
-    with IfOr(
-        BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
+    with IfAnd(
+        IS_AT_SPAWN_COUNTER >= 10,
     ):
-        # has spawn team outside of spawn
-        SEND_TO_SPAWN_COUNTER.value += 1
+        PLAYER_GANG.value = SpawnTeam.ID
+
+    with IfAnd(
+        PLAYER_GANG == SpawnTeam.ID,
+    ):
+        IS_AT_SPAWN_COUNTER.value = 0
     with Else:
         SEND_TO_SPAWN_COUNTER.value = 0
         exit_function()
+
+    with IfOr(
+        BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
+        PLAYER_GANG == SpawnTeam.ID,
+    ):
+        SEND_TO_SPAWN_COUNTER.value = 0
+    with Else:
+        SEND_TO_SPAWN_COUNTER.value += 1
 
     with IfAnd(
         SEND_TO_SPAWN_COUNTER >= 10,
