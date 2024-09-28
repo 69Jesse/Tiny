@@ -984,6 +984,8 @@ def quiet_reset_turf(turf: type[BaseTurf]) -> None:
     turf.GANG.value = EMPTY_TURF_GANG
     turf.FUNDS.value = 0
     turf.FUNDS_PER_SECOND.value = 0
+    turf.HP.value = turf.MAX_HP
+    turf.HELD_FOR.value = 0
 
 
 def UPDATE_TURF(turf: type[BaseTurf]) -> None:

@@ -450,7 +450,7 @@ class OnBadKillTitleActionBar(TitleActionBar):
         ):
             chat(IMPORTANT_MESSAGE_PREFIX + f'&4&lBAD KILL&7 why??&c -&2{DISPLAY_ARG_1}©')
         with Else:
-            chat(IMPORTANT_MESSAGE_PREFIX + '&4&lBAD KILL&7 why??&c No penalty')
+            chat(IMPORTANT_MESSAGE_PREFIX + '&4&lBAD KILL&7 why??&c No penalty.')
         play_sound('Anvil Land')
 
     @staticmethod
@@ -478,13 +478,13 @@ class OnBadKillTitleActionBar(TitleActionBar):
             DISPLAY_ARG_2 == 0,
         ):
             display_title(
-                title='&4&lBAD KILL&7 why??&c No penalty',
+                title='&4&lBAD KILL&7 why??&c No penalty.',
                 fadein=0,
                 stay=1,
                 fadeout=0,
             )
             display_action_bar(
-                '&4&lBAD KILL&7 why??&c No penalty',
+                '&4&lBAD KILL&7 why??&c No penalty.',
             )
 
 

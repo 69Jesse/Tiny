@@ -55,6 +55,7 @@ def on_player_drop_item() -> None:
         BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id
     ):
         cancel()
+        exit_function()
 
     with IfOr(
         *(IsItem(crown) for crown in (
