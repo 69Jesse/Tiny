@@ -488,6 +488,10 @@ TIPS = [
     '&eMembers of very small gangs compared to others will gain&c +1 Strength&e.',
     '&eKilling a friendly gang member will cause you to lose&2 Cred&e.',
     '&eA new gang leader will be randomly chosen if the crown is not worn for a long period of time.',
+    '&eYou will lose&2 Cred&e if you kill a friendly gang member.',
+    '&eA gang leader does not lose&2 Cred&e if they kill a friendly gang member.',
+    '&eYou can buy and upgrade your gear at spawn or with&7 /shop&e.',
+    '&eThe max HP of a turf is determined by the gang level of all its members.',
 ]
 
 
@@ -1053,7 +1057,7 @@ def update_turf_3() -> None:
 @create_function('Add Onto Turf Max HP')
 def add_onto_turf_max_hp() -> None:
     with IfAnd(
-        PLAYER_GANG == EMPTY_TURF_GANG
+        PLAYER_GANG == SpawnTeam.ID,
     ):
         exit_function()
     max_hp_addition = PlayerStat('temp')
@@ -1063,6 +1067,7 @@ def add_onto_turf_max_hp() -> None:
             turf.GANG == PLAYER_GANG
         ):
             turf.MAX_HP += max_hp_addition
+            turf.MAX_HP += PLAYER_CURRENT_LEVEL
 
 
 @create_function('Update Turfs')
