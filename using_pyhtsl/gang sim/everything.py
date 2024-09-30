@@ -312,7 +312,7 @@ class CustomItem:
         return Item(
             self.key,
             name=f'&{self.rarity.value}{self.name}',
-            lore=lore,
+            lore='\n'.join(lore),
             enchantments=self.enchantments,
             hide_all_flags=True,
             unbreakable=True,

@@ -164,11 +164,11 @@ from typing import Literal
 
 """
 TODO
-[1.0] add shops
-[1.0] add all locations
-[1.0] message when entering turf area
-[1.0] abilities
-[1.0] bounties maybe
+[ ] add shops
+[ ] add all locations
+[ ] message when entering turf area
+[ ] abilities
+[ ] bounties maybe
 """
 
 
@@ -812,14 +812,31 @@ def on_player_enter_portal() -> None:
             trigger_function(function)
 
 
+BLOODS_SPAWN = (-8.5, 46, -47.5, 130, 30.0)
+CRIPS_SPAWN = (7.5, 46, -47.5, -130, 30.0)
+KINGS_SPAWN = (9.5, 46, -36.5, -60.0, 25.0)
+GRAPES_SPAWN = (-10.5, 46, -36.5, 60.0, 25.0)
+
+
 @create_function('Move To Spawn')
 def move_to_spawn() -> None:
     SEND_TO_SPAWN_COUNTER.value = 0
     set_player_team(SpawnTeam.TEAM)
     PLAYER_GANG.value = SpawnTeam.ID
-    Teleports.SPAWN.teleport()
     COMBAT_TIMER.value = 0
     full_heal()
+    for gang_id, spawn in (
+        (Bloods.ID, BLOODS_SPAWN),
+        (Crips.ID, CRIPS_SPAWN),
+        (Kings.ID, KINGS_SPAWN),
+        (Grapes.ID, GRAPES_SPAWN),
+    ):
+        with IfAnd(
+            PLAYER_LAST_GANG == gang_id,
+        ):
+            teleport_player(spawn)
+            exit_function()
+    Teleports.SPAWN.teleport()
 
 
 @create_function('Check Out Of Spawn')
