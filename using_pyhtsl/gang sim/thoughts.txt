@@ -25,11 +25,11 @@ perks:
         1. restore power to max on kill
 
     additional power:
-        1. +10 power
-        2. +20 power
-        3. +30 power
-        4. +40 power
-        5. +50 power
+        1. +20 power
+        2. +40 power
+        3. +60 power
+        4. +80 power
+        5. +100 power
 
     xp on kill:
         1. +1 xp on kill
