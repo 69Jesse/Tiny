@@ -169,6 +169,10 @@ WEAPON_ABILITY_SPEED_TIMER = PlayerStat('waspt')
 WEAPON_ABILITY_REGEN_TIMER = PlayerStat('waregt')
 
 
+SHOP_BUY_ID = PlayerStat('shopbuyid')
+TOTAL_FUNDS_SPENT = PlayerStat('fundsspent')
+
+
 ABILITY_ID = PlayerStat('abilityid')
 ABILITY_POWER_COST = PlayerStat('abpcost')
 

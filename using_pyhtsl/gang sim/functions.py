@@ -148,6 +148,8 @@ from constants import (
     WEAPON_ABILITY_REGEN_TIMER,
     ABILITY_ID,
     ABILITY_POWER_COST,
+    SHOP_BUY_ID,
+    TOTAL_FUNDS_SPENT,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -163,7 +165,10 @@ from title_action_bar import (
     NewGangLeaderTitleActionBar,
     GangLeaderFallenTitleActionBar,
     RemoveCredTitleActionBar,
+    RemovePowerTitleActionBar,
+    RemoveFundsTitleActionBar,
 )
+from shop import ALL_SHOP_ITEMS
 
 from typing import Literal
 
@@ -207,6 +212,7 @@ def try_to_use_ability() -> None:
         exit_function()
 
     PLAYER_POWER.value -= ABILITY_POWER_COST
+    RemovePowerTitleActionBar.apply(ABILITY_POWER_COST)
     PLAYER_POWER_UPPER_BOUND.value = PLAYER_POWER
     trigger_function(force_use_ability)
 
@@ -226,6 +232,72 @@ def force_use_ability() -> None:
         WEAPON_ABILITY_SPEED_TIMER > 10,
     ):
         WEAPON_ABILITY_SPEED_TIMER.value = 10
+    with IfAnd(
+        ABILITY_ID >= 3,  # WEAPON ABILITIES
+        ABILITY_ID <= 18,
+        WEAPON_ABILITY_REGEN_TIMER < 0,
+    ):
+        WEAPON_ABILITY_REGEN_TIMER.value = 0
+
+
+# SHOP =========================================================
+
+
+@create_function('Shop Not Enough Funds Message')
+def shop_not_enough_funds_message() -> None:
+    chat(IMPORTANT_MESSAGE_PREFIX + '&cYou do not have enough Funds to purchase this item!')
+    play_unable_sound()
+
+
+@create_function('Shop Missing Items Message')
+def shop_missing_items_message() -> None:
+    chat(IMPORTANT_MESSAGE_PREFIX + '&cYou are missing required item(s) to purchase this item!')
+    play_unable_sound()
+
+
+def item_copied_with_correct_count(item: Item, count: int) -> Item:
+    item = item.copy()
+    item.count = count
+    return item
+
+
+@create_function('Try To Buy Shop Item')
+def try_to_buy_shop_item() -> None:
+    for shop_item in ALL_SHOP_ITEMS:
+        with IfAnd(
+            SHOP_BUY_ID == shop_item.id,
+            PLAYER_FUNDS < shop_item.funds_cost,
+        ):
+            trigger_function(shop_not_enough_funds_message)
+            exit_function()
+        if shop_item.items_cost:
+            with IfAnd(
+                SHOP_BUY_ID == shop_item.id,
+                *(
+                    HasItem(item_copied_with_correct_count(item, count))
+                    for item, count in shop_item.items_cost
+                )
+            ):
+                trigger_function(shop_missing_items_message)
+                exit_function()
+    trigger_function(force_buy_shop_item)
+
+
+@create_function('Force Buy Shop Item')
+def force_buy_shop_item() -> None:
+    for shop_item in ALL_SHOP_ITEMS:
+        with IfAnd(
+            SHOP_BUY_ID == shop_item.id,
+        ):
+            PLAYER_FUNDS.value -= shop_item.funds_cost
+            RemoveFundsTitleActionBar.apply(shop_item.funds_cost)
+            TOTAL_FUNDS_SPENT.value += shop_item.funds_cost
+            for item, count in shop_item.items_cost:
+                remove_item(item_copied_with_correct_count(item, count))
+            give_item(shop_item.item, allow_multiple=True)
+            assert shop_item.item.name is not None
+            name = (f'&8{shop_item.item.count} ' if shop_item.item.count > 1 else '') + shop_item.item.name
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&aSuccessfully purchased {name}&a!')
 
 
 # JOIN / LEAVE ========================================================
@@ -889,6 +961,7 @@ def move_to_spawn() -> None:
     PLAYER_GANG.value = SpawnTeam.ID
     COMBAT_TIMER.value = 0
     full_heal()
+    PLAYER_POWER.value = PLAYER_MAX_POWER
     for gang_id, spawn in (
         (Bloods.ID, BLOODS_SPAWN),
         (Crips.ID, CRIPS_SPAWN),

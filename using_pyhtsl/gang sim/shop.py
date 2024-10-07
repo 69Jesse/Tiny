@@ -96,5 +96,9 @@ BOOTS_SHOP_ITEMS = [
 ]
 
 
-for item in ALL_SHOP_ITEMS:
-    item.create_item().save()
+if __name__ == '__main__':
+    for item in ALL_SHOP_ITEMS:
+        item.create_item().save()
+
+    for item in ALL_SHOP_ITEMS:
+        print(f'{item.item.name!r} (ID: {item.id})')
