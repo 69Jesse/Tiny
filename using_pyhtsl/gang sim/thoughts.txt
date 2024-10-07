@@ -4,46 +4,54 @@ perks:
     can only have 2 perks active at a time
     on click -> if doesnt own, buy it, if does own, equip it, if already equipped, upgrade it
 
-    strength on kill:
-        1. +1 strength on kill for 1s
-        2. +1 strength on kill for 2s
-        3. +1 strength on kill for 3s
-        4. +1 strength on kill for 4s
-        5. +1 strength on kill for 5s
+    1. regen on kill:
+        1. +2 regen on kill for 4s   FREE
+        2. +2 regen on kill for 5s   1,000 Funds
+        3. +3 regen on kill for 4s   5,000 Funds
+        4. +3 regen on kill for 5s   10,000 Funds
+        5. +3 regen on kill for 6s   30,000 Funds
 
-    speed:
-        1. permanent +1 speed
+    2. xp on kill:
+        1. +1 xp on kill   FREE
+        2. +2 xp on kill   5,000 Funds
+        3. +3 xp on kill   50,000 Funds
 
-    regen on kill:
-        1. +2 regen on kill for 4s
-        2. +2 regen on kill for 5s
-        3. +3 regen on kill for 4s
-        4. +3 regen on kill for 5s
-        5. +3 regen on kill for 6s
+    3. funds on kill:
+        1. +2 funds on kill   1,000 Funds
+        2. +4 funds on kill   3,000 Funds
+        3. +6 funds on kill   5,000 Funds
 
-    max power on kill:
-        1. restore power to max on kill
+    4. strength on kill:
+        1. +1 strength on kill for 1s   5,000 Funds
+        2. +1 strength on kill for 2s   10,000 Funds
+        3. +1 strength on kill for 3s   15,000 Funds
+        4. +1 strength on kill for 4s   20,000 Funds
+        5. +1 strength on kill for 5s   25,000 Funds
 
-    additional power:
-        1. +20 power
-        2. +40 power
-        3. +60 power
-        4. +80 power
-        5. +100 power
+    5. speed:
+        1. permanent +1 speed   20,000 Funds
+        2. permanent +2 speed   1,000,000 Funds
 
-    xp on kill:
-        1. +1 xp on kill
-        2. +2 xp on kill
-        3. +3 xp on kill
+    6. max power on kill:
+        1. restore power to max on kill   15,000 Funds
 
-    funds on kill:
-        1. +2 funds on kill
-        2. +4 funds on kill
-        3. +6 funds on kill
+    7. additional power:
+        1. +20 power   1,000 Funds
+        2. +40 power   2,500 Funds
+        3. +60 power   5,000 Funds
+        4. +80 power   10,000 Funds
+        5. +100 power   30,000 Funds
 
-    more turf damage:
-        1. +1 turf damage
-        2. +2 turf damage
-        3. +3 turf damage
-        4. +4 turf damage
-        5. +5 turf damage
+    8. more turf damage:
+        1. +1 turf damage   1,000 Funds
+        2. +2 turf damage   2,500 Funds
+        3. +3 turf damage   5,000 Funds
+        4. +4 turf damage   10,000 Funds
+        5. +5 turf damage   30,000 Funds
+
+    9. extra distribution funds:
+        1. +2% distribution funds   1,000 Funds
+        2. +4% distribution funds   2,500 Funds
+        3. +6% distribution funds   10,000 Funds
+        4. +8% distribution funds   50,000 Funds
+        5. +10% distribution funds   100,000 Funds

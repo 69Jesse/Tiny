@@ -195,6 +195,35 @@ DAILY_RESET_LAST_DAY = PlayerStat('drlastday')
 DAILY_FREE_SWITCHES = PlayerStat('dfswitches')
 
 
+SELECTED_PERK_A = PlayerStat('perka')
+SELECTED_PERK_B = PlayerStat('perkb')
+
+PERK_1_TIER = PlayerStat('perk1t')
+PERK_2_TIER = PlayerStat('perk2t')
+PERK_3_TIER = PlayerStat('perk3t')
+PERK_4_TIER = PlayerStat('perk4t')
+PERK_5_TIER = PlayerStat('perk5t')
+PERK_6_TIER = PlayerStat('perk6t')
+PERK_7_TIER = PlayerStat('perk7t')
+PERK_8_TIER = PlayerStat('perk8t')
+PERK_9_TIER = PlayerStat('perk9t')
+
+PERK_1_COLOR = PlayerStat('perk1c')
+PERK_2_COLOR = PlayerStat('perk2c')
+PERK_3_COLOR = PlayerStat('perk3c')
+PERK_4_COLOR = PlayerStat('perk4c')
+PERK_5_COLOR = PlayerStat('perk5c')
+PERK_6_COLOR = PlayerStat('perk6c')
+PERK_7_COLOR = PlayerStat('perk7c')
+PERK_8_COLOR = PlayerStat('perk8c')
+PERK_9_COLOR = PlayerStat('perk9c')
+
+CHANGING_PERK_LETTER = PlayerStat('cpletter')
+CLICKED_PERK_INDEX = PlayerStat('cpindex')
+PERK_BUY_PRICE = PlayerStat('perkbp')
+PERK_NEW_TIER = PlayerStat('perknt')
+
+
 TEAM_ID = TeamStat('id')
 leader_id_key = 'leaderid'
 leader_is_wearing_crown_key = 'leaderisc'
@@ -295,6 +324,14 @@ def seconds_to_every_4_ticks(seconds: int) -> int:
 
 def play_unable_sound() -> None:
     play_sound('Note Bass Guitar')
+
+
+def play_big_success_sound() -> None:
+    play_sound('Level Up')
+
+
+def play_small_success_sound() -> None:
+    play_sound('Note Pling', pitch=2.0)
 
 
 WEAPON_ABILITIES: dict[int, tuple[

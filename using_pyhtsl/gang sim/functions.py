@@ -141,6 +141,8 @@ from constants import (
     GLOBAL_TEMP_ARG_1,
     GLOBAL_TEMP_ARG_2,
     play_unable_sound,
+    play_big_success_sound,
+    play_small_success_sound,
     IS_AT_SPAWN_COUNTER,
     PLAYER_POWER_UPPER_BOUND,
     PERSONAL_EVERY_SECOND_INDEX,
@@ -150,6 +152,30 @@ from constants import (
     ABILITY_POWER_COST,
     SHOP_BUY_ID,
     TOTAL_FUNDS_SPENT,
+    SELECTED_PERK_A,
+    SELECTED_PERK_B,
+    PERK_1_TIER,
+    PERK_2_TIER,
+    PERK_3_TIER,
+    PERK_4_TIER,
+    PERK_5_TIER,
+    PERK_6_TIER,
+    PERK_7_TIER,
+    PERK_8_TIER,
+    PERK_9_TIER,
+    PERK_1_COLOR,
+    PERK_2_COLOR,
+    PERK_3_COLOR,
+    PERK_4_COLOR,
+    PERK_5_COLOR,
+    PERK_6_COLOR,
+    PERK_7_COLOR,
+    PERK_8_COLOR,
+    PERK_9_COLOR,
+    CHANGING_PERK_LETTER,
+    CLICKED_PERK_INDEX,
+    PERK_BUY_PRICE,
+    PERK_NEW_TIER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -169,6 +195,7 @@ from title_action_bar import (
     RemoveFundsTitleActionBar,
 )
 from shop import ALL_SHOP_ITEMS
+from perks import ALL_PERKS
 
 from typing import Literal
 
@@ -302,7 +329,148 @@ def force_buy_shop_item() -> None:
             give_item(shop_item.item, allow_multiple=True)
             assert shop_item.item.name is not None
             name = (f'&8{shop_item.item.count} ' if shop_item.item.count > 1 else '') + shop_item.item.name
-            chat(IMPORTANT_MESSAGE_PREFIX + f'&aSuccessfully purchased {name}&a!')
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lNICE!&e Successfully purchased {name}&e!')
+    play_big_success_sound()
+
+
+# PERKS =========================================================
+
+
+'''
+How it should work:
+    - General perk menu:
+        - Click on a park -> Buy / upgrade it
+    - Selecting perk menu:
+        - Click on a perk ->
+            if unselected -> select it
+            if selected by this perk letter -> upgrade it
+            if selected by other perk letter -> select it, deselect other one
+'''
+
+
+LETTER_A = 0
+LETTER_B = 1
+
+
+# NOTE: In general perk menu, set CLICKED_PERK_INDEX to the perk index then trigger this
+@create_function('Try To Upgrade Perk')
+def try_to_upgrade_perk() -> None:
+    PERK_BUY_PRICE.value = -1
+    for perk in ALL_PERKS:
+        for tier, (_, price) in enumerate(perk.tiers, start=1):
+            with IfAnd(
+                CLICKED_PERK_INDEX == perk.index,
+                perk.unlocked_tier_stat == tier - 1,
+            ):
+                PERK_BUY_PRICE.value = price
+                PERK_NEW_TIER.value = tier
+    with IfAnd(
+        PERK_BUY_PRICE < 0,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cThis perk cannot be upgraded any further!')
+        play_unable_sound()
+        exit_function()
+    with IfAnd(
+        PLAYER_FUNDS < PERK_BUY_PRICE,
+        PERK_NEW_TIER == 1,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou do not have enough Funds to purchase this perk!')
+        play_unable_sound()
+        exit_function()
+    with IfAnd(
+        PLAYER_FUNDS < PERK_BUY_PRICE,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou do not have enough Funds to upgrade this perk!')
+        play_unable_sound()
+        exit_function()
+    trigger_function(force_upgrade_perk)
+
+
+@create_function('Force Upgrade Perk')
+def force_upgrade_perk() -> None:
+    for perk in ALL_PERKS:
+        with IfAnd(
+            CLICKED_PERK_INDEX == perk.index,
+        ):
+            perk.unlocked_tier_stat.value = PERK_NEW_TIER
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lNICE!&e Upgraded&a {perk.name}&e to&c Tier {perk.unlocked_tier_stat}&e!')
+    PLAYER_FUNDS.value -= PERK_BUY_PRICE
+    RemoveFundsTitleActionBar.apply(PERK_BUY_PRICE)
+    play_big_success_sound()
+    PERK_BUY_PRICE.value = 0
+    PERK_NEW_TIER.value = 0
+
+
+@create_function('Force Select Perk')
+def force_select_perk() -> None:
+    for perk in ALL_PERKS:
+        for letter_stat, letter, letter_name in (
+            (SELECTED_PERK_A, LETTER_A, 'A'),
+            (SELECTED_PERK_B, LETTER_B, 'B'),
+        ):
+            with IfAnd(
+                CHANGING_PERK_LETTER == letter,
+                CLICKED_PERK_INDEX == perk.index,
+            ):
+                letter_stat.value = CLICKED_PERK_INDEX
+                chat(IMPORTANT_MESSAGE_PREFIX + f'&eSelected&a {perk.name}&e as your&a Perk {letter_name}&e.&7 (Click again to upgrade)')
+
+    play_small_success_sound()
+
+    with IfAnd(
+        CHANGING_PERK_LETTER == LETTER_A,
+        SELECTED_PERK_A == SELECTED_PERK_B
+    ):
+        SELECTED_PERK_B.value = 0
+    with IfAnd(
+        CHANGING_PERK_LETTER == LETTER_B,
+        SELECTED_PERK_B == SELECTED_PERK_A
+    ):
+        SELECTED_PERK_A.value = 0
+
+
+# NOTE: In selecting perk menu, set CHANGING_PERK_LETTER to A or B and CLICKED_PERK_INDEX to the perk index then trigger this
+@create_function('Select Or Upgrade Perk')
+def select_or_upgrade_perk() -> None:
+    with IfAnd(
+        SELECTED_PERK_A == CLICKED_PERK_INDEX,
+        CHANGING_PERK_LETTER == LETTER_A,
+    ):
+        trigger_function(try_to_upgrade_perk)
+        exit_function()
+    with IfAnd(
+        SELECTED_PERK_B == CLICKED_PERK_INDEX,
+        CHANGING_PERK_LETTER == LETTER_B,
+    ):
+        trigger_function(try_to_upgrade_perk)
+        exit_function()
+
+    for perk in ALL_PERKS:
+        with IfAnd(
+            CLICKED_PERK_INDEX == perk.index,
+            perk.unlocked_tier_stat <= 0,
+        ):
+            trigger_function(try_to_upgrade_perk)
+            exit_function()
+
+    trigger_function(force_select_perk)
+
+
+# NOTE: In selecting perk menu, set CHANGING_PERK_LETTER to A or B then trigger this
+@create_function('Deselect Perk')
+def deselect_perk() -> None:
+    for letter_stat, letter, letter_name in (
+        (SELECTED_PERK_A, LETTER_A, 'A'),
+        (SELECTED_PERK_B, LETTER_B, 'B'),
+    ):
+        with IfAnd(
+            CHANGING_PERK_LETTER == letter,
+            letter_stat > 0,
+        ):
+            letter_stat.value = 0
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&eDeselected&a Perk {letter_name}&e.')
+
+    play_small_success_sound()
 
 
 # JOIN / LEAVE ========================================================
@@ -913,7 +1081,7 @@ def ON_TEAM_JOIN(
         chat(IMPORTANT_MESSAGE_PREFIX + '&cYou have ran out of free daily gang switches.')
         trigger_function(display_last_gang_membership)
         trigger_function(move_to_spawn)
-        play_sound('Note Pling')
+        play_unable_sound()
         exit_function()
 
     DAILY_FREE_SWITCHES.value -= 1
@@ -1074,7 +1242,7 @@ def level_up() -> None:
             PLAYER_CURRENT_LEVEL.value = team.LEVEL
             PLAYER_CURRENT_XP.value = team.EXPERIENCE
             chat(f'&b&lLEVEL UP!&e Your&{team.ID}&l {team.name().upper()} LEVEL&e is now&{team.ID} Lv{team.LEVEL}&e!')
-            play_sound('Level Up')
+            play_big_success_sound()
 
     PLAYER_CURRENT_REQUIRED_XP.value = PLAYER_CURRENT_LEVEL * XP_PER_LEVEL
 
