@@ -142,6 +142,12 @@ from constants import (
     GLOBAL_TEMP_ARG_2,
     play_unable_sound,
     IS_AT_SPAWN_COUNTER,
+    PLAYER_POWER_UPPER_BOUND,
+    PERSONAL_EVERY_SECOND_INDEX,
+    WEAPON_ABILITY_SPEED_TIMER,
+    WEAPON_ABILITY_REGEN_TIMER,
+    ABILITY_ID,
+    ABILITY_POWER_COST,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -170,6 +176,56 @@ TODO
 [ ] abilities
 [ ] bounties maybe
 """
+
+
+# ABILITIES =========================================================
+
+
+@create_function('Try To Use Ability')
+def try_to_use_ability() -> None:
+    ABILITY_POWER_COST.value = -1
+    with IfAnd(
+        ABILITY_ID >= 3,  # WEAPON ABILITIES
+        ABILITY_ID <= 18,
+    ):
+        ABILITY_POWER_COST.value = 70 + (ABILITY_ID * 10)
+
+    with IfAnd(
+        ABILITY_POWER_COST < 0,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cThis ability does not seem to exist?? Contact a staff member.')
+        play_unable_sound()
+        exit_function()
+
+    trigger_function(set_most_stats)
+    trigger_function(update_power)
+    with IfAnd(
+        PLAYER_POWER < ABILITY_POWER_COST,
+    ):
+        chat(IMPORTANT_MESSAGE_PREFIX + f'&cYou do not have enough Power to use this ability! ({ABILITY_POWER_COST}/{PLAYER_POWER})')
+        play_unable_sound()
+        exit_function()
+
+    PLAYER_POWER.value -= ABILITY_POWER_COST
+    PLAYER_POWER_UPPER_BOUND.value = PLAYER_POWER
+    trigger_function(force_use_ability)
+
+
+@create_function('Force Use Ability')
+def force_use_ability() -> None:
+    with IfAnd(
+        ABILITY_ID >= 3,  # WEAPON ABILITIES
+        ABILITY_ID <= 18,
+    ):
+        WEAPON_ABILITY_SPEED_TIMER.value = ABILITY_ID + 2
+        WEAPON_ABILITY_REGEN_TIMER.value = ABILITY_ID - 8
+        play_sound('Wolf Howl', pitch=2.0)
+    with IfAnd(
+        ABILITY_ID >= 3,  # WEAPON ABILITIES
+        ABILITY_ID <= 18,
+        WEAPON_ABILITY_SPEED_TIMER > 10,
+    ):
+        WEAPON_ABILITY_SPEED_TIMER.value = 10
 
 
 # JOIN / LEAVE ========================================================
@@ -559,7 +615,11 @@ def apply_all_potion_effects() -> None:
         SPEED_EFFECT_TIMER > 0,
     ):
         count.value += 1
-    apply_effects_to_max('speed', 3, count)
+    with IfAnd(
+        WEAPON_ABILITY_SPEED_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('speed', 2, count)
 
     count.value = 0
     with IfAnd(
@@ -573,7 +633,11 @@ def apply_all_potion_effects() -> None:
         REGENERATION_EFFECT_TIMER > 0,
     ):
         count.value += 1
-    apply_effects_to_max('regeneration', 1, count)
+    with IfAnd(
+        WEAPON_ABILITY_REGEN_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('regeneration', 2, count)
 
     count.value = 0
     with IfAnd(
@@ -615,7 +679,7 @@ def apply_all_potion_effects() -> None:
 
     apply_potion_effect(
         'night_vision',
-        duration=2592000,
+        duration=4141,
         level=1,
         override_existing_effects=True,
     )
@@ -971,7 +1035,28 @@ def set_most_stats() -> None:
         ):
             buff_type.stat.value = buff_type.max
     trigger_function(clamp_cred)
-    PLAYER_POWER.value = PLAYER_MAX_POWER  # TODO abilities
+
+
+@create_function('Increment Power')
+def increment_power() -> None:
+    PLAYER_POWER.value += (PLAYER_MAX_POWER // 30)
+    trigger_function(update_power)
+
+
+@create_function('Update Power')
+def update_power() -> None:
+    with IfAnd(
+        PLAYER_POWER > PLAYER_POWER_UPPER_BOUND,
+    ):
+        PLAYER_POWER_UPPER_BOUND.value = PLAYER_POWER
+    with IfAnd(
+        PLAYER_POWER < PLAYER_POWER_UPPER_BOUND,
+    ):
+        PLAYER_POWER.value = PLAYER_POWER_UPPER_BOUND
+    with IfAnd(
+        PLAYER_POWER > PLAYER_MAX_POWER,
+    ):
+        PLAYER_POWER.value = PLAYER_MAX_POWER
 
 
 @create_function('Check Player Gang')
@@ -1130,28 +1215,34 @@ def daily_reset() -> None:
 
 @create_function('Decrement Buff Timers')
 def decrement_buff_timers() -> None:
-    for timer in (
-        SPEED_EFFECT_TIMER,
-        RESISTANCE_EFFECT_TIMER,
-        REGENERATION_EFFECT_TIMER,
-        JUMPBOOST_EFFECT_TIMER,
-        INVISIBILITY_EFFECT_TIMER,
+    for timer, dec_in_spawn in (
+        (SPEED_EFFECT_TIMER, False),
+        (RESISTANCE_EFFECT_TIMER, False),
+        (REGENERATION_EFFECT_TIMER, False),
+        (JUMPBOOST_EFFECT_TIMER, False),
+        (INVISIBILITY_EFFECT_TIMER, False),
+        (WEAPON_ABILITY_SPEED_TIMER, True),
+        (WEAPON_ABILITY_REGEN_TIMER, True),
     ):
-        with IfOr(
-            timer <= 0,
-            BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
-        ):
-            pass
-        with Else:
-            timer.value -= 1
+        if dec_in_spawn:
+            with IfAnd(
+                timer > 0,
+            ):
+                timer.value -= 1
+        else:
+            with IfOr(
+                timer <= 0,
+                BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
+            ):
+                pass
+            with Else:
+                timer.value -= 1
 
 
-# NOTE have this run every 20 ticks
 @create_function('Personal 1s')
 def personal_every_second() -> None:
+    trigger_function(increment_power)
     PLAYTIME_SECONDS.value += 1
-    trigger_function(check_locations)
-    trigger_function(update_teleports)
     with IfAnd(
         DAILY_RESET_LAST_DAY < TIME_DAY,
     ):
@@ -1174,6 +1265,12 @@ def personal_every_4ticks() -> None:
     trigger_function(update_display_stats)
     trigger_function(display_action_bar_and_title)
     trigger_function(apply_all_potion_effects)
+    PERSONAL_EVERY_SECOND_INDEX.value += 1
+    with IfAnd(
+        PERSONAL_EVERY_SECOND_INDEX >= 5,
+    ):
+        PERSONAL_EVERY_SECOND_INDEX.value = 0
+        trigger_function(personal_every_second)
 
 
 # NOTE have this run every 4 ticks

@@ -96,6 +96,5 @@ BOOTS_SHOP_ITEMS = [
 ]
 
 
-
 for item in ALL_SHOP_ITEMS:
     item.create_item().save()

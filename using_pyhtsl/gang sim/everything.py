@@ -34,6 +34,7 @@ from constants import (
     IMPORTANT_MESSAGE_PREFIX,
     TELEPORTING_ID,
     TELEPORTING_TIMER,
+    WEAPON_ABILITIES,
 )
 from title_action_bar import WaitingOnTeleportTitleActionBar
 
@@ -325,6 +326,24 @@ class CustomItem:
         )
 
 
+def weapon_ability_quote(tier: int) -> Optional[str]:
+    power_cost, speed_timer, regen_timer = WEAPON_ABILITIES.get(tier, (0, 0, 0))
+    if speed_timer == 0 and regen_timer == 0:
+        return None
+    lines = ['&6Special Ability&e&l RIGHT CLICK']
+
+    if speed_timer > 0 and regen_timer > 0:
+        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} seconds')
+        lines.append(f'&7and&d +1 Regen&7 for&a {regen_timer} seconds&7.')
+    elif speed_timer > 0:
+        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} seconds&7.')
+    elif regen_timer > 0:
+        lines.append(f'&7Gain&d +1 Regen&7 for&a {regen_timer} seconds&7.')
+
+    lines.append(f'&8Power Cost:&4 {power_cost}⸎ Power')
+    return '\n'.join(lines)
+
+
 class Items:
     __slots__ = ()
     tier_1_weapon = CustomItem(
@@ -333,6 +352,7 @@ class Items:
         ItemRarity.COMMON,
         ItemType.Weapon,
         buffs=[Buff(BuffType.power, 0)],
+        quote=weapon_ability_quote(1),
     )
     tier_2_weapon = CustomItem(
         'Tier 2 Weapon',
@@ -341,6 +361,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 0)],
+        quote=weapon_ability_quote(2),
     )
     tier_3_weapon = CustomItem(
         'Tier 3 Weapon',
@@ -349,6 +370,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 2)],
         buffs=[Buff(BuffType.power, 5)],
+        quote=weapon_ability_quote(3),
     )
     tier_4_weapon = CustomItem(
         'Tier 4 Weapon',
@@ -357,6 +379,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3)],
         buffs=[Buff(BuffType.power, 10)],
+        quote=weapon_ability_quote(4),
     )
     tier_5_weapon = CustomItem(
         'Tier 5 Weapon',
@@ -364,6 +387,7 @@ class Items:
         ItemRarity.UNCOMMON,
         ItemType.Weapon,
         buffs=[Buff(BuffType.power, 15)],
+        quote=weapon_ability_quote(5),
     )
     tier_6_weapon = CustomItem(
         'Tier 6 Weapon',
@@ -372,6 +396,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 20)],
+        quote=weapon_ability_quote(6),
     )
     tier_7_weapon = CustomItem(
         'Tier 7 Weapon',
@@ -380,6 +405,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 2)],
         buffs=[Buff(BuffType.power, 25)],
+        quote=weapon_ability_quote(7),
     )
     tier_8_weapon = CustomItem(
         'Tier 8 Weapon',
@@ -388,6 +414,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3), Enchantment('efficiency', 2)],
         buffs=[Buff(BuffType.power, 30)],
+        quote=weapon_ability_quote(8),
     )
     tier_9_weapon = CustomItem(
         'Tier 9 Weapon',
@@ -396,6 +423,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 4)],
         buffs=[Buff(BuffType.power, 35)],
+        quote=weapon_ability_quote(9),
     )
     tier_10_weapon = CustomItem(
         'Tier 10 Weapon',
@@ -404,6 +432,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 40)],
+        quote=weapon_ability_quote(10),
     )
     tier_11_weapon = CustomItem(
         'Tier 11 Weapon',
@@ -412,6 +441,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 2)],
         buffs=[Buff(BuffType.power, 45)],
+        quote=weapon_ability_quote(11),
     )
     tier_12_weapon = CustomItem(
         'Tier 12 Weapon',
@@ -420,6 +450,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3), Enchantment('efficiency', 2)],
         buffs=[Buff(BuffType.power, 50)],
+        quote=weapon_ability_quote(12),
     )
     tier_13_weapon = CustomItem(
         'Tier 13 Weapon',
@@ -428,6 +459,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 4)],
         buffs=[Buff(BuffType.power, 55)],
+        quote=weapon_ability_quote(13),
     )
     tier_14_weapon = CustomItem(
         'Tier 14 Weapon',
@@ -436,6 +468,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 60)],
+        quote=weapon_ability_quote(14),
     )
     tier_15_weapon = CustomItem(
         'Tier 15 Weapon',
@@ -444,6 +477,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 6)],
         buffs=[Buff(BuffType.power, 65)],
+        quote=weapon_ability_quote(15),
     )
     tier_16_weapon = CustomItem(
         'Tier 16 Weapon',
@@ -452,6 +486,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 3)],
         buffs=[Buff(BuffType.power, 70)],
+        quote=weapon_ability_quote(16),
     )
     tier_17_weapon = CustomItem(
         'Tier 17 Weapon',
@@ -460,6 +495,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 4)],
         buffs=[Buff(BuffType.power, 75)],
+        quote=weapon_ability_quote(17),
     )
     tier_18_weapon = CustomItem(
         'Tier 18 Weapon',
@@ -468,6 +504,7 @@ class Items:
         ItemType.Weapon,
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 80)],
+        quote=weapon_ability_quote(18),
     )
 
     @staticmethod

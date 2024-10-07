@@ -108,6 +108,7 @@ PLAYER_LAST_GANG = PlayerStat('lastgang')
 
 PLAYER_POWER = PlayerStat('power')
 PLAYER_MAX_POWER = PlayerStat('maxpower')
+PLAYER_POWER_UPPER_BOUND = PlayerStat('powerub')
 
 PLAYER_KILLS = PlayerStat('kills')
 PLAYER_DEATHS = PlayerStat('deaths')
@@ -162,6 +163,17 @@ RESISTANCE_EFFECT_TIMER = PlayerStat('et/res')
 REGENERATION_EFFECT_TIMER = PlayerStat('et/reg')
 JUMPBOOST_EFFECT_TIMER = PlayerStat('et/jum')
 INVISIBILITY_EFFECT_TIMER = PlayerStat('et/inv')
+
+
+WEAPON_ABILITY_SPEED_TIMER = PlayerStat('waspt')
+WEAPON_ABILITY_REGEN_TIMER = PlayerStat('waregt')
+
+
+ABILITY_ID = PlayerStat('abilityid')
+ABILITY_POWER_COST = PlayerStat('abpcost')
+
+
+PERSONAL_EVERY_SECOND_INDEX = PlayerStat('psindex')
 
 
 NEW_DESIRED_GANG_ID = PlayerStat('ndgid')
@@ -275,3 +287,29 @@ def seconds_to_every_4_ticks(seconds: int) -> int:
 
 def play_unable_sound() -> None:
     play_sound('Note Bass Guitar')
+
+
+WEAPON_ABILITIES: dict[int, tuple[
+    int,  # power cost
+    int,  # +1 speed timer
+    int,  # +1 regen timer
+]] = {
+    1: (0, 0, 0),
+    2: (0, 0, 0),
+    3: (100, 5, 0),
+    4: (110, 6, 0),
+    5: (120, 7, 0),
+    6: (130, 8, 0),
+    7: (140, 9, 0),
+    8: (150, 10, 0),
+    9: (160, 10, 1),
+    10: (170, 10, 2),
+    11: (180, 10, 3),
+    12: (190, 10, 4),
+    13: (200, 10, 5),
+    14: (210, 10, 6),
+    15: (220, 10, 7),
+    16: (230, 10, 8),
+    17: (240, 10, 9),
+    18: (250, 10, 10),
+}
