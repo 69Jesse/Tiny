@@ -207,7 +207,7 @@ def try_to_use_ability() -> None:
     with IfAnd(
         PLAYER_POWER < ABILITY_POWER_COST,
     ):
-        chat(IMPORTANT_MESSAGE_PREFIX + f'&cYou do not have enough Power to use this ability! ({ABILITY_POWER_COST}/{PLAYER_POWER})')
+        chat(IMPORTANT_MESSAGE_PREFIX + f'&cYou do not have enough Power to use this ability! ({PLAYER_POWER}/{ABILITY_POWER_COST})')
         play_unable_sound()
         exit_function()
 
@@ -217,27 +217,32 @@ def try_to_use_ability() -> None:
     trigger_function(force_use_ability)
 
 
+@create_function('Force Trigger Weapon Ability')
+def force_trigger_weapon_ability() -> None:
+    WEAPON_ABILITY_SPEED_TIMER.value = ABILITY_ID + 2
+    WEAPON_ABILITY_REGEN_TIMER.value = ABILITY_ID - 8
+    with IfAnd(
+        WEAPON_ABILITY_SPEED_TIMER > 10,
+    ):
+        WEAPON_ABILITY_SPEED_TIMER.value = 10
+    with IfAnd(
+        WEAPON_ABILITY_REGEN_TIMER < 0,
+    ):
+        WEAPON_ABILITY_REGEN_TIMER.value = 0
+    play_sound('Wolf Howl', pitch=2.0)
+    pause_execution(20)
+    play_sound('Wolf Howl', pitch=2.0)
+    pause_execution(20)
+    play_sound('Wolf Howl', pitch=2.0)
+
+
 @create_function('Force Use Ability')
 def force_use_ability() -> None:
     with IfAnd(
         ABILITY_ID >= 3,  # WEAPON ABILITIES
         ABILITY_ID <= 18,
     ):
-        WEAPON_ABILITY_SPEED_TIMER.value = ABILITY_ID + 2
-        WEAPON_ABILITY_REGEN_TIMER.value = ABILITY_ID - 8
-        play_sound('Wolf Howl', pitch=2.0)
-    with IfAnd(
-        ABILITY_ID >= 3,  # WEAPON ABILITIES
-        ABILITY_ID <= 18,
-        WEAPON_ABILITY_SPEED_TIMER > 10,
-    ):
-        WEAPON_ABILITY_SPEED_TIMER.value = 10
-    with IfAnd(
-        ABILITY_ID >= 3,  # WEAPON ABILITIES
-        ABILITY_ID <= 18,
-        WEAPON_ABILITY_REGEN_TIMER < 0,
-    ):
-        WEAPON_ABILITY_REGEN_TIMER.value = 0
+        trigger_function(force_trigger_weapon_ability)
 
 
 # SHOP =========================================================
@@ -948,10 +953,10 @@ def on_player_enter_portal() -> None:
             trigger_function(function)
 
 
-BLOODS_SPAWN = (-8.5, 46, -47.5, 130, 30.0)
-CRIPS_SPAWN = (7.5, 46, -47.5, -130, 30.0)
-KINGS_SPAWN = (9.5, 46, -36.5, -60.0, 25.0)
-GRAPES_SPAWN = (-10.5, 46, -36.5, 60.0, 25.0)
+BLOODS_SPAWN = (-8.5, 46, -47.5, 130, 0)
+CRIPS_SPAWN = (7.5, 46, -47.5, -130, 0)
+KINGS_SPAWN = (9.5, 46, -36.5, -60.0, 0)
+GRAPES_SPAWN = (-10.5, 46, -36.5, 60.0, 0)
 
 
 @create_function('Move To Spawn')
@@ -1108,6 +1113,7 @@ def set_most_stats() -> None:
         ):
             buff_type.stat.value = buff_type.max
     trigger_function(clamp_cred)
+    trigger_function(update_power)
 
 
 @create_function('Increment Power')
@@ -1159,11 +1165,15 @@ def set_team_ids() -> None:
         team.TEAM.stat('id').value = team.ID
 
 
-def quiet_reset_turf(turf: type[BaseTurf]) -> None:
+def quiet_reset_turf(
+    turf: type[BaseTurf],
+    set_hp: bool,
+) -> None:
     turf.GANG.value = EMPTY_TURF_GANG
     turf.FUNDS.value = 0
     turf.FUNDS_PER_SECOND.value = 0
-    turf.HP.value = turf.MAX_HP
+    if set_hp:
+        turf.HP.value = turf.MAX_HP
     turf.HELD_FOR.value = 0
 
 
@@ -1182,7 +1192,7 @@ def UPDATE_TURF(turf: type[BaseTurf]) -> None:
     )):
         pass
     with Else:
-        quiet_reset_turf(turf)
+        quiet_reset_turf(turf, set_hp=False)
         exit_function()
 
     for team in ALL_GANG_TEAMS:
@@ -1258,19 +1268,44 @@ def update_turfs() -> None:
     trigger_function(update_turf_2)
     trigger_function(update_turf_3)
 
+    for turf in (Turf1, Turf2, Turf3):
+        with IfAnd(
+            turf.HP > turf.HP_UPPER_BOUND,
+        ):
+            turf.HP_UPPER_BOUND.value = turf.HP
+        with IfAnd(
+            turf.HP < turf.HP_UPPER_BOUND,
+        ):
+            turf.HP.value = turf.HP_UPPER_BOUND
+        with IfAnd(
+            turf.HP > turf.MAX_HP,
+        ):
+            turf.HP.value = turf.MAX_HP
+
     # check duplicates
-    with IfAnd(
-        Turf2.GANG == Turf3.GANG,
+    # if (turfa.GANG == turfb.GANG) and (turfb.GANG != EMPTY_TURF_GANG):
+    # is the same as not ((turfa.GANG != turfb.GANG) or (turfb.GANG == EMPTY_TURF_GANG))
+    with IfOr(
+        Turf2.GANG != Turf3.GANG,
+        Turf3.GANG == EMPTY_TURF_GANG,
     ):
-        quiet_reset_turf(Turf3)
-    with IfAnd(
-        Turf1.GANG == Turf3.GANG,
+        pass
+    with Else:
+        quiet_reset_turf(Turf3, set_hp=True)
+    with IfOr(
+        Turf1.GANG != Turf3.GANG,
+        Turf3.GANG == EMPTY_TURF_GANG,
     ):
-        quiet_reset_turf(Turf3)
-    with IfAnd(
-        Turf1.GANG == Turf2.GANG,
+        pass
+    with Else:
+        quiet_reset_turf(Turf3, set_hp=True)
+    with IfOr(
+        Turf1.GANG != Turf2.GANG,
+        Turf2.GANG == EMPTY_TURF_GANG,
     ):
-        quiet_reset_turf(Turf2)
+        pass
+    with Else:
+        quiet_reset_turf(Turf2, set_hp=True)
 
 
 # LOOPS ==========================================================
@@ -1323,6 +1358,7 @@ def personal_every_second() -> None:
         trigger_function(daily_reset)
     trigger_function(set_player_team_function)
     trigger_function(set_player_group_function)
+    trigger_function(update_teleports)
     trigger_function(decrement_buff_timers)
 
 
@@ -2094,6 +2130,7 @@ def ON_CLICK_TURF(
     ):
         trigger_function(set_most_stats)
         turf.HP.value -= PLAYER_DAMAGE
+        turf.HP_UPPER_BOUND.value = turf.HP
         turf.HEAL_COOLDOWN.value = 8
         play_sound('Zombie Metal', pitch=2.0)
     with IfAnd(

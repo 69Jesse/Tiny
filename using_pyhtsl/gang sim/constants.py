@@ -21,6 +21,7 @@ class BaseTurf:
     GANG: GlobalStat
     HELD_FOR: GlobalStat
     HP: GlobalStat
+    HP_UPPER_BOUND: GlobalStat
     MAX_HP: GlobalStat
     FUNDS: GlobalStat
     FUNDS_PER_SECOND: GlobalStat
@@ -35,6 +36,7 @@ class Turf1(BaseTurf):
     GANG = GlobalStat('turf1/gang')
     HELD_FOR = GlobalStat('turf1/held')
     HP = GlobalStat('turf1/hp')
+    HP_UPPER_BOUND = GlobalStat('turf1/hpub')
     MAX_HP = GlobalStat('turf1/mhp')
     FUNDS = GlobalStat('turf1/funds')
     FUNDS_PER_SECOND = GlobalStat('turf1/af')
@@ -48,6 +50,7 @@ class Turf2(BaseTurf):
     GANG = GlobalStat('turf2/gang')
     HELD_FOR = GlobalStat('turf2/held')
     HP = GlobalStat('turf2/hp')
+    HP_UPPER_BOUND = GlobalStat('turf2/hpub')
     MAX_HP = GlobalStat('turf2/mhp')
     FUNDS = GlobalStat('turf2/funds')
     FUNDS_PER_SECOND = GlobalStat('turf2/af')
@@ -61,6 +64,7 @@ class Turf3(BaseTurf):
     GANG = GlobalStat('turf3/gang')
     HELD_FOR = GlobalStat('turf3/held')
     HP = GlobalStat('turf3/hp')
+    HP_UPPER_BOUND = GlobalStat('turf3/hpub')
     MAX_HP = GlobalStat('turf3/mhp')
     FUNDS = GlobalStat('turf3/funds')
     FUNDS_PER_SECOND = GlobalStat('turf3/af')

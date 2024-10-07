@@ -232,6 +232,7 @@ class CustomItem:
     buffs: Optional[list[Buff]]
     color: Optional[str]
     quote: Optional[str]
+    interaction_data_key: Optional[str]
     def __init__(
         self,
         name: str,
@@ -243,6 +244,7 @@ class CustomItem:
         buffs: Optional[list[Buff]] = None,
         color: Optional[str] = None,
         quote: Optional[str] = None,
+        interaction_data_key: Optional[str] = None,
     ) -> None:
         self.name = name
         self.key = key
@@ -260,6 +262,7 @@ class CustomItem:
         self.buffs = self.updated_buffs(buffs)
         self.color = color
         self.quote = quote
+        self.interaction_data_key = interaction_data_key
 
     def find_buff(self, buffs: list[Buff], buff_type: BuffType) -> Buff:
         for buff in buffs:
@@ -318,6 +321,7 @@ class CustomItem:
             hide_all_flags=True,
             unbreakable=True,
             color=self.color,
+            interaction_data_key=self.interaction_data_key
         )
 
     def if_has_condition(self) -> IfStatement:
@@ -333,12 +337,12 @@ def weapon_ability_quote(tier: int) -> Optional[str]:
     lines = ['&6Special Ability&e&l RIGHT CLICK']
 
     if speed_timer > 0 and regen_timer > 0:
-        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} seconds')
-        lines.append(f'&7and&d +1 Regen&7 for&a {regen_timer} seconds&7.')
+        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} second{'s' * (speed_timer != 1)}&7,')
+        lines.append(f'&7and&d +1 Regen&7 for&a {regen_timer} second{'s' * (regen_timer != 1)}&7.')
     elif speed_timer > 0:
-        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} seconds&7.')
+        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} second{'s' * (speed_timer != 1)}&7.')
     elif regen_timer > 0:
-        lines.append(f'&7Gain&d +1 Regen&7 for&a {regen_timer} seconds&7.')
+        lines.append(f'&7Gain&d +1 Regen&7 for&a {regen_timer} second{'s' * (regen_timer != 1)}&7.')
 
     lines.append(f'&8Power Cost:&4 {power_cost}⸎ Power')
     return '\n'.join(lines)
@@ -371,6 +375,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 2)],
         buffs=[Buff(BuffType.power, 5)],
         quote=weapon_ability_quote(3),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcDVSU3UzVHIyaytvVk5LamhKa1hnOXJPeTZ1N3lvSWZvZXZCZjU4VXpXa2VHSjV4QUJ0cktyVHEyc0VCc0xSZ05wMlFNSjR4bS91Z1NjT21YTlZLVDBxWVdGSFRqYTNHTDhZODBkTmJZbk81UlZrUzh5ZUxHQmJZNlY1VmxleDUyZldjNnBxL2E1cGtQOENDVlk3dDl3OTdsencvejMzM0VBanl4REVrcjVneERNOG40Zm1CRFA3eUxYdWtTUkkvK1BXVlhWaDZ6NEFQdGV5Vk9Ma0FBQUE9IiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.IC1PDkrsW6Q0dy1SmDCoRK4Uz4PWDBWCZI1Yj_FTRf3L6TuNaWHW8-LMma8v5xepQiRO-2ltvC9GrEPXFOw78Q',
     )
     tier_4_weapon = CustomItem(
         'Tier 4 Weapon',
@@ -380,6 +385,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 3)],
         buffs=[Buff(BuffType.power, 10)],
         quote=weapon_ability_quote(4),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcDVKU3UzVHIyaytvVk5KamlGa1hBOTNPeTZ1N3lvSWZvZXZCZjU4VXpXa2VHSjZ4QVFzYktyVHEyc0VHc0RSaE5KMlFXR1VSbS91Z1NjT2lYTlZLVDBvWVdGUFRqYTNHTDhZODBkTmJZaHZlcjBrYzhZeGRHUmJZNjE1VmxleDUyZldjNnBxL2E1cGtQOENFV1k3dDl3OEhoMXd2enozbjZBdHl4U2tndDVneENDNW40WHErOVAveUhVc2ZjUnlsL1BaS1F2WjRKc0FIRGhEYTA3a0FBQUE9IiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.Ah-X0LCjtzmnPxNyGDa80QNCyoAYMuo6rNlog6fIkIwgd_8SUBd6sVixg4l4a0pzkl_FzKMW4yiQOXs_MrRhvA',
     )
     tier_5_weapon = CustomItem(
         'Tier 5 Weapon',
@@ -388,6 +394,7 @@ class Items:
         ItemType.Weapon,
         buffs=[Buff(BuffType.power, 15)],
         quote=weapon_ability_quote(5),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTnV3NkNRQlJFeHpkcVkyZnJKL2lBQ0NVaGlEU1k0RnB2THU1cU5sa2VXWmFDdjVkb25HcE9Nam16QXBaWTBOT3F1bXBYQU1ZT3BtVXRKQ2IzbUEyOXRXU3hwRUpwWlhzbHBwaFRXWGVWeFMrellXTDdSbUlkWGNNc2lmbWRoUXdqYksxUjc3YzAvRlViVGxyelJsTXZUUXNIenF1cnZuL1luY2oxaXNJNzdYMUJyamdFNUQ0SERJTHpVYmllTC8yL2ZNUHlORW5pbkY4ZVdjVFNXd1o4QU1ic0tEKzVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.U-khegQdfd8mgl8zp71wue4bEIf7bdFWM6rv7waQlyfim3RM2K1FQAprm38XAm9D2rpY1hK9AeteP_mf4jWtHA',
     )
     tier_6_weapon = CustomItem(
         'Tier 6 Weapon',
@@ -397,6 +404,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 20)],
         quote=weapon_ability_quote(6),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4ZzZPTG02azlRZ1Fpak1ZZ3NtRUNkbXhkYVRKTktEZFNCZnkvUmVOTTl5ZVc1SmVCaFFiVlZwdTJYQUtZdTVrOGpKR1psd3NiZVc3THdxRkphMlVHSk9SeDZtbmRyOFlzelR1endrbGlkcjZjOFRYakpUZ3dUYkd5bkhnL1o4Y1owbkxUbUwwMkQ3SHE0Y0p0MysvM0QxcWNncktyUTMwV0NBckdQS2FoSGpPUGpRUVJoSktPL2ZNMktMRTJUZ2wvdStabGx0eHo0QU4vdlR0RzVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.-mY6ExqoTPlAkQuzOgAf8TEDRUfUD4trC0b_waKN59qo_VnsBkhbN-x7NvdqdQ77c9ldfp181FKCHeejyNw3uQ',
     )
     tier_7_weapon = CustomItem(
         'Tier 7 Weapon',
@@ -406,6 +414,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 2)],
         buffs=[Buff(BuffType.power, 25)],
         quote=weapon_ability_quote(7),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4bzZPTG02azlRZ1FpaklZZ3VtRUNkbXhkYVRKTktEWlNCZnkvUmVOTTl5ZVc1RmVCaVNaVlZwdWxXQUtZTzVpOGpKR1pGd3NiZVdiSndxVlJhMlVHSk9SYjBNbjFqOGN0eW5OamhMYkdPcitjc1RYakJ6Z3dUYkcycm5rL1o4dHEwbkxUbWIwMkRiRHM0Y09xKytmNWg1NUVmbEdYZzdVTkJ2amhFNUZjalJ0SHBLUHdnbE9GZnZtSDVMVTJUbkY4ZVdjeHU5d3o0QUJjVHZEMjVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.DZeUSkDg1GrdDMaEGdwAa-MSTmeo9OaBDBX3tQZn12anS-3ygkDnoTZsvrUEgM6oVkuWesMzVOmeAuVIXIefww',
     )
     tier_8_weapon = CustomItem(
         'Tier 8 Weapon',
@@ -415,6 +424,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 3), Enchantment('efficiency', 2)],
         buffs=[Buff(BuffType.power, 30)],
         quote=weapon_ability_quote(8),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcDVMYTZ0S3RheitoRHlVOWlwaDFNZER0dkx5NmF5ejRoYTRILzMxU05LZDVZSGhtQTZ5eG90em9wdTQzQU9ZTVZ0VkloVVVhOHFuM2hneldsT2xTbTFGTEMwdXFtcUUyK0lWTkV6TzJDdHZnN3NkUktGTHVjOHl3TjUxK3YxVW5pcVlUVkphaUxXbFVYUThHVmd6MTl3K0hDOWxPbGptWG95dkpsaWVQN0h4Q3o3dWVwZTI0eXYzTGR6eDVSRkdZaU5zckR2ampHUU1mNkJDZzNMa0FBQUE9IiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.FaC1zIkpOg_tysVY-YPBLJH1296r8AruoD9dqi4DmoA9UDl4UCIAqtN6nHskwr5MGz-uCBv_P-1rFAKCrbKlAw',
     )
     tier_9_weapon = CustomItem(
         'Tier 9 Weapon',
@@ -424,6 +434,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 4)],
         buffs=[Buff(BuffType.power, 35)],
         quote=weapon_ability_quote(9),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4bzRPTG02ay93bzBRWWlVRjB3UVRyM0x6WVNwcFVJS1VPL0h1SnhwdnVTUzdQQllDUE9UMmNidW91QUREMk1IMDFVbUZ5Uy9uUU8wY09QcFhhYU5kck9jV01YczI3ZHZqRkh5YXVieFVXeDNPU1o2bTQ4WVJqaEpXenVxcVVGYy9HQ2pKR3RJWjZaVHQ0OEo3dit2dUg5WjVZV0piaGZoTkpZbkliRTNzTUdNZUhuV1JocEtLL2ZNbUxTNWFsaFRqZDh5Ty9YSFBnQXlEc1VqQzVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.U3Eiq1RY0tfEqEBhV8g94IEVU9RBqUuR9r0F6UNVZe1_Ls2M63bMNN7Mg8uXot_PtIUtcW-pEUBAp71GhPWaEA',
     )
     tier_10_weapon = CustomItem(
         'Tier 10 Weapon',
@@ -433,6 +444,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 40)],
         quote=weapon_ability_quote(10),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcHc5SzdkS3RheitoVWttUEltWmRESFE3TDYvdUtndW1vdXZCZjU4VXpXa2VHSjZ4QUJOYktyUnFtOEVDc0RTd2ZyZENZcFZGYk82REpnMlRjbFVyUFNteHhvYmU3ZGhvL0dMTkV6MTFFcnZ3SGlSeHhETVdNQ3h3MEwycUt0bnpzdTA1MVRYdmFwcGtQOENBVVk3Tjl3OUhteHczejEzNzVBbHl4TmtucDVqUjk2OFg0YmllOVA3eVBVc2ZjUnlsL1BaS1F2WjRKc0FIT2U4MDNya0FBQUE9IiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.Hq9jKAgYWJdRDlf69SgZTcZkmU5_87v8SjtOo6dOBhkW_b6LgXVePjQI-LMmPgRs3hls5pukoyGl9NdyHkPFFA',
     )
     tier_11_weapon = CustomItem(
         'Tier 11 Weapon',
@@ -442,6 +454,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 2)],
         buffs=[Buff(BuffType.power, 45)],
         quote=weapon_ability_quote(11),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcDVJeXZYVHIyay9vUTBtUEltWmVESFE3TDYvdEpndCtvZXZCZjU4VXpXa2VHSjZ4Z0MwMjlOS3FiUVlMd05LRVViZENZcFZIYk82REpvMHRGYXBTZWxMQ3dKcnFkbXcwZnJIbmlaNDZDVHU4QjJrYzhad0ZEQXZzZGEvS1V2YjgzZmFjcW9wM0ZVMnlIMkRDZkkvTjl3K0hDemx1VWJpWG95ZklFU2Vmbk5lTXZuODlDOGYxcFBlWDcxaVd4SEdVOGRzekRWbnlTSUVQOFJQR01ya0FBQUE9IiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.834fypmomhsQNkTRvRY-MxQ_pVC09AyeuiBAKNEwymZiMRt7HpiM2N9GgTFmc_eRSzKHqXBtqUIfuJw3ln3fxA',
     )
     tier_12_weapon = CustomItem(
         'Tier 12 Weapon',
@@ -451,6 +464,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 3), Enchantment('efficiency', 2)],
         buffs=[Buff(BuffType.power, 50)],
         quote=weapon_ability_quote(12),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4b2ZneHVydjRFbFJKaEpBU1JCUk9zYy9OQ3EybUMxRUFaK1BjU2pUZmRrMXllV3dJTHpLbTAydFR0RXNEWXdmUmxwTUxrRnZPaHQ1WXNGbFRvU3R0ZXl5bG05REpkYmZITGVwalkvcTJ3aWk1aGxzVGl4a09PRWJhMjBjK25hc1RETklLcVNyd3I2bFhUd29IejZPcnZIM1l1TWE4b1BIZnZTMkx5RUJBckJ3eUMwMUV5ejFmK1g3N2hlWm9rY1M3Tzl5emk2VFVEUGtydmlkbTVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.jspCZkgP-KXZnyd4xfkciJr1Xg3OVvFL74ozuJweRQqNCSAUQ-XHjZF62c2UldVSSWVIz5FEO_qNG9oZLgsGPQ',
     )
     tier_13_weapon = CustomItem(
         'Tier 13 Weapon',
@@ -460,6 +474,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 4)],
         buffs=[Buff(BuffType.power, 55)],
         quote=weapon_ability_quote(13),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcHcvS2lxQmIxMzVDNVVwNkZESHpZbURiZVhsMXQxZ3dOM1E5K08rVG9qbk5BOE16UzJDQk9aVldtN3BkQWhnN21MNk1WSmpjWWo3MDFwTEZnZ3BkYWR0ck9jV01YcWFyTFg1WkR4UGJ2eFZXMFNYTWtsamNlTWd4d3RZMit2bFVqWGlZUmxCVmlYZEZ2V3BhT0hBZVhmMzl3ODRsNWhXRjUrNTlTVXdlQW1MbGdFRndPa3JtK2NyL3l6YzhUNU1renNYNW5rVTh2V2JBQjRJVGV6VzVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0._lijkS0z5x-7pKsj0_UqGtzG0X-vNOwQ0TqqFc8iK2LYxqtX8FblyEB0RfSOFjS-0g3BUX-r9gBMfQMfcA_a1w',
     )
     tier_14_weapon = CustomItem(
         'Tier 14 Weapon',
@@ -469,6 +484,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 60)],
         quote=weapon_ability_quote(14),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcHcvS0NxSmIxMzVDNVVwNkZESHpZbURiZVhsMXQxZ3dOM1E5K08rVG9qbk5BOE16UzJDQk9aVldtN3BkQWhnN21MNk1WSmpjWWo3MDFwTEZnZ3BkYWR0ck9jV01YcWFyTFg1WkR4UGJ2eFZXMFNYTWtsamNlTWd4d3RZMit2bFVqWGlZUmxCVmlYZEZ2V3BhT0hBZVhmMzl3ODRsNWhXRjUrNTlTVXdlQW1MbGdFRndPa3JtK2NyL3l6YzhUNU1renNYNW5rVTh2V2JBQjVzUUhkdTVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.6aOYcF-QPGtkMYC8ZM3JdC7KcZLEQ4Gcb1Te-i8mibfKx3sQzp3abp6QQWcB5l90OJYJPWU-HCVXA2yzNjyomw',
     )
     tier_15_weapon = CustomItem(
         'Tier 15 Weapon',
@@ -478,6 +494,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 6)],
         buffs=[Buff(BuffType.power, 65)],
         quote=weapon_ability_quote(15),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4bzZxQ2JxejlCcFVRWUNVRmt3UVRyM0x6UWFwb2dOVkFHL3IxRTQwMzNKSmZubHNBQ2N5cXROblc3QkRCMk1IMFpxVEM1eFh6b3JTV0xCUlc2MHJiWGNvb1p2VXhYVy95eUhpYTJmeXVzb2t1WUpiRzQ4WkJqaEsxdDlQT3BHdkV3amFDcUV1K0tldFcwY09BOHV2cjdoNTFMekNzS3o5MzdrcGc4Qk1US0FZUGdkSlRNODVYL2wyOTRuaVpKbkl2elBZdDRlczJBRDFQczd6ZTVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.3om9til2AUW0YWPtSxE5VUbH_uiv-uQFCpFiTWH33cvUAzsI0xA4xRnEUNPLeYMExdCOtF0dwS3qudRjn1Hb9Q',
     )
     tier_16_weapon = CustomItem(
         'Tier 16 Weapon',
@@ -487,6 +504,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 3)],
         buffs=[Buff(BuffType.power, 70)],
         quote=weapon_ability_quote(16),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4bzRPTG02azlRZ1Fnak1ZZ3VtR2lkbXhkYVNKTktDZFNCZnkvUmVOTTl5ZVU1RDNDeHBOSXEwL1FlZ0ttRCtjc0lpZGtqWldQdkxWbTRWQ2l0N0tERUhBdDZtWGRqOGN0Nm5OaWhsVmlkTGttZXBmekJFb1lKTnJaVGRTMDdYcG1PazlhODFUVElyb2NEcDNvMzN6OXNmUXJDb2dqOVhTUW9FUHVZZ25MRU9ENGVSQkJHTXZyTDEreCt6YkwwenMvUC9NU3V0eHo0QUNRUlZNSzVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.BnLyg25o67o4Be5HHSMzl2eD6197yayyjqfCd4kRYLHNksys5I2u_7oGok7XGsg7SAfOT8ks97CjFSSILEaeNg',
     )
     tier_17_weapon = CustomItem(
         'Tier 17 Weapon',
@@ -496,6 +514,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 4)],
         buffs=[Buff(BuffType.power, 75)],
         quote=weapon_ability_quote(17),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlBRK0NNQmlFejQ4bzZxS1RxejlCcFVRWUNVRmt3UVRyM0x6UWFwb2dOVkFHL3IxRTQwMzNKSmZubHNBQ2N5cXROblc3QkRCMk1IMFpxVEM1eFh6b3JTV0xCUlc2MHJiWGNvb1p2VXhYVy95eUdTYTJmeXVzb2t1WUpiRzQ4WkJqaEsxdDlQT3BHdkV3amFDcUV1K0tldFcwY09BOHV2cjdoNTFMekNzS3o5MzdrcGc4Qk1US0FZUGdkSlRNODVYL2w2OTVuaVpKbkl2elBZdDRlczJBRCt6dHBpNjVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.tiZuCm5OgZh3XlY4lb1efKoStyXzLcQtUgcDprzOq2yLlUsE-7v8H6mjEikopxpGszC-Dn1AWLCfMo65pP_J0w',
     )
     tier_18_weapon = CustomItem(
         'Tier 18 Weapon',
@@ -505,6 +524,7 @@ class Items:
         enchantments=[Enchantment('sharpness', 1)],
         buffs=[Buff(BuffType.power, 80)],
         quote=weapon_ability_quote(18),
+        interaction_data_key='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJkYXRhIjoiSDRzSUFBQUFBQUFBL3pXTlRRdUNRQmlFcHcvSzZoSmR1dllUS2xmU280aVpGd1BienN1cnU4V0N1YUhyd1grZkZNMXBIaGllV1FJTHpLbTAydFR0RXNEWXdmUmxwTUxrRnZPaHQ1WXNGbFRvU3R0ZXl5bG05REpkYmZITFpwalkvcTJ3aWk1aGxzVGl4a09PRWJhMjBjK25hc1RETklLcVNyd3I2bFhUd29IejZPcnZIM1l1TWE4b1BIZnZTMkx5RUJBckJ3eUMwMUV5ejFmK1g3N21lWm9rY1M3Tzl5emk2VFVEUHZYdXdNQzVBQUFBIiwiaXNzIjoiOWNjZWM4YmYtNjBiOS00OTBjLWI2ZmYtZGRjOWI1Zjc0YWIzIiwidmVyc2lvbiI6MX0.OQsNqACc374WRN_dvPViEhIrFeg9_iIWGfy21rz-O2-9gV_cvXXkv1vzb0n05Ndo4lLdvuo4lUgTGlyJ8mp-HQ',
     )
 
     @staticmethod
