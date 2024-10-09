@@ -1,5 +1,7 @@
-from pyhtsl import TeamPlayers, Team, chat
+from pyhtsl import trigger_function
+from constants import MACHINE_EFFECT_INDEX
+from functions import maybe_apply_machine_effect
 
 
-t = Team('BLOOD')
-chat(f'some team players: {t.stat('id')} {t.players()}')
+MACHINE_EFFECT_INDEX.value = 0
+trigger_function(maybe_apply_machine_effect)

@@ -284,6 +284,8 @@ PERK_A_ITEM = Item(
     hide_all_flags=True,
 )
 PERK_A_ITEM_ENCHANTED = PERK_A_ITEM.copy()
+assert PERK_A_ITEM_ENCHANTED.lore is not None
+PERK_A_ITEM_ENCHANTED.lore = PERK_A_ITEM_ENCHANTED.lore.replace('&eClick to change!', '&eClick to go back!')
 PERK_A_ITEM_ENCHANTED.enchantments = [Enchantment('infinity', 1)]
 
 
@@ -294,6 +296,8 @@ PERK_B_ITEM = Item(
     hide_all_flags=True,
 )
 PERK_B_ITEM_ENCHANTED = PERK_B_ITEM.copy()
+assert PERK_B_ITEM_ENCHANTED.lore is not None
+PERK_B_ITEM_ENCHANTED.lore = PERK_B_ITEM_ENCHANTED.lore.replace('&eClick to change!', '&eClick to go back!')
 PERK_B_ITEM_ENCHANTED.enchantments = [Enchantment('infinity', 1)]
 
 

@@ -299,6 +299,7 @@ def item_copied_with_correct_count(item: Item, count: int) -> Item:
     return item
 
 
+# NOTE: In shop menu, set SHOP_BUY_ID to the shop item id then trigger this
 @create_function('Try To Buy Shop Item')
 def try_to_buy_shop_item() -> None:
     for shop_item in ALL_SHOP_ITEMS:
@@ -315,6 +316,11 @@ def try_to_buy_shop_item() -> None:
                     HasItem(item_copied_with_correct_count(item, count))
                     for item, count in shop_item.items_cost
                 )
+            ):
+                trigger_function(force_buy_shop_item)
+                exit_function()
+            with IfAnd(
+                SHOP_BUY_ID == shop_item.id,
             ):
                 trigger_function(shop_missing_items_message)
                 exit_function()
@@ -358,7 +364,7 @@ LETTER_A = 0
 LETTER_B = 1
 
 
-# NOTE: In general perk menu, set CLICKED_PERK_INDEX to the perk index then trigger this
+# NOTE: In general perk menu, set CLICKED_PERK_INDEX to the perk index then trigger this, then reopen menu
 @create_function('Try To Upgrade Perk')
 def try_to_upgrade_perk() -> None:
     PERK_BUY_PRICE.value = -1
@@ -370,6 +376,7 @@ def try_to_upgrade_perk() -> None:
             ):
                 PERK_BUY_PRICE.value = price
                 PERK_NEW_TIER.value = tier
+
     with IfAnd(
         PERK_BUY_PRICE < 0,
     ):
@@ -389,6 +396,7 @@ def try_to_upgrade_perk() -> None:
         chat(IMPORTANT_MESSAGE_PREFIX + '&cYou do not have enough Funds to upgrade this perk!')
         play_unable_sound()
         exit_function()
+
     trigger_function(force_upgrade_perk)
 
 
@@ -428,14 +436,16 @@ def force_select_perk() -> None:
         SELECTED_PERK_A == SELECTED_PERK_B
     ):
         SELECTED_PERK_B.value = 0
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou now have no Perk B selected.')
     with IfAnd(
         CHANGING_PERK_LETTER == LETTER_B,
         SELECTED_PERK_B == SELECTED_PERK_A
     ):
         SELECTED_PERK_A.value = 0
+        chat(IMPORTANT_MESSAGE_PREFIX + '&cYou now have no Perk A selected.')
 
 
-# NOTE: In selecting perk menu, set CHANGING_PERK_LETTER to A or B and CLICKED_PERK_INDEX to the perk index then trigger this
+# NOTE: In selecting perk menu, set CHANGING_PERK_LETTER to A or B and CLICKED_PERK_INDEX to the perk index then trigger this, then reopen menu
 @create_function('Select Or Upgrade Perk')
 def select_or_upgrade_perk() -> None:
     with IfAnd(
@@ -457,6 +467,10 @@ def select_or_upgrade_perk() -> None:
             perk.unlocked_tier_stat <= 0,
         ):
             trigger_function(try_to_upgrade_perk)
+        with IfAnd(
+            CLICKED_PERK_INDEX == perk.index,
+            perk.unlocked_tier_stat <= 0,
+        ):
             exit_function()
 
     trigger_function(force_select_perk)
@@ -475,6 +489,11 @@ def deselect_perk() -> None:
         ):
             letter_stat.value = 0
             chat(IMPORTANT_MESSAGE_PREFIX + f'&eDeselected&a Perk {letter_name}&e.')
+        with IfAnd(
+            CHANGING_PERK_LETTER == letter,
+            letter_stat == 0,
+        ):
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&eYou do not have a Perk {letter_name} selected.')
 
     play_small_success_sound()
 
@@ -488,7 +507,7 @@ def set_perk_color_stats() -> None:
         ):
             perk.color_stat.value = 2
         with Else:
-            perk.color_stat.value = 7
+            perk.color_stat.value = 8
 
 
 @create_function('Reset Perk Color Stats')
@@ -502,6 +521,7 @@ def reset_perk_color_stats() -> None:
 def open_general_perk_menu() -> None:
     trigger_function(set_perk_color_stats)
     display_menu('Blacksmith: Perks')
+    pause_execution(20)
     trigger_function(reset_perk_color_stats)
 
 
@@ -517,6 +537,7 @@ def open_selecting_perk_menu() -> None:
         CHANGING_PERK_LETTER == LETTER_B,
     ):
         display_menu('Select Perk B')
+    pause_execution(20)
     trigger_function(reset_perk_color_stats)
 
 
@@ -793,13 +814,13 @@ def on_player_kill() -> None:
         ADD_FUNDS.value *= 2
         ADD_CRED.value = 5
 
+    trigger_function(apply_on_kill_perk_buffs)
+
     with IfAnd(
         PLAYER_CRED < 0,
     ):
         ADD_FUNDS.value /= 2
         ADD_EXPERIENCE.value /= 2
-
-    trigger_function(apply_on_kill_perk_buffs)
 
     trigger_function(add_experience)
     PLAYER_FUNDS.value += ADD_FUNDS
@@ -975,6 +996,11 @@ def misc_every_4_ticks() -> None:
         PLAYER_ID == NO_GANG_LEADER_ID,
     ):
         PLAYER_ID.value = RandomInt(1_000_000, 10_000_000)
+    with IfAnd(
+        SELECTED_PERK_A > 0,
+        SELECTED_PERK_A == SELECTED_PERK_B,
+    ):
+        SELECTED_PERK_B.value = 0
 
 
 def apply_effects_to_max(effect: ALL_POTION_EFFECTS, max_level: int, count: PlayerStat) -> None:
@@ -1269,8 +1295,14 @@ def on_grapes_join() -> None:
 def afk_area_iteration() -> None:
     n = 1
     PLAYER_FUNDS.value += n
-    AddFundsTitleActionBar.apply(n)
     teleport_player(('~', '~13', '~'))
+    display_title(
+        '&r',
+        f'&e+{n:,}⛁&7 (&e{PLAYER_FUNDS}⛁&7)',
+        fadein=0,
+        stay=2,
+        fadeout=0,
+    )
 
 
 # NOTE have this get called by the actual event
@@ -1692,7 +1724,7 @@ def decrement_buff_timers() -> None:
         else:
             with IfOr(
                 timer <= 0,
-                BIGGEST_LOCATION_ID != LocationInstances.spawn.biggest_id,
+                BIGGEST_LOCATION_ID == LocationInstances.spawn.biggest_id,
             ):
                 pass
             with Else:
