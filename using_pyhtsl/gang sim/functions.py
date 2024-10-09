@@ -679,6 +679,8 @@ def on_player_death() -> None:
     PLAYER_CRED.value -= removing_cred
     trigger_function(clamp_cred)
 
+    pause_execution(1)
+
     for gang, crown in (
         (Bloods, Items.bloods_leader_crown),
         (Crips, Items.crips_leader_crown),
@@ -708,7 +710,6 @@ def on_player_death() -> None:
 
     PLAYER_KILL_STREAK.value = 0
 
-    pause_execution(1)
     trigger_function(move_to_spawn)
 
 
@@ -952,11 +953,11 @@ def show_tip() -> None:
 @create_function('Maybe Apply Machine Effect')
 def maybe_apply_machine_effect() -> None:
     for index, (timer_stat, cost, name) in enumerate((
-        (SPEED_EFFECT_TIMER, 50, '&f+1 Speed'),
-        (RESISTANCE_EFFECT_TIMER, 1000, '&9+1 Resistance'),
-        (REGENERATION_EFFECT_TIMER, 500, '&d+1 Regen'),
-        (JUMPBOOST_EFFECT_TIMER, 250, '&a+1 Jump Boost'),
-        (INVISIBILITY_EFFECT_TIMER, 250, '&7Invisibility'),
+        (SPEED_EFFECT_TIMER, 25, '&f+1 Speed'),
+        (RESISTANCE_EFFECT_TIMER, 500, '&9+1 Resistance'),
+        (REGENERATION_EFFECT_TIMER, 250, '&d+1 Regen'),
+        (JUMPBOOST_EFFECT_TIMER, 125, '&a+1 Jump Boost'),
+        (INVISIBILITY_EFFECT_TIMER, 125, '&7Invisibility'),
     )):
         with IfAnd(
             MACHINE_EFFECT_INDEX == index,
@@ -2395,7 +2396,7 @@ def DESTROY_TURF(turf: type[BaseTurf]) -> None:
         turf.HELD_FOR,
     )
     trigger_function(apply_turf_destroyed_title, trigger_for_all_players=True)
-    TurfDestroyedTitleActionBar.apply(turf.FUNDS)
+    DISPLAY_ARG_1.value = turf.FUNDS
     turf.GANG.value = EMPTY_TURF_GANG
 
     funds = PlayerStat('temp')

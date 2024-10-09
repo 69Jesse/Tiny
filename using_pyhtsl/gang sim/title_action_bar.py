@@ -420,7 +420,7 @@ class OnKillTitleActionBar(TitleActionBar):
         DISPLAY_ARG_1.value = added_funds
         DISPLAY_ARG_2.value = added_cred
         DISPLAY_ARG_3.value = added_experience
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
         play_sound('Successful Hit')
 
     @staticmethod
@@ -444,7 +444,7 @@ class OnBadKillTitleActionBar(TitleActionBar):
         cls.set_id()
         DISPLAY_ARG_1.value = removed_cred
         DISPLAY_ARG_2.value = has_penalty
-        DISPLAY_TIMER.value = seconds_to_every_4_ticks(1)
+        DISPLAY_TIMER.value = seconds_to_every_4_ticks(2)
         with IfAnd(
             has_penalty == 1,
         ):
