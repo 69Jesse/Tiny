@@ -113,6 +113,8 @@ from constants import (
     ALL_TEAMS,
     ALL_GANG_TEAMS,
     PLAYER_KILL_STREAK,
+    ADD_FUNDS,
+    ADD_CRED,
     ADD_EXPERIENCE,
     PLAYER_KILLS,
     PLAYER_DEATHS,
@@ -176,6 +178,8 @@ from constants import (
     CLICKED_PERK_INDEX,
     PERK_BUY_PRICE,
     PERK_NEW_TIER,
+    REGEN_ON_KILL_TIMER,
+    STRENGTH_ON_KILL_TIMER,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -195,7 +199,7 @@ from title_action_bar import (
     RemoveFundsTitleActionBar,
 )
 from shop import ALL_SHOP_ITEMS
-from perks import ALL_PERKS
+from perks import ALL_PERKS, NamedPerks
 
 from typing import Literal
 
@@ -473,6 +477,47 @@ def deselect_perk() -> None:
     play_small_success_sound()
 
 
+@create_function('Set Perk Color Stats')
+def set_perk_color_stats() -> None:
+    for perk in ALL_PERKS:
+        with IfOr(
+            SELECTED_PERK_A == perk.index,
+            SELECTED_PERK_B == perk.index,
+        ):
+            perk.color_stat.value = 2
+        with Else:
+            perk.color_stat.value = 7
+
+
+@create_function('Reset Perk Color Stats')
+def reset_perk_color_stats() -> None:
+    for perk in ALL_PERKS:
+        perk.color_stat.value = 0
+
+
+# NOTE: In blacksmith menu, on perk item click, trigger this
+@create_function('Open General Perk Menu')
+def open_general_perk_menu() -> None:
+    trigger_function(set_perk_color_stats)
+    display_menu('Blacksmith: Perks')
+    trigger_function(reset_perk_color_stats)
+
+
+# NOTE: in general perk menu, on perk A/B item click, set CHANGING_PERK_LETTER to A/B then trigger this
+@create_function('Open Selecting Perk Menu')
+def open_selecting_perk_menu() -> None:
+    trigger_function(set_perk_color_stats)
+    with IfAnd(
+        CHANGING_PERK_LETTER == LETTER_A,
+    ):
+        display_menu('Select Perk A')
+    with IfAnd(
+        CHANGING_PERK_LETTER == LETTER_B,
+    ):
+        display_menu('Select Perk B')
+    trigger_function(reset_perk_color_stats)
+
+
 # JOIN / LEAVE ========================================================
 
 
@@ -528,8 +573,15 @@ def on_player_join_first_time() -> None:
     TOTAL_PLAYERS_JOINED.value += 1
     PLAYER_ID.value = TOTAL_PLAYERS_JOINED
     set_player_team(SpawnTeam.TEAM)
+
     PLAYER_CRED.value = 10
     PLAYER_FUNDS.value = 100
+
+    NamedPerks.regen_on_kill.unlocked_tier_stat.value = 1
+    SELECTED_PERK_A.value = NamedPerks.regen_on_kill.index
+    NamedPerks.extra_xp_on_kill.unlocked_tier_stat.value = 1
+    SELECTED_PERK_B.value = NamedPerks.extra_xp_on_kill.index
+
     reset_inventory()
     give_item(Items.tier_1_weapon.item)
     give_item(Items.tier_1_boots.item)
@@ -635,6 +687,56 @@ def on_player_death() -> None:
     PLAYER_KILL_STREAK.value = 0
 
 
+@create_function('Apply On Kill Perk Buffs')
+def apply_on_kill_perk_buffs() -> None:
+    has_regen_on_kill = PlayerStat('temp')
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.regen_on_kill.index,
+        SELECTED_PERK_B == NamedPerks.regen_on_kill.index,
+    ):
+        has_regen_on_kill.value = 1
+    with Else:
+        has_regen_on_kill.value = 0
+    with IfAnd(
+        has_regen_on_kill == 1,
+        NamedPerks.regen_on_kill.unlocked_tier_stat < 3,
+    ):
+        REGEN_ON_KILL_TIMER.value = NamedPerks.regen_on_kill.unlocked_tier_stat + 3
+    with IfAnd(
+        has_regen_on_kill == 1,
+        NamedPerks.regen_on_kill.unlocked_tier_stat >= 3,
+    ):
+        REGEN_ON_KILL_TIMER.value = NamedPerks.regen_on_kill.unlocked_tier_stat + 1
+
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.extra_xp_on_kill.index,
+        SELECTED_PERK_B == NamedPerks.extra_xp_on_kill.index,
+    ):
+        ADD_EXPERIENCE.value += NamedPerks.extra_xp_on_kill.unlocked_tier_stat
+
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.extra_funds_on_kill.index,
+        SELECTED_PERK_B == NamedPerks.extra_funds_on_kill.index,
+    ):
+        ADD_FUNDS.value += NamedPerks.extra_funds_on_kill.unlocked_tier_stat * 2
+
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.strength_on_kill.index,
+        SELECTED_PERK_B == NamedPerks.strength_on_kill.index,
+    ):
+        STRENGTH_ON_KILL_TIMER.value = NamedPerks.strength_on_kill.unlocked_tier_stat
+
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.max_power_on_kill.index,
+        SELECTED_PERK_B == NamedPerks.max_power_on_kill.index,
+    ):
+        PLAYER_POWER.value = PLAYER_MAX_POWER
+    with IfAnd(
+        PLAYER_POWER > PLAYER_POWER_UPPER_BOUND,
+    ):
+        PLAYER_POWER_UPPER_BOUND.value = PLAYER_POWER
+
+
 # NOTE have this get called by the actual event
 @create_function('On Player Kill')
 def on_player_kill() -> None:
@@ -672,9 +774,6 @@ def on_player_kill() -> None:
         trigger_function(on_bad_player_kill)
         exit_function()
 
-    added_funds = PlayerStat('temp1')
-    added_cred = PlayerStat('temp2')
-
     ADD_EXPERIENCE.value = 3 + (PLAYER_KILL_STREAK // 5)
     with IfAnd(
         ADD_EXPERIENCE > 10,
@@ -682,28 +781,30 @@ def on_player_kill() -> None:
         ADD_EXPERIENCE.value = 10
     ADD_EXPERIENCE.value += PLAYER_PRESTIGE
 
-    added_funds.value = 10 + PLAYER_PRESTIGE
-    added_cred.value = 3
+    ADD_FUNDS.value = 10 + PLAYER_PRESTIGE
+    ADD_CRED.value = 3
 
     with IfAnd(
         LATEST_DEATH_WAS_LEADER == 1,
     ):
         ADD_EXPERIENCE.value *= 2
-        added_funds.value *= 2
-        added_cred.value = 5
+        ADD_FUNDS.value *= 2
+        ADD_CRED.value = 5
 
     with IfAnd(
         PLAYER_CRED < 0,
     ):
-        added_funds.value /= 2
+        ADD_FUNDS.value /= 2
         ADD_EXPERIENCE.value /= 2
 
+    trigger_function(apply_on_kill_perk_buffs)
+
     trigger_function(add_experience)
-    PLAYER_FUNDS.value += added_funds
-    PLAYER_CRED.value += added_cred
+    PLAYER_FUNDS.value += ADD_FUNDS
+    PLAYER_CRED.value += ADD_CRED
     OnKillTitleActionBar.apply(
-        added_funds,
-        added_cred,
+        ADD_FUNDS,
+        ADD_CRED,
         ADD_EXPERIENCE,
     )
 
@@ -774,7 +875,7 @@ TIPS = [
     '&eYour&c Power&e is used for abilities and will regenerate over time.',
     '&eKilling your own gang leader is discouraged, but it will promote you to leader.',
     '&eGained&3 XP&e on kill =&a min&7(&b3&a +&6 killstreak&a /&b 5&7,&b 10&7)',  # min(3 + killstreak/5, 10) + prestige
-    '&eHaving all 5 effects at the same time will give you&c +1 Strength&e.',
+    '&eHaving all 5 effects at the same time will give you&c +1 Strength&e effect.',
     '&eYour turf will slowly heal back to&c full health&e over time.',
     '&eKilling an enemy gang leader gives double&3 XP&e and&6 Funds&e, and more&2 Cred&e!',
     '&eIf you have negative&2 Cred&e, you will earn less&6 Funds&e and&3 XP&e.',
@@ -864,7 +965,12 @@ def apply_all_potion_effects() -> None:
         WEAPON_ABILITY_SPEED_TIMER > 0,
     ):
         count.value += 1
-    apply_effects_to_max('speed', 2, count)
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.perm_speed.index,
+        SELECTED_PERK_B == NamedPerks.perm_speed.index,
+    ):
+        count.value += NamedPerks.perm_speed.unlocked_tier_stat
+    apply_effects_to_max('speed', 4, count)
 
     count.value = 0
     with IfAnd(
@@ -882,7 +988,17 @@ def apply_all_potion_effects() -> None:
         WEAPON_ABILITY_REGEN_TIMER > 0,
     ):
         count.value += 1
-    apply_effects_to_max('regeneration', 2, count)
+    with IfAnd(
+        REGEN_ON_KILL_TIMER > 0,
+        NamedPerks.regen_on_kill.unlocked_tier_stat < 3,
+    ):
+        count.value += 2
+    with IfAnd(
+        REGEN_ON_KILL_TIMER > 0,
+        NamedPerks.regen_on_kill.unlocked_tier_stat >= 3,
+    ):
+        count.value += 3
+    apply_effects_to_max('regeneration', 5, count)
 
     count.value = 0
     with IfAnd(
@@ -907,7 +1023,7 @@ def apply_all_potion_effects() -> None:
         INVISIBILITY_EFFECT_TIMER > 0,
     ):
         count.value += 1
-    one_eightth = PlayerStat('temp1')
+    one_eightth = PlayerStat('one8th')
     one_eightth.value = (Bloods.TEAM.players() + Crips.TEAM.players() + Kings.TEAM.players() + Grapes.TEAM.players()) // 8
     for gang in (
         Bloods,
@@ -920,7 +1036,12 @@ def apply_all_potion_effects() -> None:
             gang.TEAM.players() <= one_eightth,
         ):
             count.value += 1
-    apply_effects_to_max('strength', 2, count)
+    one_eightth.value = 0
+    with IfAnd(
+        STRENGTH_ON_KILL_TIMER > 0,
+    ):
+        count.value += 1
+    apply_effects_to_max('strength', 3, count)
 
     apply_potion_effect(
         'night_vision',
@@ -1280,6 +1401,16 @@ def set_most_stats() -> None:
             buff_type.stat > buff_type.max,
         ):
             buff_type.stat.value = buff_type.max
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.additional_power.index,
+        SELECTED_PERK_B == NamedPerks.additional_power.index,
+    ):
+        PLAYER_MAX_POWER.value += NamedPerks.additional_power.unlocked_tier_stat * 20
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.more_turf_damage.index,
+        SELECTED_PERK_B == NamedPerks.more_turf_damage.index,
+    ):
+        PLAYER_DAMAGE.value += NamedPerks.more_turf_damage.unlocked_tier_stat
     trigger_function(clamp_cred)
     trigger_function(update_power)
 
@@ -1499,6 +1630,8 @@ def decrement_buff_timers() -> None:
         (INVISIBILITY_EFFECT_TIMER, False),
         (WEAPON_ABILITY_SPEED_TIMER, True),
         (WEAPON_ABILITY_REGEN_TIMER, True),
+        (REGEN_ON_KILL_TIMER, True),
+        (STRENGTH_ON_KILL_TIMER, True),
     ):
         if dec_in_spawn:
             with IfAnd(
@@ -2127,6 +2260,13 @@ def payout_turf_funds() -> None:
     ):
         PAYOUT_REST.value -= 1
         payout += 1
+
+    with IfOr(
+        SELECTED_PERK_A == NamedPerks.extra_distribution_funds.index,
+        SELECTED_PERK_B == NamedPerks.extra_distribution_funds.index,
+    ):
+        payout.value *= 100
+        payout.value //= (100 + NamedPerks.extra_distribution_funds.unlocked_tier_stat * 4)
 
     with IfAnd(
         payout > 0,

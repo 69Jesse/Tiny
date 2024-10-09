@@ -134,6 +134,8 @@ PLAYER_FORAGING_FORTUNE = PlayerStat('forafortune')
 
 PLAYER_DAMAGE = PlayerStat('damage')
 
+ADD_FUNDS = PlayerStat('addfunds')
+ADD_CRED = PlayerStat('addcred')
 ADD_EXPERIENCE = PlayerStat('addxp')
 
 DISPLAY_ID = PlayerStat('dp/id')
@@ -167,6 +169,9 @@ RESISTANCE_EFFECT_TIMER = PlayerStat('et/res')
 REGENERATION_EFFECT_TIMER = PlayerStat('et/reg')
 JUMPBOOST_EFFECT_TIMER = PlayerStat('et/jum')
 INVISIBILITY_EFFECT_TIMER = PlayerStat('et/inv')
+
+REGEN_ON_KILL_TIMER = PlayerStat('okt/reg')
+STRENGTH_ON_KILL_TIMER = PlayerStat('okt/str')
 
 
 WEAPON_ABILITY_SPEED_TIMER = PlayerStat('waspt')

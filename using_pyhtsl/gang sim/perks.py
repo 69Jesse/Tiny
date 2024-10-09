@@ -245,16 +245,28 @@ ALL_PERKS: list[Perk] = [
         'Extra Distribution Funds',
         '&7Gain extra&e Funds&7 from turf distributions.',
         [
-            ('&e+2% Distribution Funds', 1000),
-            ('&e+4% Distribution Funds', 2500),
-            ('&e+6% Distribution Funds', 10000),
-            ('&e+8% Distribution Funds', 50000),
-            ('&e+10% Distribution Funds', 100000),
+            ('&e+4% Distribution Funds', 1000),
+            ('&e+8% Distribution Funds', 2500),
+            ('&e+12% Distribution Funds', 10000),
+            ('&e+16% Distribution Funds', 50000),
+            ('&e+20% Distribution Funds', 100000),
         ],
         PERK_9_TIER,
         PERK_9_COLOR,
     ),
 ]
+
+
+class NamedPerks:
+    regen_on_kill = ALL_PERKS[0]
+    extra_xp_on_kill = ALL_PERKS[1]
+    extra_funds_on_kill = ALL_PERKS[2]
+    strength_on_kill = ALL_PERKS[3]
+    perm_speed = ALL_PERKS[4]
+    max_power_on_kill = ALL_PERKS[5]
+    additional_power = ALL_PERKS[6]
+    more_turf_damage = ALL_PERKS[7]
+    extra_distribution_funds = ALL_PERKS[8]
 
 
 def perk_block_lore(perk_stat: PlayerStat) -> str:
