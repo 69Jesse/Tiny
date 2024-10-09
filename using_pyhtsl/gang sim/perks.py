@@ -302,7 +302,7 @@ if __name__ == '__main__':
 
     for perk in ALL_PERKS:
         perk.item_upgrade.save()
-        # perk.item_select_or_upgrade.save()
+        perk.item_select_or_upgrade.save()
 
     PERK_A_ITEM.save()
     PERK_A_ITEM_ENCHANTED.save()

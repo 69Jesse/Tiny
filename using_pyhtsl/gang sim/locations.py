@@ -122,6 +122,12 @@ class LocationInstances:
         'Grapes Spawn Area',
         10400,
     )
+    spawn_afk_area = Location(
+        (3, 56, -9),
+        (-5, 40, -13),
+        'AFK Drop Area',
+        10500,
+    )
 
     # cell_block = Location(
     #     (-22, 115, -28),

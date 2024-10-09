@@ -16,7 +16,7 @@ from pyhtsl.types import ALL_ITEM_KEYS, IfStatement, LEATHER_ARMOR_KEYS
 from enum import Enum, auto
 import re
 
-from typing import Optional, Generator, Callable
+from typing import Optional, Generator, Callable, Literal
 
 from constants import (
     PLAYER_POWER,
@@ -313,9 +313,13 @@ class CustomItem:
         type_name = self.type.better_name(self.key)
         lore.append(f'&{self.rarity.value}&l{self.rarity.name} {type_name.upper()}')
 
+        name = self.name
+        if not any(name.startswith(f'&{c}') for c in '0123456789abcdef'):
+            name = f'&{self.rarity.value}{name}'
+
         return Item(
             self.key,
-            name=f'&{self.rarity.value}{self.name}',
+            name=name,
             lore='\n'.join(lore),
             enchantments=self.enchantments,
             hide_all_flags=True,
@@ -330,22 +334,42 @@ class CustomItem:
         )
 
 
+def special_ability_quote(
+    mode: Literal['click', 'worn', 'held'] | None,
+    description: str,
+    power_cost: int | None = None,
+) -> str:
+    quote = '&6Special Ability'
+    if mode == 'click':
+        quote += '&e&l RIGHT CLICK'
+    elif mode == 'worn':
+        quote += '&e&l WHILE WORN'
+    elif mode == 'held':
+        quote += '&e&l WHILE HELD'
+    quote += '\n' + description
+    if power_cost is not None:
+        quote += f'\n&8Power Cost:&4 {power_cost}⸎ Power'
+    return quote
+
+
 def weapon_ability_quote(tier: int) -> Optional[str]:
     power_cost, speed_timer, regen_timer = WEAPON_ABILITIES.get(tier, (0, 0, 0))
     if speed_timer == 0 and regen_timer == 0:
         return None
-    lines = ['&6Special Ability&e&l RIGHT CLICK']
 
     if speed_timer > 0 and regen_timer > 0:
-        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} second{'s' * (speed_timer != 1)}&7,')
-        lines.append(f'&7and&d +1 Regen&7 for&a {regen_timer} second{'s' * (regen_timer != 1)}&7.')
+        description = (
+            f'&7Gain&f +1 Speed&7 for&a {speed_timer} second{'s' * (speed_timer != 1)}&7,'
+             + f'\n&7and&d +1 Regen&7 for&a {regen_timer} second{'s' * (regen_timer != 1)}&7.'
+        )
     elif speed_timer > 0:
-        lines.append(f'&7Gain&f +1 Speed&7 for&a {speed_timer} second{'s' * (speed_timer != 1)}&7.')
+        description = f'&7Gain&f +1 Speed&7 for&a {speed_timer} second{'s' * (speed_timer != 1)}&7.'
     elif regen_timer > 0:
-        lines.append(f'&7Gain&d +1 Regen&7 for&a {regen_timer} second{'s' * (regen_timer != 1)}&7.')
+        description = f'&7Gain&d +1 Regen&7 for&a {regen_timer} second{'s' * (regen_timer != 1)}&7.'
+    else:
+        raise
 
-    lines.append(f'&8Power Cost:&4 {power_cost}⸎ Power')
-    return '\n'.join(lines)
+    return special_ability_quote('click', description, power_cost)
 
 
 class Items:
@@ -808,11 +832,27 @@ class Items:
             Items.tier_16_boots,
         ]
 
+    long_leg_leggings = CustomItem(
+        '&aLong Leg Leggings',
+        'leather_pants',
+        ItemRarity.EPIC,
+        ItemType.Armor,
+        quote='&8Super-deluxe, limited edition,\n&8unbreakable pants. Have fun!\n\n' + special_ability_quote(
+            'worn',
+            '&7Permanent&a +2 Jump Boost&7.',
+        ),
+        color='55FF55',
+    )
+
     @classmethod
     def all(cls) -> Generator[CustomItem, None, None]:
         for item in cls.__dict__.values():
             if isinstance(item, CustomItem):
                 yield item
+
+
+for item in Items.all():
+    item.item.save()
 
 
 class Teleport:

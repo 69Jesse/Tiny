@@ -174,6 +174,9 @@ REGEN_ON_KILL_TIMER = PlayerStat('okt/reg')
 STRENGTH_ON_KILL_TIMER = PlayerStat('okt/str')
 
 
+MACHINE_EFFECT_INDEX = PlayerStat('meindex')
+
+
 WEAPON_ABILITY_SPEED_TIMER = PlayerStat('waspt')
 WEAPON_ABILITY_REGEN_TIMER = PlayerStat('waregt')
 

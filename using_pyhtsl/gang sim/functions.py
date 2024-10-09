@@ -180,6 +180,7 @@ from constants import (
     PERK_NEW_TIER,
     REGEN_ON_KILL_TIMER,
     STRENGTH_ON_KILL_TIMER,
+    MACHINE_EFFECT_INDEX,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -197,6 +198,7 @@ from title_action_bar import (
     RemoveCredTitleActionBar,
     RemovePowerTitleActionBar,
     RemoveFundsTitleActionBar,
+    AddFundsTitleActionBar,
 )
 from shop import ALL_SHOP_ITEMS
 from perks import ALL_PERKS, NamedPerks
@@ -875,7 +877,7 @@ TIPS = [
     '&eYour&c Power&e is used for abilities and will regenerate over time.',
     '&eKilling your own gang leader is discouraged, but it will promote you to leader.',
     '&eGained&3 XP&e on kill =&a min&7(&b3&a +&6 killstreak&a /&b 5&7,&b 10&7)',  # min(3 + killstreak/5, 10) + prestige
-    '&eHaving all 5 effects at the same time will give you&c +1 Strength&e effect.',
+    '&eHaving all 5 machine effects at the same time will give you&c +1 Strength&e effect.',
     '&eYour turf will slowly heal back to&c full health&e over time.',
     '&eKilling an enemy gang leader gives double&3 XP&e and&6 Funds&e, and more&2 Cred&e!',
     '&eIf you have negative&2 Cred&e, you will earn less&6 Funds&e and&3 XP&e.',
@@ -921,6 +923,42 @@ def show_tip() -> None:
             TIP_INDEX == i,
         ):
             chat('&f[&bTIP&f] ' + tip)
+
+
+# NOTE on button click, set MACHINE_EFFECT_INDEX to the index of the machine effect then trigger this
+@create_function('Maybe Apply Machine Effect')
+def maybe_apply_machine_effect() -> None:
+    for index, (timer_stat, cost, name) in enumerate((
+        (SPEED_EFFECT_TIMER, 50, '&f+1 Speed'),
+        (RESISTANCE_EFFECT_TIMER, 1000, '&9+1 Resistance'),
+        (REGENERATION_EFFECT_TIMER, 500, '&d+1 Regen'),
+        (JUMPBOOST_EFFECT_TIMER, 250, '&a+1 Jump Boost'),
+        (INVISIBILITY_EFFECT_TIMER, 250, '&7Invisibility'),
+    )):
+        with IfAnd(
+            MACHINE_EFFECT_INDEX == index,
+            timer_stat > 10,
+        ):
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&cYou still have&b {timer_stat}s&c of {name}&c left!')
+            play_unable_sound()
+            exit_function()
+        with IfAnd(
+            MACHINE_EFFECT_INDEX == index,
+            PLAYER_FUNDS < cost,
+        ):
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&cYou do not have enough Funds to purchase {name}&c! ({PLAYER_FUNDS}/{cost:,})')
+            play_unable_sound()
+            exit_function()
+        with IfAnd(
+            MACHINE_EFFECT_INDEX == index,
+        ):
+            PLAYER_FUNDS.value -= cost
+            TOTAL_FUNDS_SPENT.value += cost
+            RemoveFundsTitleActionBar.apply(cost)
+            seconds = 60
+            timer_stat.value = seconds
+            chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lNICE!&e Purchased&b {seconds}s&e of {name}&e for {cost:,}⛁ Funds&e!')
+            play_big_success_sound()
 
 
 @create_function('Misc 0.2s')
@@ -1005,7 +1043,9 @@ def apply_all_potion_effects() -> None:
         JUMPBOOST_EFFECT_TIMER > 0,
     ):
         count.value += 1
-    apply_effects_to_max('jump_boost', 1, count)
+    with Items.long_leg_leggings.if_has_condition():
+        count.value += 2
+    apply_effects_to_max('jump_boost', 3, count)
 
     count.value = 0
     with IfAnd(
@@ -1144,7 +1184,7 @@ def joined_gang_no_switch_message(gang: type[GangSimTeam]) -> None:
 
 
 def joined_gang_with_switch_message(gang: type[GangSimTeam]) -> None:
-    chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lSWITCH!&e You are now part of the&{gang.ID}&l {gang.name().upper()}&e!&7 ({DAILY_FREE_SWITCHES}/{FREE_SWITCHES_PER_DAY} daily free switches left)')
+    chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lSWITCH!&e You are now part of the&{gang.ID}&l {gang.name().upper()}&e!&7 ({DAILY_FREE_SWITCHES}/{FREE_SWITCHES_PER_DAY:,} daily free switches left)')
 
 
 @create_function('Display Last Gang Membership')
@@ -1225,6 +1265,14 @@ def on_grapes_join() -> None:
     ON_TEAM_JOIN(Grapes)
 
 
+@create_function('AFK Area Iteration')
+def afk_area_iteration() -> None:
+    n = 1
+    PLAYER_FUNDS.value += n
+    AddFundsTitleActionBar.apply(n)
+    teleport_player(('~', '~13', '~'))
+
+
 # NOTE have this get called by the actual event
 # but first have 4 ticks delay, feels nicer
 @create_function('On Player Enter Portal')
@@ -1235,6 +1283,7 @@ def on_player_enter_portal() -> None:
         (LocationInstances.spawn_crips_area, on_crips_join),
         (LocationInstances.spawn_kings_area, on_kings_join),
         (LocationInstances.spawn_grapes_area, on_grapes_join),
+        (LocationInstances.spawn_afk_area, afk_area_iteration),
     ):
         with IfAnd(
             LOCATION_ID == location.id
@@ -1383,11 +1432,13 @@ def set_most_stats() -> None:
             continue
         buff_type.stat.value = buff_type.min
     for item in Items.all():
+        if item.buffs is None:
+            continue
+        if not item.buffs:
+            continue
+        if not any(buff.type.stat is not None for buff in item.buffs):
+            continue
         with item.if_has_condition():
-            if item.buffs is None:
-                continue
-            if not item.buffs:
-                continue
             for buff in item.buffs:
                 if buff.type.stat is None:
                     continue
