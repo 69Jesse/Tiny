@@ -77,6 +77,7 @@ class ItemType(Enum):
     Tool = auto()
     Consumable = auto()
     Material = auto()
+    Item = auto()
 
     def better_name(self, item_key: ALL_ITEM_KEYS) -> str:
         if self is ItemType.Tool:
@@ -233,6 +234,8 @@ class CustomItem:
     color: Optional[str]
     quote: Optional[str]
     interaction_data_key: Optional[str]
+    is_cookie_item: bool
+    unbreakable: bool
     def __init__(
         self,
         name: str,
@@ -245,6 +248,8 @@ class CustomItem:
         color: Optional[str] = None,
         quote: Optional[str] = None,
         interaction_data_key: Optional[str] = None,
+        is_cookie_item: bool = False,
+        unbreakable: bool = True,
     ) -> None:
         self.name = name
         self.key = key
@@ -263,6 +268,8 @@ class CustomItem:
         self.color = color
         self.quote = quote
         self.interaction_data_key = interaction_data_key
+        self.is_cookie_item = is_cookie_item
+        self.unbreakable = unbreakable
 
     def find_buff(self, buffs: list[Buff], buff_type: BuffType) -> Buff:
         for buff in buffs:
@@ -323,9 +330,10 @@ class CustomItem:
             lore='\n'.join(lore),
             enchantments=self.enchantments,
             hide_all_flags=True,
-            unbreakable=True,
+            unbreakable=self.unbreakable,
             color=self.color,
-            interaction_data_key=self.interaction_data_key
+            interaction_data_key=self.interaction_data_key,
+            is_cookie_item=self.is_cookie_item,
         )
 
     def if_has_condition(self) -> IfStatement:
@@ -842,6 +850,19 @@ class Items:
             '&7Permanent&a +2 Jump Boost&7.',
         ),
         color='55FF55',
+    )
+
+    slash_cookie = CustomItem(
+        '&6Cookies&7 (Right Click)',
+        'cookie',
+        ItemRarity.LEGENDARY,
+        ItemType.Item,
+        quote='&8Giving a&6 /cookie&8 helps us out a ton\n&8and is greatly appreciated! Love!\n\n' + special_ability_quote(
+            'click',
+            '&7Turns you into an amazing person.',
+        ),
+        is_cookie_item=True,
+        unbreakable=False,
     )
 
     @classmethod

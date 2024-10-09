@@ -693,7 +693,6 @@ def on_player_death() -> None:
             gang.LEADER_ID.value = NO_GANG_LEADER_ID
             remove_item(crown.item)
 
-    trigger_function(move_to_spawn)
     trigger_function(check_gang_leaders_and_armor)
     OnDeathTitleActionBar.apply(
         removing_cred,
@@ -708,6 +707,9 @@ def on_player_death() -> None:
         trigger_function(display_death_message, trigger_for_all_players=True)
 
     PLAYER_KILL_STREAK.value = 0
+
+    pause_execution(1)
+    trigger_function(move_to_spawn)
 
 
 @create_function('Apply On Kill Perk Buffs')
@@ -741,7 +743,7 @@ def apply_on_kill_perk_buffs() -> None:
         SELECTED_PERK_A == NamedPerks.extra_funds_on_kill.index,
         SELECTED_PERK_B == NamedPerks.extra_funds_on_kill.index,
     ):
-        ADD_FUNDS.value += NamedPerks.extra_funds_on_kill.unlocked_tier_stat * 2
+        ADD_FUNDS.value += NamedPerks.extra_funds_on_kill.unlocked_tier_stat * 20
 
     with IfOr(
         SELECTED_PERK_A == NamedPerks.strength_on_kill.index,
@@ -807,14 +809,14 @@ def on_player_kill() -> None:
     ADD_FUNDS.value = 10 + PLAYER_PRESTIGE
     ADD_CRED.value = 3
 
+    trigger_function(apply_on_kill_perk_buffs)
+
     with IfAnd(
         LATEST_DEATH_WAS_LEADER == 1,
     ):
         ADD_EXPERIENCE.value *= 2
         ADD_FUNDS.value *= 2
-        ADD_CRED.value = 5
-
-    trigger_function(apply_on_kill_perk_buffs)
+        ADD_CRED.value += 2
 
     with IfAnd(
         PLAYER_CRED < 0,
@@ -1240,6 +1242,8 @@ def pay_for_gang_switch() -> None:
 def ON_TEAM_JOIN(
     team: type[GangSimTeam],
 ) -> None:
+    PLAYER_POWER.value = PLAYER_MAX_POWER
+
     with IfOr(
         PLAYER_LAST_GANG == 0,
         PLAYER_LAST_GANG == team.ID,
@@ -2181,6 +2185,13 @@ def cookie_reward() -> None:
     add_funds(1000)
 
 
+# NOTE: have this get called by the command
+@create_function('Give Cookie Command')
+def give_cookie_command() -> None:
+    give_item(Items.slash_cookie.item, allow_multiple=True)
+    play_sound('Item Pickup')
+
+
 # INGAME TIME ======================
 
 
@@ -2348,8 +2359,8 @@ def payout_turf_funds() -> None:
         SELECTED_PERK_A == NamedPerks.extra_distribution_funds.index,
         SELECTED_PERK_B == NamedPerks.extra_distribution_funds.index,
     ):
-        payout.value *= 100
-        payout.value //= (100 + NamedPerks.extra_distribution_funds.unlocked_tier_stat * 4)
+        payout.value *= (100 + NamedPerks.extra_distribution_funds.unlocked_tier_stat * 40)
+        payout.value //= 100
 
     with IfAnd(
         payout > 0,
