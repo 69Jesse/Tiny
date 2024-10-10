@@ -181,6 +181,7 @@ from constants import (
     REGEN_ON_KILL_TIMER,
     STRENGTH_ON_KILL_TIMER,
     MACHINE_EFFECT_INDEX,
+    SPAWN_TELEPORT_INDEX,
 )
 from locations import LOCATIONS, LocationInstances
 from everything import Items, BuffType, Teleports
@@ -409,6 +410,7 @@ def force_upgrade_perk() -> None:
             perk.unlocked_tier_stat.value = PERK_NEW_TIER
             chat(IMPORTANT_MESSAGE_PREFIX + f'&b&lNICE!&e Upgraded&a {perk.name}&e to&c Tier {perk.unlocked_tier_stat}&e!')
     PLAYER_FUNDS.value -= PERK_BUY_PRICE
+    TOTAL_FUNDS_SPENT.value += PERK_BUY_PRICE
     RemoveFundsTitleActionBar.apply(PERK_BUY_PRICE)
     play_big_success_sound()
     PERK_BUY_PRICE.value = 0
@@ -1180,9 +1182,85 @@ def set_player_team_function() -> None:
 TEMPORARY_SPAWN = (-2.5, 106.0, -40.5)
 
 
+SPAWNS: list[tuple[float, float, float, float, float]] = [
+    (17.5, 111, -45, 65, 10),
+    (17.5, 111, -36, 110, 10),
+    (24, 104, -32.5, -130, 0),
+    (37.5, 104, -47, -50, 10),
+    (41, 104, -60.5, 0, 0),
+    (52, 104, -60.5, 10, 0),
+    (57.5, 104, -38, 140, 0),
+    (46, 104, -28.5, 135, 0),
+    (37.5, 111, -47, -30, 0),
+    (56, 111, -60.5, 40, 0),
+    (53.5, 111, -41, 120, 0),
+    (25.5, 111, -43, -45, 0),
+    (29, 111, -31.5, -150, 0),
+    (24, 104, -25.5, -30, 0),
+    (47, 111, -33.5, -50, 0),
+    (57.5, 111, -20, 55, 0),
+    (30, 111, -17.5, -160, 0),
+    (45, 111, -21.5, 30, 0),
+    (13.5, 104, 0, 90, 0),
+    (44, 104, -7.5, 130, 0),
+    (53, 104, -22.5, 15, 0),
+    (57, 104, -20, 65, 0),
+    (59.5, 104, 0, 60, 0),
+    (50, 104, 34.5, 150, 0),
+    (34, 104, 34.5, 145, 0),
+    (-19.5, 104, 25, -90, 0),
+    (13.5, 104, 19, 125, 0),
+    (3, 104, 42.5, 25, 0),
+    (-3.5, 104, 59, 110, 0),
+    (-37.5, 104, 45, -100, 0),
+    (-22, 104, 46.5, -170, 0),
+    (-21.5, 104, 41, 75, 0),
+    (-33.5, 111, 41, -70, 0),
+    (-33.5, 111, 50, -130, 0),
+    (10.5, 111, 41, 80, 0),
+    (10.5, 111, 50, 120, 0),
+    (-21, 104, 15.5, -130, 0),
+    (-35.5, 104, 7, -110, 0),
+    (-58.5, 104, 6, -30, 0),
+    (-43, 106, -20.5, -20, 0),
+    (-39, 106, -2.5, -160, 0),
+    (-58.5, 106, 0, -150, 0),
+    (-58.5, 104, -15, -90, 0),
+    (-54.5, 104, -45, -105, 0),
+    (-54.5, 104, -32, -105, 0),
+    (-20, 104, -46.5, -30, 0),
+    (-20, 104, -34.5, -115, 0),
+    (-41, 95, -35.5, -55, 0),
+    (-20.5, 95, -44, -70, 0),
+    (-18, 97, -60.5, -10, 0),
+    (-9, 97, -60.5, 10, 0),
+    (-9, 95, -31.5, 160, 0),
+    (5, 95, -60.5, -40, 0),
+    (17, 93, -37.5, 120, 0),
+    (23.5, 95, -71, 0, -10),
+    (35, 97, -60.5, 0, 0),
+    (41.5, 97, -52, 30, 0),
+    (38, 97, -28.5, 160, 0),
+]
+
+
+teleport_into_map_portion = 10
+teleport_into_map_iterate_all_in = 5 * 60
+
+teleport_into_map_divider = round(teleport_into_map_iterate_all_in / len(SPAWNS))
+
+
 @create_function('Teleport Into Map')
 def teleport_into_map() -> None:
-    teleport_player(TEMPORARY_SPAWN)
+    SPAWN_TELEPORT_INDEX.value = (DateUnix // teleport_into_map_divider) + RandomInt(0, teleport_into_map_portion)
+    SPAWN_TELEPORT_INDEX.value -= SPAWN_TELEPORT_INDEX // len(SPAWNS) * len(SPAWNS)
+
+    for i, spawn in enumerate(SPAWNS):
+        with IfAnd(
+            SPAWN_TELEPORT_INDEX == i,
+        ):
+            teleport_player(spawn)
+
     play_sound('Enderman Teleport')
 
 

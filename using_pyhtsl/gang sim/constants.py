@@ -156,6 +156,9 @@ SEND_TO_SPAWN_COUNTER = PlayerStat('stspawnc')
 IS_AT_SPAWN_COUNTER = PlayerStat('iaspawnc')
 
 
+SPAWN_TELEPORT_INDEX = PlayerStat('stpindex')
+
+
 PREVIOUS_COORDINATE_X = PlayerStat('pcoordx')
 PREVIOUS_COORDINATE_Y = PlayerStat('pcoordy')
 PREVIOUS_COORDINATE_Z = PlayerStat('pcoordz')
